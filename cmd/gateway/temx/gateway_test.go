@@ -80,4 +80,46 @@ func TestGateway(t *testing.T) {
 			})
 		}
 	})
+	t.Run("ListBuckets", func(t *testing.T) {
+		var (
+			wantNames = map[string]bool{
+				testBucket1: true,
+			}
+			foundNames = map[string]bool{
+				testBucket1: false,
+			}
+		)
+		bucketInfos, err := gateway.ListBuckets(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, info := range bucketInfos {
+			if wantNames[info.Name] {
+				foundNames[info.Name] = true
+			}
+		}
+		for name := range wantNames {
+			if !foundNames[name] {
+				t.Fatal("failed to find name")
+			}
+		}
+	})
+	t.Run("DeleteObjects", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{"Bucket1-Found", args{testBucket1, "", "", ""}, false},
+			{"Bucket2-NotFound", args{testBucket2, "", "", ""}, true},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := gateway.DeleteBucket(context.Background(), tt.args.bucketName)
+				if (err != nil) != tt.wantErr {
+					t.Fatalf("DeleteBucket() err %v, wantErr %v", err, tt.wantErr)
+				}
+			})
+		}
+	})
 }
