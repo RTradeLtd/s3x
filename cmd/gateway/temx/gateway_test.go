@@ -104,7 +104,7 @@ func TestGateway(t *testing.T) {
 			}
 		}
 	})
-	t.Run("DeleteObjects", func(t *testing.T) {
+	t.Run("DeleteBucket", func(t *testing.T) {
 		tests := []struct {
 			name    string
 			args    args
