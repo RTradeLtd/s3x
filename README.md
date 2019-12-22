@@ -50,9 +50,11 @@ In order to enable the speed needed by S3 applications we used TemporalX to prov
 
 ## Storage
 
-All data, that is all the objects, buckets, metadata, is stored on IPFS. Because IPFS uses hashes, and S3 uses arbitrary names for the buckets and objects, we use a "Ledger" which currently takes the form of an on-disk key-value store using `ipfs/go-datastore`.
+All data, that is all the objects, buckets, metadata, is stored on IPFS. Because IPFS uses hashes, and S3 uses arbitrary names for the buckets and objects, we perform bookkeeping with a "ledger". The actual "on-ipfs" structure of the objects, and buckets themselves is defined via protocol buffers, saved as an IPLD "raw" object type. They contain the data if there, as well as object and bucket metadata.
 
-The actual "on-ipfs" structure of the objects, and buckets themselves is defined via protocol buffers, saved as an IPLD "raw" object type. They contain the data if there, as well as object and bucket metadata.
+## Ledger
+
+The "ledger" is an internal book keeper responsible for keeping track of the latest IPFS CID's that belong to each and every object, and bucket stored, and is currently implemented as a `dgraph-io/badger/v2` key-value datastore.
 
 # License
 
