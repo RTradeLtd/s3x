@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	testBucket1 = "bucket1"
+	testBucket1, testBucket2 = "bucket1", "testbucket2"
 )
 
 func TestGateway(t *testing.T) {
@@ -57,6 +57,27 @@ func TestGateway(t *testing.T) {
 		}
 		if info.Created.After(now) || info.Created.Before(then) {
 			t.Fatal("bad bucket created time")
+		}
+	})
+	t.Run("GetBucketInfo", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{"Bucket1-Found", args{testBucket1, "", "", ""}, false},
+			{"Bucket2-NotFound", args{testBucket2, "", "", ""}, true},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				info, err := gateway.GetBucketInfo(context.Background(), tt.args.bucketName)
+				if (err != nil) != tt.wantErr {
+					t.Fatalf("GetBucketInfo() err %v, wantERr %v", err, tt.wantErr)
+				}
+				if err == nil && info.Name != tt.args.bucketName {
+					t.Fatal("bad bucket name")
+				}
+			})
 		}
 	})
 }
