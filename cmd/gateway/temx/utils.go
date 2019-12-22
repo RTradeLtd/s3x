@@ -107,3 +107,19 @@ func (x *xObjects) getMinioObjectInfo(ctx context.Context, bucketName, objectNam
 		UserDefined: obj.GetObjectInfo().GetUserDefined(),
 	}, nil
 }
+
+// toMinioErr converts gRPC or ledger errors into compatible minio errors
+// or if no error is present return nil
+func (x *xObjects) toMinioErr(err error, bucket, object string) error {
+	switch err {
+	case ErrLedgerBucketDoesNotExist:
+		err = minio.BucketNotFound{Bucket: bucket}
+	case ErrLedgerObjectDoesNotExist:
+		err = minio.ObjectNotFound{Bucket: bucket, Object: object}
+	case ErrLedgerBucketExists:
+		err = minio.BucketAlreadyExists{Bucket: bucket}
+	case nil:
+		return nil
+	}
+	return err
+}

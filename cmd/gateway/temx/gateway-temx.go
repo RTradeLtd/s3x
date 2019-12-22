@@ -325,6 +325,8 @@ func (x *xObjects) CopyObject(
 	srcInfo minio.ObjectInfo,
 	srcOpts, dstOpts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
+	// TODO(bonedaddy): implement usage of options
+
 	// TODO(bonedaddy): we probably need to implement a check here
 	// that determines whether or not the bucket exists
 	// get hash of th eobject
@@ -345,32 +347,28 @@ func (x *xObjects) CopyObject(
 }
 
 // DeleteObject deletes a blob in bucket
-func (x *xObjects) DeleteObject(ctx context.Context, bucket string, object string) error {
-	//TODO(bonedaddy): implement
-	/*
-		bkt, err := l.Bucket(ctx, bucket)
-		if err != nil {
-			return err
-		}
-
-		// If we hide the file we'll conform to B2's versioning policy, it also
-		// saves an additional call to check if the file exists first
-		_, err = bkt.HideFile(l.ctx, object)
-		logger.LogIf(ctx, err)
-		return b2ToObjectError(err, bucket, object)
-	*/
-	return errors.New("not yet implemented")
+func (x *xObjects) DeleteObject(ctx context.Context, bucket, object string) error {
+	//TODO(bonedaddy): implement removal from IPFS
+	err := x.ledgerStore.RemoveObject(bucket, object)
+	switch err {
+	case ErrLedgerBucketDoesNotExist:
+		err = minio.BucketNotFound{Bucket: bucket}
+	case ErrLedgerObjectDoesNotExist:
+		err = minio.ObjectNotFound{Bucket: bucket, Object: object}
+	}
+	return x.toMinioErr(err, bucket, object)
 }
 
 func (x *xObjects) DeleteObjects(ctx context.Context, bucket string, objects []string) ([]error, error) {
-	//TODO(bonedaddy): implement
-	return nil, errors.New("not yet implemented")
-	/*	errs := make([]error, len(objects))
-		for idx, object := range objects {
-			errs[idx] = l.DeleteObject(ctx, bucket, object)
-		}
-		return errs, nil
-	*/
+	// TODO(bonedaddy): implement removal from ipfs
+	errs := make([]error, len(objects))
+	for i, object := range objects {
+		errs[i] = x.toMinioErr(
+			x.ledgerStore.RemoveObject(bucket, object),
+			bucket, object,
+		)
+	}
+	return errs, nil
 }
 
 // ListMultipartUploads lists all multipart uploads.
