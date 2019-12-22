@@ -292,12 +292,18 @@ func (x *xObjects) PutObject(ctx context.Context, bucket string, object string, 
 	if err != nil {
 		return objInfo, err
 	}
-	hash, err := x.objectToIPFS(ctx, &Object{
+	// add the object to ipfs
+	objectHash, err := x.objectToIPFS(ctx, &Object{
 		Data:       data,
 		ObjectInfo: obinfo,
 	})
-	// TODO(bonedaddy): add to protocol buffer object
-	if err := x.ledgerStore.AddObjectToBucket(bucket, object, hash); err != nil {
+	// update the bucket on ipfs with the new object
+	bucketHash, err := x.addObjectToBucketAndIPFS(ctx, object, objectHash, bucket)
+	if err != nil {
+		return objInfo, err
+	}
+	// update our internal ledger state
+	if err := x.ledgerStore.AddObjectToBucket(bucket, object, objectHash); err != nil {
 		return objInfo, err
 	}
 	return x.getMinioObjectInfo(ctx, bucket, object)

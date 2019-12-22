@@ -36,6 +36,18 @@ func (x *xObjects) objectToIPFS(ctx context.Context, obj *Object) (string, error
 	return resp.GetHashes()[0], nil
 }
 
+func (x *xObjects) addObjectToBucketAndIPFS(ctx context.Context, objectName, objectHash, bucketName string) (string, error) {
+	bucket, err := x.bucketFromIPFS(ctx, bucketName)
+	if err != nil {
+		return "", err
+	}
+	if bucket.Objects == nil {
+		bucket.Objects = make(map[string]string)
+	}
+	bucket.Objects[objectName] = objectHash
+	return x.bucketToIPFS(ctx, bucket)
+}
+
 func (x *xObjects) bucketFromIPFS(ctx context.Context, name string) (*Bucket, error) {
 	hash, err := x.ledgerStore.GetBucketHash(name)
 	if err != nil {

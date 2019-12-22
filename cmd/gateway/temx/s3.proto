@@ -49,7 +49,8 @@ message Bucket {
     bytes data = 1;
     // information associated with this bucket
     BucketInfo bucketInfo = 2;
-    repeated Object objects = 3;
+    // maps object names to object hashes
+    map<string, string> objects = 3;
 }
 // Object is a singular s3 object.
 // the data field contains the actual data 
