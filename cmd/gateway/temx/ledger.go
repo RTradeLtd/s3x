@@ -11,6 +11,17 @@ import (
 var (
 	ledgerKey    = datastore.NewKey("ledgerstatekey")
 	ledgerPrefix = datastore.NewKey("ledgerRoot")
+	// errors
+
+	// ErrLedgerBucketExists is an error message returned from the internal
+	// ledgerStore indicating that a bucket already exists
+	ErrLedgerBucketExists = errors.New("bucket exists")
+	// ErrLedgerBucketDoesNotExist is an error message returned from the internal
+	// ledgerStore indicating that a bucket does not exist
+	ErrLedgerBucketDoesNotExist = errors.New("bucket does not exist")
+	// ErrLedgerObjectDoesNotExist is an error message returned from the internal
+	// ledgerStore indicating that a object does not exist
+	ErrLedgerObjectDoesNotExist = errors.New("object does not exist")
 )
 
 type ledgerStore struct {
@@ -31,7 +42,7 @@ func (le *ledgerStore) NewBucket(name, hash string) error {
 	le.locker.Lock()
 	defer le.locker.Unlock()
 	if le.bucketExists(name) {
-		return errors.New("bucket exists")
+		return ErrLedgerBucketExists
 	}
 	ledger, err := le.getLedger()
 	if err != nil {
@@ -52,7 +63,7 @@ func (le *ledgerStore) UpdateBucketHash(name, hash string) error {
 	le.locker.Lock()
 	defer le.locker.Unlock()
 	if !le.bucketExists(name) {
-		return errors.New("bucket does not exist")
+		return ErrLedgerBucketDoesNotExist
 	}
 	ledger, err := le.getLedger()
 	if err != nil {
@@ -66,7 +77,7 @@ func (le *ledgerStore) AddObjectToBucket(bucketName, objectName, objectHash stri
 	le.locker.Lock()
 	defer le.locker.Unlock()
 	if !le.bucketExists(bucketName) {
-		return errors.New("bucket exists")
+		return ErrLedgerBucketExists
 	}
 	ledger, err := le.getLedger()
 	if err != nil {
@@ -91,7 +102,7 @@ func (le *ledgerStore) GetBucketHash(name string) (string, error) {
 		return "", err
 	}
 	if ledger.GetBuckets()[name] == nil {
-		return "", errors.New("bucket does not exist")
+		return "", ErrLedgerBucketDoesNotExist
 	}
 	return ledger.Buckets[name].GetIpfsHash(), nil
 }
@@ -104,11 +115,11 @@ func (le *ledgerStore) GetObjectHashFromBucket(bucketName, objectName string) (s
 		return "", err
 	}
 	if ledger.GetBuckets()[bucketName] == nil {
-		return "", errors.New("bucket does not exist")
+		return "", ErrLedgerBucketDoesNotExist
 	}
 	bucket := ledger.GetBuckets()[bucketName]
 	if bucket.GetObjects()[objectName] == nil {
-		return "", errors.New("object does not exist")
+		return "", ErrLedgerObjectDoesNotExist
 	}
 	return bucket.GetObjects()[objectName].GetIpfsHash(), nil
 }
@@ -121,7 +132,7 @@ func (le *ledgerStore) DeleteBucket(name string) error {
 		return err
 	}
 	if ledger.GetBuckets()[name] == nil {
-		return errors.New("bucket does not exist")
+		return ErrLedgerBucketDoesNotExist
 	}
 	delete(ledger.Buckets, name)
 	return le.putLedger(ledger)

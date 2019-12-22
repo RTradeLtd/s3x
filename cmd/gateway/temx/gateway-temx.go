@@ -108,10 +108,11 @@ func (x *xObjects) MakeBucketWithLocation(ctx context.Context, name, location st
 		return err
 	}
 	log.Printf("bucket-name: %s\tbucket-hash: %s", name, hash)
+	// TODO(bonedaddy): check at start of call is bucket already exists
 	err = x.ledgerStore.NewBucket(name, hash)
 	if err != nil {
-		switch err.Error() {
-		case "bucket exists":
+		switch err {
+		case ErrLedgerBucketExists:
 			err = minio.BucketAlreadyExists{Bucket: name}
 		}
 		return err
@@ -324,13 +325,23 @@ func (x *xObjects) CopyObject(
 	srcInfo minio.ObjectInfo,
 	srcOpts, dstOpts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
-	// get the object hash
+	// TODO(bonedaddy): we probably need to implement a check here
+	// that determines whether or not the bucket exists
+	// get hash of th eobject
 	objHash, err := x.ledgerStore.GetObjectHashFromBucket(srcBucket, srcObject)
 	if err != nil {
 		return objInfo, err
 	}
-
-	return objInfo, errors.New("not yet implemented")
+	// update the destination bucket with the object hash under the destination object
+	dstBucketHash, err := x.addObjectToBucketAndIPFS(ctx, dstObject, objHash, dstBucket)
+	if err != nil {
+		return objInfo, err
+	}
+	// update the internal ledger state for the destination bucket and destination bucket hash
+	if err := x.ledgerStore.UpdateBucketHash(dstBucket, dstBucketHash); err != nil {
+		return objInfo, err
+	}
+	return x.getMinioObjectInfo(ctx, dstBucket, dstObject)
 }
 
 // DeleteObject deletes a blob in bucket
