@@ -77,6 +77,8 @@ message ObjectInfo {
     string accTime = 13;
     string backendType = 14;
     map<string, string> userDefined = 15;
+    string contentDisposition = 16;
+    string contentLanguage = 17;
 }
 
 

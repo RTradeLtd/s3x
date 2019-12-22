@@ -52,6 +52,27 @@ func (le *ledgerStore) NewBucket(name, hash string) error {
 	return le.ds.Put(ledgerKey, ledgerBytes)
 }
 
+func (le *ledgerStore) AddObjectToBucket(bucketName, objectName, objectHash string) error {
+	le.locker.Lock()
+	defer le.locker.Unlock()
+	if !le.bucketExists(bucketName) {
+		return errors.New("bucket exists")
+	}
+	ledger, err := le.getLedger()
+	if err != nil {
+		return err
+	}
+	ledger.Buckets[bucketName].Objects[objectName] = &LedgerObjectEntry{
+		Name:     objectName,
+		IpfsHash: objectHash,
+	}
+	ledgerBytes, err := ledger.Marshal()
+	if err != nil {
+		return err
+	}
+	return le.ds.Put(ledgerKey, ledgerBytes)
+}
+
 func (le *ledgerStore) GetBucketHash(name string) (string, error) {
 	le.locker.RLock()
 	defer le.locker.RUnlock()

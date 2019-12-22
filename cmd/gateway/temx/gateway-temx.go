@@ -5,7 +5,9 @@ import (
 	"crypto/tls"
 	"errors"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -207,7 +209,7 @@ func (x *xObjects) ListObjectsV2(ctx context.Context, bucket, prefix, continuati
 		}
 		return loi, nil
 	*/
-	return loi, errors.New("")
+	return loi, errors.New("not yet implemented")
 }
 
 // GetObjectNInfo - returns object info and locked object ReadCloser
@@ -256,46 +258,43 @@ func (x *xObjects) GetObject(ctx context.Context, bucket string, object string, 
 
 // GetObjectInfo reads object info and replies back ObjectInfo
 func (x *xObjects) GetObjectInfo(ctx context.Context, bucket string, object string, opts minio.ObjectOptions) (objInfo minio.ObjectInfo, err error) {
-	obj, err := x.objectFromBucket(ctx, bucket, object)
-	if err != nil {
-		return objInfo, err
-	}
-	modTime, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", obj.GetObjectInfo().GetModTime())
-	if err != nil {
-		return objInfo, err
-	}
-	return minio.ObjectInfo{
-		Bucket:      obj.GetObjectInfo().GetBucket(),
-		Name:        object,
-		ETag:        minio.ToS3ETag(obj.GetObjectInfo().GetEtag()),
-		Size:        obj.GetObjectInfo().GetSize_(),
-		ModTime:     modTime,
-		ContentType: obj.GetObjectInfo().GetContentType(),
-		UserDefined: obj.GetObjectInfo().GetUserDefined(),
-	}, nil
+	return x.getMinioObjectInfo(ctx, bucket, object)
 }
 
 // PutObject creates a new object with the incoming data,
 func (x *xObjects) PutObject(ctx context.Context, bucket string, object string, r *minio.PutObjReader, opts minio.ObjectOptions) (objInfo minio.ObjectInfo, err error) {
-	// TODO(bonedaddy): implement
-	/*
-		data := r.Reader
-		oi, err := l.Client.PutObject(bucket, object, data, data.Size(), data.MD5Base64String(), data.SHA256HexString(), minio.ToMinioClientMetadata(opts.UserDefined), opts.ServerSideEncryption)
-		if err != nil {
-			return objInfo, minio.ErrorRespToObjectError(err, bucket, object)
+	// TODO(bonedaddy): ensure consistency with the way s3 and b2 handle this
+	obinfo := &ObjectInfo{}
+	for k, v := range opts.UserDefined {
+		switch strings.ToLower(k) {
+		case "content-encoding":
+			obinfo.ContentEncoding = v
+		case "content-disposition":
+			obinfo.ContentDisposition = v
+		case "content-language":
+			obinfo.ContentLanguage = v
+		case "content-type":
+			obinfo.ContentType = v
 		}
-		// On success, populate the key & metadata so they are present in the notification
-		oi.Key = object
-		oi.Metadata = minio.ToMinioClientObjectInfoMetadata(opts.UserDefined)
-
-		return minio.FromMinioClientObjectInfo(bucket, oi), nil
-	*/
-	return objInfo, nil
+	}
+	data, err := ioutil.ReadAll(r)
+	if err != nil {
+		return objInfo, err
+	}
+	hash, err := x.objectToIPFS(ctx, &Object{
+		Data:       data,
+		ObjectInfo: obinfo,
+	})
+	// TODO(bonedaddy): add to protocol buffer object
+	if err := x.ledgerStore.AddObjectToBucket(bucket, object, hash); err != nil {
+		return objInfo, err
+	}
+	return x.getMinioObjectInfo(ctx, bucket, object)
 }
 
 // CopyObject copies an object from source bucket to a destination bucket.
 func (x *xObjects) CopyObject(ctx context.Context, srcBucket string, srcObject string, dstBucket string, dstObject string, srcInfo minio.ObjectInfo, srcOpts, dstOpts minio.ObjectOptions) (objInfo minio.ObjectInfo, err error) {
-	return objInfo, nil
+	return objInfo, errors.New("not yet implemented")
 }
 
 // DeleteObject deletes a blob in bucket
@@ -313,12 +312,12 @@ func (x *xObjects) DeleteObject(ctx context.Context, bucket string, object strin
 		logger.LogIf(ctx, err)
 		return b2ToObjectError(err, bucket, object)
 	*/
-	return nil
+	return errors.New("not yet implemented")
 }
 
 func (x *xObjects) DeleteObjects(ctx context.Context, bucket string, objects []string) ([]error, error) {
 	//TODO(bonedaddy): implement
-	return nil, nil
+	return nil, errors.New("not yet implemented")
 	/*	errs := make([]error, len(objects))
 		for idx, object := range objects {
 			errs[idx] = l.DeleteObject(ctx, bucket, object)
@@ -329,54 +328,54 @@ func (x *xObjects) DeleteObjects(ctx context.Context, bucket string, objects []s
 
 // ListMultipartUploads lists all multipart uploads.
 func (x *xObjects) ListMultipartUploads(ctx context.Context, bucket string, prefix string, keyMarker string, uploadIDMarker string, delimiter string, maxUploads int) (lmi minio.ListMultipartsInfo, e error) {
-	return lmi, nil
+	return lmi, errors.New("not yet implemented")
 }
 
 // NewMultipartUpload upload object in multiple parts
 func (x *xObjects) NewMultipartUpload(ctx context.Context, bucket string, object string, o minio.ObjectOptions) (uploadID string, err error) {
-	return uploadID, nil
+	return uploadID, errors.New("not yet implemented")
 }
 
 // PutObjectPart puts a part of object in bucket
 func (x *xObjects) PutObjectPart(ctx context.Context, bucket string, object string, uploadID string, partID int, r *minio.PutObjReader, opts minio.ObjectOptions) (pi minio.PartInfo, e error) {
-	return pi, nil
+	return pi, errors.New("not yet implemented")
 }
 
 // CopyObjectPart creates a part in a multipart upload by copying
 // existing object or a part of it.
 func (x *xObjects) CopyObjectPart(ctx context.Context, srcBucket, srcObject, destBucket, destObject, uploadID string,
 	partID int, startOffset, length int64, srcInfo minio.ObjectInfo, srcOpts, dstOpts minio.ObjectOptions) (p minio.PartInfo, err error) {
-	return p, nil
+	return p, errors.New("not yet implemented")
 }
 
 // ListObjectParts returns all object parts for specified object in specified bucket
 func (x *xObjects) ListObjectParts(ctx context.Context, bucket string, object string, uploadID string, partNumberMarker int, maxParts int, opts minio.ObjectOptions) (lpi minio.ListPartsInfo, e error) {
-	return lpi, nil
+	return lpi, errors.New("not yet implemented")
 }
 
 // AbortMultipartUpload aborts a ongoing multipart upload
 func (x *xObjects) AbortMultipartUpload(ctx context.Context, bucket string, object string, uploadID string) error {
-	return nil
+	return errors.New("not yet implemented")
 }
 
 // CompleteMultipartUpload completes ongoing multipart upload and finalizes object
 func (x *xObjects) CompleteMultipartUpload(ctx context.Context, bucket string, object string, uploadID string, uploadedParts []minio.CompletePart, opts minio.ObjectOptions) (oi minio.ObjectInfo, e error) {
-	return oi, nil
+	return oi, errors.New("not yet implemented")
 }
 
 // SetBucketPolicy sets policy on bucket
 func (x *xObjects) SetBucketPolicy(ctx context.Context, bucket string, bucketPolicy *policy.Policy) error {
-	return nil
+	return errors.New("not yet implemented")
 }
 
 // GetBucketPolicy will get policy on bucket
 func (x *xObjects) GetBucketPolicy(ctx context.Context, bucket string) (*policy.Policy, error) {
-	return nil, nil
+	return nil, errors.New("not yet implemented")
 }
 
 // DeleteBucketPolicy deletes all policies on bucket
 func (x *xObjects) DeleteBucketPolicy(ctx context.Context, bucket string) error {
-	return nil
+	return errors.New("not yet implemented")
 }
 
 // IsCompressionSupported returns whether compression is applicable for this layer.
