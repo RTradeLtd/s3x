@@ -9,6 +9,10 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/auth"
 )
 
+const (
+	testBucket1 = "bucket1"
+)
+
 func TestGateway(t *testing.T) {
 	temx := &TEMX{}
 	gateway, err := temx.NewGatewayLayer(auth.Credentials{})
@@ -19,16 +23,40 @@ func TestGateway(t *testing.T) {
 	if sinfo.Backend.Type != minio.BackendGateway {
 		t.Fatal("bad type")
 	}
-	then := time.Now()
-	if err := gateway.MakeBucketWithLocation(context.Background(), "testbucket", "us-east-1"); err != nil {
-		t.Fatal(err)
+	type args struct {
+		bucketName, objectName, bucketHash, objectHash string
 	}
-	info, err := gateway.GetBucketInfo(context.Background(), "testbucket")
-	if err != nil {
-		t.Fatal(err)
-	}
-	now := time.Now().Add(time.Minute)
-	if info.Created.After(now) || info.Created.Before(then) {
-		t.Fatal("bad bucket time")
-	}
+	then := time.Now().UTC()
+	t.Run("MakeBucketWithLocation", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{"Bucket1-Success", args{testBucket1, "", "", ""}, false},
+			{"Bucket1-AlreadyExists", args{testBucket1, "", "", ""}, true},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				err := gateway.MakeBucketWithLocation(
+					context.Background(),
+					tt.args.bucketName,
+					"us-east-1",
+				)
+				if (err != nil) != tt.wantErr {
+					t.Fatalf("MakeBucketWithLocation() err %v, wantErr %v", err, tt.wantErr)
+				}
+			})
+		}
+	})
+	t.Run("Bucket Created Time Test", func(t *testing.T) {
+		now := time.Now().UTC()
+		info, err := gateway.GetBucketInfo(context.Background(), testBucket1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if info.Created.After(now) || info.Created.Before(then) {
+			t.Fatal("bad bucket created time")
+		}
+	})
 }
