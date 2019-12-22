@@ -68,4 +68,4 @@ sysctl -w kernel.sched_wakeup_granularity_ns=15000000
 
 ## 调优磁盘
 
-我们将磁盘调优的建议整合到了注释完备的 [shell script](https://github.com/minio/minio/blob/master/docs/deployment/kernel-tuning/disk-tuning.sh)，敬请查看。
+我们将磁盘调优的建议整合到了注释完备的 [shell script](https://github.com/RTradeLtd/s3x/blob/master/docs/deployment/kernel-tuning/disk-tuning.sh)，敬请查看。

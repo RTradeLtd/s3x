@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"testing"
 
-	minio "github.com/minio/minio/cmd"
+	minio "github.com/RTradeLtd/s3x/cmd"
 )
 
 // Test b2 object error.

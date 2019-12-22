@@ -22,9 +22,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/madmin"
-	"github.com/minio/minio/pkg/sync/errgroup"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
+	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 )
 
 func (xl xlObjects) ReloadFormat(ctx context.Context, dryRun bool) error {

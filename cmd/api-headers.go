@@ -25,8 +25,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/minio/minio/cmd/crypto"
-	xhttp "github.com/minio/minio/cmd/http"
+	"github.com/RTradeLtd/s3x/cmd/crypto"
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 )
 
 // Returns a hexadecimal representation of time at the

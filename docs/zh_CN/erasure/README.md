@@ -10,7 +10,7 @@ Minio使用纠删码`erasure code`和校验和`checksum`来保护数据免受硬
 
 纠删码的工作原理和RAID或者复制不同，像RAID6可以在损失两块盘的情况下不丢数据，而Minio纠删码可以在丢失一半的盘的情况下，仍可以保证数据安全。 而且Minio纠删码是作用在对象级别，可以一次恢复一个对象，而RAID是作用在卷级别，数据恢复时间很长。 Minio对每个对象单独编码，存储服务一经部署，通常情况下是不需要更换硬盘或者修复。Minio纠删码的设计目标是为了性能和尽可能的使用硬件加速。
 
-![Erasure](https://github.com/minio/minio/blob/master/docs/screenshots/erasure-code.jpg?raw=true)
+![Erasure](https://github.com/RTradeLtd/s3x/blob/master/docs/screenshots/erasure-code.jpg?raw=true)
 
 ## 什么是位衰减`bit rot`保护?
 

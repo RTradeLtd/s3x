@@ -17,7 +17,7 @@
 package iampolicy
 
 import (
-	"github.com/minio/minio/pkg/policy"
+	"github.com/RTradeLtd/s3x/pkg/policy"
 )
 
 // Policy claim constants

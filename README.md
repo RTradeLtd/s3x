@@ -148,7 +148,7 @@ firewall-cmd --reload
 ## Test using MinIO Browser
 MinIO Server comes with an embedded web based object browser. Point your web browser to http://127.0.0.1:9000 ensure your server has started successfully.
 
-![Screenshot](https://github.com/minio/minio/blob/master/docs/screenshots/minio-browser.png?raw=true)
+![Screenshot](https://github.com/RTradeLtd/s3x/blob/master/docs/screenshots/minio-browser.png?raw=true)
 
 ## Test using MinIO Client `mc`
 `mc` provides a modern alternative to UNIX commands like ls, cat, cp, mirror, diff etc. It supports filesystems and Amazon S3 compatible cloud storage services. Follow the MinIO Client [Quickstart Guide](https://docs.min.io/docs/minio-client-quickstart-guide) for further instructions.
@@ -183,7 +183,7 @@ mc admin update <minio alias, e.g., myminio>
 - [The MinIO documentation website](https://docs.min.io)
 
 ## Contribute to MinIO Project
-Please follow MinIO [Contributor's Guide](https://github.com/minio/minio/blob/master/CONTRIBUTING.md)
+Please follow MinIO [Contributor's Guide](https://github.com/RTradeLtd/s3x/blob/master/CONTRIBUTING.md)
 
 ## Caveats
 MinIO in its default mode doesn't use MD5Sum checkums of incoming streams unless requested by the client in `Content-Md5` header for validation. This may lead to incompatibility with rare S3 clients like `s3ql` which unfortunately do not set `Content-Md5` but depend on hex MD5Sum for the stream to be calculated by the server. MinIO considers this as a bug in `s3ql` and should be fixed on the client side because MD5Sum is a poor way to checksum and validate the authenticity of the objects. Although MinIO provides a workaround until client applications are fixed use `--compat` option instead to start the server.

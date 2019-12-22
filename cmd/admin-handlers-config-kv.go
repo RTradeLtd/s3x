@@ -26,17 +26,17 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/minio/minio/cmd/config"
-	"github.com/minio/minio/cmd/config/cache"
-	"github.com/minio/minio/cmd/config/etcd"
-	xldap "github.com/minio/minio/cmd/config/identity/ldap"
-	"github.com/minio/minio/cmd/config/identity/openid"
-	"github.com/minio/minio/cmd/config/policy/opa"
-	"github.com/minio/minio/cmd/config/storageclass"
-	"github.com/minio/minio/cmd/crypto"
-	"github.com/minio/minio/cmd/logger"
-	iampolicy "github.com/minio/minio/pkg/iam/policy"
-	"github.com/minio/minio/pkg/madmin"
+	"github.com/RTradeLtd/s3x/cmd/config"
+	"github.com/RTradeLtd/s3x/cmd/config/cache"
+	"github.com/RTradeLtd/s3x/cmd/config/etcd"
+	xldap "github.com/RTradeLtd/s3x/cmd/config/identity/ldap"
+	"github.com/RTradeLtd/s3x/cmd/config/identity/openid"
+	"github.com/RTradeLtd/s3x/cmd/config/policy/opa"
+	"github.com/RTradeLtd/s3x/cmd/config/storageclass"
+	"github.com/RTradeLtd/s3x/cmd/crypto"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
 )
 
 func validateAdminReqConfigKV(ctx context.Context, w http.ResponseWriter, r *http.Request) ObjectLayer {

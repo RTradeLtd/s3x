@@ -29,12 +29,12 @@ import (
 	"strings"
 
 	jwtgo "github.com/dgrijalva/jwt-go"
-	xhttp "github.com/minio/minio/cmd/http"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/auth"
-	"github.com/minio/minio/pkg/hash"
-	iampolicy "github.com/minio/minio/pkg/iam/policy"
-	"github.com/minio/minio/pkg/policy"
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/auth"
+	"github.com/RTradeLtd/s3x/pkg/hash"
+	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
+	"github.com/RTradeLtd/s3x/pkg/policy"
 )
 
 // Verify if request has JWT.

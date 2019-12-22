@@ -120,7 +120,7 @@ server only assumes that the KMS provides two services:
                   decryption of the encrypted data key using the master key referenced by the key ID -
                   on success or an error otherwise.
 
-More details about supported KMS implementations and configuration can be found at the [KMS guide](https://github.com/minio/minio/blob/master/docs/kms/README.md).
+More details about supported KMS implementations and configuration can be found at the [KMS guide](https://github.com/RTradeLtd/s3x/blob/master/docs/kms/README.md).
 
 The MinIO server requests a new data key from the KMS for each uploaded object and uses that data key
 as EK. Additionally it stores the encrypted form of the data key and the master key ID as part

@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"net/http"
 
-	xhttp "github.com/minio/minio/cmd/http"
-	"github.com/minio/minio/cmd/logger"
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
+	"github.com/RTradeLtd/s3x/cmd/logger"
 )
 
 // writeSTSErrorRespone writes error headers

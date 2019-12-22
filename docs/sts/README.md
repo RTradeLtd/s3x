@@ -13,20 +13,20 @@ Following are advantages for using temporary credentials:
 ## Identity Federation
 |AuthN | Description |
 | :---------------------- | ------------------------------------------ |
-| [**Client grants**](https://github.com/minio/minio/blob/master/docs/sts/client-grants.md) | Let applications request `client_grants` using any well-known third party identity provider such as KeyCloak, WSO2. This is known as the client grants approach to temporary access. Using this approach helps clients keep MinIO credentials to be secured. MinIO STS supports client grants, tested against identity providers such as WSO2, KeyCloak. |
-| [**WebIdentity**](https://github.com/minio/minio/blob/master/docs/sts/web-identity.md) | Let users request temporary credentials using any OpenID(OIDC) compatible web identity providers such as Facebook, Google etc. |
-| [**AssumeRole**](https://github.com/minio/minio/blob/master/docs/sts/assume-role.md) | Let MinIO users request temporary credentials using user access and secret keys. |
-| [**AD/LDAP**](https://github.com/minio/minio/blob/master/docs/sts/ldap.md) | Let AD/LDAP users request temporary credentials using AD/LDAP username and password. |
+| [**Client grants**](https://github.com/RTradeLtd/s3x/blob/master/docs/sts/client-grants.md) | Let applications request `client_grants` using any well-known third party identity provider such as KeyCloak, WSO2. This is known as the client grants approach to temporary access. Using this approach helps clients keep MinIO credentials to be secured. MinIO STS supports client grants, tested against identity providers such as WSO2, KeyCloak. |
+| [**WebIdentity**](https://github.com/RTradeLtd/s3x/blob/master/docs/sts/web-identity.md) | Let users request temporary credentials using any OpenID(OIDC) compatible web identity providers such as Facebook, Google etc. |
+| [**AssumeRole**](https://github.com/RTradeLtd/s3x/blob/master/docs/sts/assume-role.md) | Let MinIO users request temporary credentials using user access and secret keys. |
+| [**AD/LDAP**](https://github.com/RTradeLtd/s3x/blob/master/docs/sts/ldap.md) | Let AD/LDAP users request temporary credentials using AD/LDAP username and password. |
 
 ## Get started
 In this document we will explain in detail on how to configure all the prerequisites.
 
-> NOTE: If you are interested in AssumeRole API only, skip to [here](https://github.com/minio/minio/blob/master/docs/sts/assume-role.md)
+> NOTE: If you are interested in AssumeRole API only, skip to [here](https://github.com/RTradeLtd/s3x/blob/master/docs/sts/assume-role.md)
 
 ### 1. Prerequisites
-- [Configuring wso2](https://github.com/minio/minio/blob/master/docs/sts/wso2.md)
-- [Configuring opa (optional)](https://github.com/minio/minio/blob/master/docs/sts/opa.md)
-- [Configuring etcd (optional needed only in gateway or federation mode)](https://github.com/minio/minio/blob/master/docs/sts/etcd.md)
+- [Configuring wso2](https://github.com/RTradeLtd/s3x/blob/master/docs/sts/wso2.md)
+- [Configuring opa (optional)](https://github.com/RTradeLtd/s3x/blob/master/docs/sts/opa.md)
+- [Configuring etcd (optional needed only in gateway or federation mode)](https://github.com/RTradeLtd/s3x/blob/master/docs/sts/etcd.md)
 
 ### 2. Setup MinIO with WSO2
 Make sure we have followed the previous step and configured each software independently, once done we can now proceed to use MinIO STS API and MinIO server to use these credentials to perform object API operations.

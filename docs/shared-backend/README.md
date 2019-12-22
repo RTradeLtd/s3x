@@ -2,7 +2,7 @@
 
 MinIO shared mode lets you use single [NAS](https://en.wikipedia.org/wiki/Network-attached_storage) (like NFS, GlusterFS, and other 
 distributed filesystems) as the storage backend for multiple MinIO servers. Synchronization among MinIO servers is taken care by design. 
-Read more about the MinIO shared mode design [here](https://github.com/minio/minio/blob/master/docs/shared-backend/DESIGN.md).
+Read more about the MinIO shared mode design [here](https://github.com/RTradeLtd/s3x/blob/master/docs/shared-backend/DESIGN.md).
 
 MinIO shared mode is developed to solve several real world use cases, without any special configuration changes. Some of these are
 

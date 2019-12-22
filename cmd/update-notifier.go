@@ -25,7 +25,7 @@ import (
 
 	"github.com/cheggaaa/pb"
 	humanize "github.com/dustin/go-humanize"
-	"github.com/minio/minio/pkg/color"
+	"github.com/RTradeLtd/s3x/pkg/color"
 )
 
 // prepareUpdateMessage - prepares the update message, only if a

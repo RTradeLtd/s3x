@@ -33,7 +33,7 @@ minio server /export{1...24}
 要验证是否部署成功，你可以通过浏览器或者[`mc`](https://docs.min.io/docs/minio-client-quickstart-guide)来访问刚刚部署的Minio服务。你应该可以看到上传的文件在所有Minio节点上都可以访问。
 
 # 了解更多
-- [磁盘缓存设计](https://github.com/minio/minio/blob/master/docs/disk-caching/DESIGN.md)
+- [磁盘缓存设计](https://github.com/RTradeLtd/s3x/blob/master/docs/disk-caching/DESIGN.md)
 - [mc快速入门](https://docs.min.io/docs/minio-client-quickstart-guide)
 - [使用 aws-cli](https://docs.min.io/docs/aws-cli-with-minio)
 - [使用 s3cmd](https://docs.min.io/docs/s3cmd-with-minio)

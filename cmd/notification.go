@@ -30,14 +30,14 @@ import (
 	"time"
 
 	"github.com/klauspost/compress/zip"
-	"github.com/minio/minio/cmd/crypto"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/event"
-	"github.com/minio/minio/pkg/lifecycle"
-	"github.com/minio/minio/pkg/madmin"
-	xnet "github.com/minio/minio/pkg/net"
-	"github.com/minio/minio/pkg/policy"
-	"github.com/minio/minio/pkg/sync/errgroup"
+	"github.com/RTradeLtd/s3x/cmd/crypto"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/event"
+	"github.com/RTradeLtd/s3x/pkg/lifecycle"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
+	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 )
 
 // NotificationSys - notification system.

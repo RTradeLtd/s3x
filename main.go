@@ -27,10 +27,10 @@ package main // import "github.com/minio/minio"
 import (
 	"os"
 
-	minio "github.com/minio/minio/cmd"
+	minio "github.com/RTradeLtd/s3x/cmd"
 
 	// Import gateway
-	_ "github.com/minio/minio/cmd/gateway"
+	_ "github.com/RTradeLtd/s3x/cmd/gateway"
 )
 
 func main() {

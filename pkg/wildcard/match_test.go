@@ -19,7 +19,7 @@ package wildcard_test
 import (
 	"testing"
 
-	"github.com/minio/minio/pkg/wildcard"
+	"github.com/RTradeLtd/s3x/pkg/wildcard"
 )
 
 // TestMatch - Tests validate the logic of wild card matching.

@@ -13,7 +13,7 @@ minio --config-dir ~/tenant2 server --address :9002 /data/tenant2
 minio --config-dir ~/tenant3 server --address :9003 /data/tenant3
 ```
 
-![示例1](https://github.com/minio/minio/blob/master/docs/screenshots/Example-1.jpg?raw=true)
+![示例1](https://github.com/RTradeLtd/s3x/blob/master/docs/screenshots/Example-1.jpg?raw=true)
 
 #### 示例2：单主机，多块磁盘 (erasure code)
 
@@ -23,7 +23,7 @@ minio --config-dir ~/tenant1 server --address :9001 /disk1/data/tenant1 /disk2/d
 minio --config-dir ~/tenant2 server --address :9002 /disk1/data/tenant2 /disk2/data/tenant2 /disk3/data/tenant2 /disk4/data/tenant2
 minio --config-dir ~/tenant3 server --address :9003 /disk1/data/tenant3 /disk2/data/tenant3 /disk3/data/tenant3 /disk4/data/tenant3
 ```
-![示例2](https://github.com/minio/minio/blob/master/docs/screenshots/Example-2.jpg?raw=true)
+![示例2](https://github.com/RTradeLtd/s3x/blob/master/docs/screenshots/Example-2.jpg?raw=true)
 
 ## 分布式部署
 要在分布式环境中托管多个租户，同时运行多个分布式MinIO实例。
@@ -46,7 +46,7 @@ export MINIO_SECRET_KEY=<TENANT3_SECRET_KEY>
 minio --config-dir ~/tenant3 server --address :9003 http://192.168.10.11/data/tenant3 http://192.168.10.12/data/tenant3 http://192.168.10.13/data/tenant3 http://192.168.10.14/data/tenant3
 ```
 
-![示例3](https://github.com/minio/minio/blob/master/docs/screenshots/Example-3.jpg?raw=true)
+![示例3](https://github.com/RTradeLtd/s3x/blob/master/docs/screenshots/Example-3.jpg?raw=true)
 
 ## 云端可伸缩部署
 对于大型多租户MinIO部署，我们建议使用一个流行的容器编排平台，比如Kubernetes、DC/OS，或者是Docker Swarm.参考 [这个文档](https://docs.min.io/cn/minio-deployment-quickstart-guide) ,学习如何在编排平台中使用MinIO。

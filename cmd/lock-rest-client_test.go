@@ -19,7 +19,7 @@ package cmd
 import (
 	"testing"
 
-	"github.com/minio/minio/pkg/dsync"
+	"github.com/RTradeLtd/s3x/pkg/dsync"
 )
 
 // Tests lock rpc client.

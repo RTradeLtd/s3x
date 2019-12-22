@@ -27,8 +27,8 @@ import (
 	"encoding/hex"
 
 	humanize "github.com/dustin/go-humanize"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/sync/errgroup"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 	sha256 "github.com/minio/sha256-simd"
 )
 

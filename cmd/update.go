@@ -33,10 +33,10 @@ import (
 	"time"
 
 	"github.com/inconshreveable/go-update"
-	xhttp "github.com/minio/minio/cmd/http"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/env"
-	xnet "github.com/minio/minio/pkg/net"
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/env"
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
 	_ "github.com/minio/sha256-simd" // Needed for sha256 hash verifier.
 )
 
@@ -227,7 +227,7 @@ func IsSourceBuild() bool {
 //   MinIO (<OS>; <ARCH>[; <MODE>][; dcos][; kubernetes][; docker][; source]) MinIO/<VERSION> MinIO/<RELEASE-TAG> MinIO/<COMMIT-ID> [MinIO/universe-<PACKAGE-NAME>] [MinIO/helm-<HELM-VERSION>]
 //
 // Any change here should be discussed by opening an issue at
-// https://github.com/minio/minio/issues.
+// https://github.com/RTradeLtd/s3x/issues.
 func getUserAgent(mode string) string {
 
 	userAgentParts := []string{}

@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-We always provide security updates for the [latest release](https://github.com/minio/minio/releases/latest).
+We always provide security updates for the [latest release](https://github.com/RTradeLtd/s3x/releases/latest).
 Whenever there is a security update you just need to upgrade to the latest version.
 
 ## Reporting a Vulnerability

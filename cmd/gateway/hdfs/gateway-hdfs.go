@@ -38,11 +38,11 @@ import (
 	"github.com/minio/hdfs/v3"
 	"github.com/minio/hdfs/v3/hadoopconf"
 	"github.com/minio/minio-go/v6/pkg/s3utils"
-	minio "github.com/minio/minio/cmd"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/auth"
-	"github.com/minio/minio/pkg/env"
-	xnet "github.com/minio/minio/pkg/net"
+	minio "github.com/RTradeLtd/s3x/cmd"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/auth"
+	"github.com/RTradeLtd/s3x/pkg/env"
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
 )
 
 const (

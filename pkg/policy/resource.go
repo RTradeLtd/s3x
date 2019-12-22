@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/minio/minio/pkg/policy/condition"
-	"github.com/minio/minio/pkg/wildcard"
+	"github.com/RTradeLtd/s3x/pkg/policy/condition"
+	"github.com/RTradeLtd/s3x/pkg/wildcard"
 )
 
 // ResourceARNPrefix - resource ARN prefix as per AWS S3 specification.

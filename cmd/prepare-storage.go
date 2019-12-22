@@ -23,8 +23,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/sync/errgroup"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 )
 
 var printEndpointError = func() func(Endpoint, error) {
@@ -168,7 +168,7 @@ func validateXLFormats(format *formatXLV3, formats []*formatXLV3, endpoints Endp
 // migration failed to capture '.This' field properly which indicates
 // the disk UUID association. Below error message is returned when
 // we see this situation in format.json, for more info refer
-// https://github.com/minio/minio/issues/5667
+// https://github.com/RTradeLtd/s3x/issues/5667
 var errXLV3ThisEmpty = fmt.Errorf("XL format version 3 has This field empty")
 
 // connect to list of endpoints and load all XL disk formats, validate the formats are correct
@@ -247,7 +247,7 @@ func connectLoadInitFormats(retryCount int, firstDisk bool, endpoints Endpoints,
 	// in release RELEASE.2018-03-16T22-52-12Z after migrating v1 to v2 to v3.
 	// This migration failed to capture '.This' field properly which indicates
 	// the disk UUID association. Below function is called to handle and fix
-	// this regression, for more info refer https://github.com/minio/minio/issues/5667
+	// this regression, for more info refer https://github.com/RTradeLtd/s3x/issues/5667
 	if err := fixFormatXLV3(storageDisks, endpoints, formatConfigs); err != nil {
 		return nil, err
 	}

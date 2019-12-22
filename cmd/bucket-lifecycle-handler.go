@@ -22,9 +22,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/lifecycle"
-	"github.com/minio/minio/pkg/policy"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/lifecycle"
+	"github.com/RTradeLtd/s3x/pkg/policy"
 )
 
 const (

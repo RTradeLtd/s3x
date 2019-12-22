@@ -9,7 +9,7 @@
 ### 数据保护
 
 
-分布式Minio采用 [erasure code](https://docs.min.io/cn/minio-erasure-code-quickstart-guide)来防范多个节点宕机和[位衰减`bit rot`](https://github.com/minio/minio/blob/master/docs/zh_CN/erasure/README.md#what-is-bit-rot-protection)。  
+分布式Minio采用 [erasure code](https://docs.min.io/cn/minio-erasure-code-quickstart-guide)来防范多个节点宕机和[位衰减`bit rot`](https://github.com/RTradeLtd/s3x/blob/master/docs/zh_CN/erasure/README.md#what-is-bit-rot-protection)。  
 
 分布式Minio至少需要4个节点，使用分布式Minio自动引入了纠删码功能。
 
@@ -72,7 +72,7 @@ minio.exe server http://192.168.1.11/C:/data http://192.168.1.12/C:/data ^
                   http://192.168.1.17/C:/data http://192.168.1.18/C:/data
 ```
 
-![分布式Minio,8节点，每个节点一块盘](https://github.com/minio/minio/blob/master/docs/screenshots/Architecture-diagram_distributed_8.jpg?raw=true)
+![分布式Minio,8节点，每个节点一块盘](https://github.com/RTradeLtd/s3x/blob/master/docs/screenshots/Architecture-diagram_distributed_8.jpg?raw=true)
 
 示例2: 启动分布式Minio实例，4节点，每节点4块盘，需要在4个节点上都运行下面的命令。
 
@@ -106,7 +106,7 @@ minio.exe server http://192.168.1.11/C:/data1 http://192.168.1.11/C:/data2 ^
                   http://192.168.1.14/C:/data3 http://192.168.1.14/C:/data4
 ```
 
-![分布式Minio,4节点，每节点4块盘](https://github.com/minio/minio/blob/master/docs/screenshots/Architecture-diagram_distributed_16.jpg?raw=true)
+![分布式Minio,4节点，每节点4块盘](https://github.com/RTradeLtd/s3x/blob/master/docs/screenshots/Architecture-diagram_distributed_16.jpg?raw=true)
 
 ## 3. 验证
 

@@ -1,0 +1,90 @@
+syntax = "proto3"; 
+package temx;
+
+
+service S3API {
+    rpc MakeBucket(MakeBucketRequest) returns (BucketInfo) { };
+    rpc GetBucketInfo(BucketInfo) returns (BucketInfo) { };
+}
+
+// Ledger is our internal state keeper, and is responsible
+// for keeping track of buckets, objects, and their corresponding IPFS hashes
+message Ledger {
+    // key = bucket name
+    map<string, LedgerBucketEntry> buckets = 1;
+}
+
+message LedgerBucketEntry {
+    // key = object name
+    map<string, LedgerObjectEntry> objects = 1;
+    string name = 2;
+    string ipfsHash = 3;
+}
+
+message LedgerObjectEntry {
+    string ipfsHash = 1;
+    string name = 2;
+}
+
+message MakeBucketRequest {
+    // the name of the bucket
+    string name = 1;
+    // the location of the bucket (ie, us-east-1) if any
+    string location =2;
+}
+
+// BucketInfo is used to store s3 bucket metadata
+message BucketInfo {
+    // name is the name of the bucket
+    string name = 1;
+    // created is equivalent to golang time.Time as a string
+    string created = 2;
+    // the location of the bucket
+    string location = 3;
+}
+
+
+message Bucket {
+    // data associated with the object
+    bytes data = 1;
+    // information associated with this bucket
+    BucketInfo bucketInfo = 2;
+    repeated Object objects = 3;
+}
+// Object is a singular s3 object.
+// the data field contains the actual data 
+// refered to by this object, while the objectInfo
+// field is used to contain the information associated
+// wth the object
+message Object {
+    bytes data = 1;
+    ObjectInfo objectInfo = 2;
+}
+
+message ObjectInfo {
+    string bucket = 1;
+    string name = 2;
+    string modTime = 3;
+    int64 size = 4;
+    bool isDir = 5;
+    string etag = 6;
+    string contentType = 7;
+    string contentEncoding = 8;
+    string expires = 9;
+    string storageClass = 10;
+    repeated ObjectPartInfo parts = 11; // this shouldn't be sent  to clients
+    bool metadataOnly = 12;
+    string accTime = 13;
+    string backendType = 14;
+    map<string, string> userDefined = 15;
+}
+
+
+message ObjectPartInfo {
+    // this should be an "int" type in Golang
+    int64 number = 1;
+    string name = 2;
+    string etag = 3;
+    int64 size = 4;
+    int64 actualSize = 5;
+}

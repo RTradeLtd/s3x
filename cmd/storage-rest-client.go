@@ -30,10 +30,10 @@ import (
 	"strconv"
 	"sync/atomic"
 
-	"github.com/minio/minio/cmd/http"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/cmd/rest"
-	xnet "github.com/minio/minio/pkg/net"
+	"github.com/RTradeLtd/s3x/cmd/http"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/cmd/rest"
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
 )
 
 func isNetworkError(err error) bool {

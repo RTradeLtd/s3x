@@ -16,7 +16,7 @@
 
 package cache
 
-import "github.com/minio/minio/cmd/config"
+import "github.com/RTradeLtd/s3x/cmd/config"
 
 // Help template for caching feature.
 var (

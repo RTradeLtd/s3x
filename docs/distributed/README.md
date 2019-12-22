@@ -8,7 +8,7 @@ MinIO in distributed mode can help you setup a highly-available storage system w
 
 ### Data protection
 
-Distributed MinIO provides protection against multiple node/drive failures and [bit rot](https://github.com/minio/minio/blob/master/docs/erasure/README.md#what-is-bit-rot-protection) using [erasure code](https://docs.min.io/docs/minio-erasure-code-quickstart-guide). As the minimum disks required for distributed MinIO is 4 (same as minimum disks required for erasure coding), erasure code automatically kicks in as you launch distributed MinIO.
+Distributed MinIO provides protection against multiple node/drive failures and [bit rot](https://github.com/RTradeLtd/s3x/blob/master/docs/erasure/README.md#what-is-bit-rot-protection) using [erasure code](https://docs.min.io/docs/minio-erasure-code-quickstart-guide). As the minimum disks required for distributed MinIO is 4 (same as minimum disks required for erasure coding), erasure code automatically kicks in as you launch distributed MinIO.
 
 ### High availability
 
@@ -16,7 +16,7 @@ A stand-alone MinIO server would go down if the server hosting the disks goes of
 
 For example, an 16-node distributed MinIO setup with 16 disks per node would continue serving files, even if up to 8 servers are offline. But, you'll need at least 9 servers online to create new objects.
 
-You can also use [storage classes](https://github.com/minio/minio/tree/master/docs/erasure/storage-class) to set custom data and parity distribution per object.
+You can also use [storage classes](https://github.com/RTradeLtd/s3x/tree/master/docs/erasure/storage-class) to set custom data and parity distribution per object.
 
 ### Consistency Guarantees
 
@@ -45,7 +45,7 @@ To start a distributed MinIO instance, you just need to pass drive locations as 
 - `MINIO_DOMAIN` environment variable should be defined and exported if domain is needed to be set.
 
 Example 1: Start distributed MinIO instance on 32 nodes with 32 drives each mounted at `/export1` to `/export32` (pictured below), by running this command on all the 32 nodes:
-![Distributed MinIO, 32 nodes with 32 drives each](https://github.com/minio/minio/blob/master/docs/screenshots/Architecture-diagram_distributed_32.png?raw=true)
+![Distributed MinIO, 32 nodes with 32 drives each](https://github.com/RTradeLtd/s3x/blob/master/docs/screenshots/Architecture-diagram_distributed_32.png?raw=true)
 
 #### GNU/Linux and macOS
 

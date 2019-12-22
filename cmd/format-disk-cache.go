@@ -29,7 +29,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/minio/minio/cmd/logger"
+	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/minio/sio"
 )
 

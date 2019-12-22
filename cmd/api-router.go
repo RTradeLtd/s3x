@@ -20,7 +20,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	xhttp "github.com/minio/minio/cmd/http"
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 )
 
 func newHTTPServerFn() *xhttp.Server {

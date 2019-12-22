@@ -25,7 +25,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/minio/minio/cmd/logger"
+	"github.com/RTradeLtd/s3x/cmd/logger"
 )
 
 // Return all the entries at the directory dirPath.

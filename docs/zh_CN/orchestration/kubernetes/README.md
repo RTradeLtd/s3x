@@ -4,7 +4,7 @@ Kubernetes的部署和状态集提供了在独立，分布式或共享模式下�
 
 - MinIO [Helm](https://helm.sh) Chart通过一个简单的命令即可提供自定义而且简单的MinIO部署。更多关于MinIO Helm部署的资料，请访问[这里](#prerequisites).
 
-- 你也可以浏览Kubernetes [MinIO示例](https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes/README.md) ，通过`.yaml`文件来部署MinIO。
+- 你也可以浏览Kubernetes [MinIO示例](https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes/README.md) ，通过`.yaml`文件来部署MinIO。
 
 <a name="prerequisites"></a>
 ## 1. 前提条件
@@ -84,7 +84,7 @@ $ helm install --set mode=distributed,numberOfNodes=8 stable/minio
 
 ### Shared MinIO
 
-如需采用[shared mode](https://github.com/minio/minio/blob/master/docs/shared-backend/README.md)部署MinIO, 将`mode` 设为`shared`,
+如需采用[shared mode](https://github.com/RTradeLtd/s3x/blob/master/docs/shared-backend/README.md)部署MinIO, 将`mode` 设为`shared`,
 
 ```bash
 $ helm install --set mode=shared stable/minio

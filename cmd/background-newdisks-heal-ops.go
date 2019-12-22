@@ -20,7 +20,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/minio/minio/cmd/logger"
+	"github.com/RTradeLtd/s3x/cmd/logger"
 )
 
 const defaultMonitorNewDiskInterval = time.Minute * 10

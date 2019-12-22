@@ -27,9 +27,9 @@ import (
 	"time"
 
 	humanize "github.com/dustin/go-humanize"
-	"github.com/minio/minio/pkg/cpu"
-	"github.com/minio/minio/pkg/disk"
-	"github.com/minio/minio/pkg/mem"
+	"github.com/RTradeLtd/s3x/pkg/cpu"
+	"github.com/RTradeLtd/s3x/pkg/disk"
+	"github.com/RTradeLtd/s3x/pkg/mem"
 )
 
 const (

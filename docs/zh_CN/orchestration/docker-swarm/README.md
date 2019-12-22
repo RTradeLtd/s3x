@@ -34,7 +34,7 @@ echo "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" | docker secret create secret_ke
 
 ## 4. 部署分布式minio服务
 
-在你的Swarm master上下载[Docker Compose file](https://github.com/minio/minio/blob/master/docs/orchestration/docker-swarm/docker-compose-secrets.yaml?raw=true) ，然后运行下面的命令
+在你的Swarm master上下载[Docker Compose file](https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/docker-swarm/docker-compose-secrets.yaml?raw=true) ，然后运行下面的命令
 
 ```shell
 docker stack deploy --compose-file=docker-compose-secrets.yaml minio_stack

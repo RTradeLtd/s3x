@@ -29,7 +29,7 @@ import (
 	humanize "github.com/dustin/go-humanize"
 
 	"github.com/minio/minio-go/v6/pkg/set"
-	"github.com/minio/minio/pkg/certs"
+	"github.com/RTradeLtd/s3x/pkg/certs"
 )
 
 const (

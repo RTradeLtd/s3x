@@ -23,10 +23,10 @@ import (
 	"strings"
 
 	"github.com/minio/minio-go/pkg/set"
-	"github.com/minio/minio/pkg/cpu"
-	"github.com/minio/minio/pkg/disk"
-	"github.com/minio/minio/pkg/madmin"
-	"github.com/minio/minio/pkg/mem"
+	"github.com/RTradeLtd/s3x/pkg/cpu"
+	"github.com/RTradeLtd/s3x/pkg/disk"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
+	"github.com/RTradeLtd/s3x/pkg/mem"
 
 	cpuhw "github.com/shirou/gopsutil/cpu"
 )

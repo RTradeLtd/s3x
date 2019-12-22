@@ -20,7 +20,7 @@ minio server --address :9002 /data/tenant2
 minio server --address :9003 /data/tenant3
 ```
 
-![Example-1](https://github.com/minio/minio/blob/master/docs/screenshots/Example-1.jpg?raw=true)
+![Example-1](https://github.com/RTradeLtd/s3x/blob/master/docs/screenshots/Example-1.jpg?raw=true)
 
 ### 1.2 Host Multiple Tenants on Multiple Drives (Erasure Code)
 
@@ -32,7 +32,7 @@ minio server --address :9002 /disk1/data/tenant2 /disk2/data/tenant2 /disk3/data
 minio server --address :9003 /disk1/data/tenant3 /disk2/data/tenant3 /disk3/data/tenant3 /disk4/data/tenant3
 ```
 
-![Example-2](https://github.com/minio/minio/blob/master/docs/screenshots/Example-2.jpg?raw=true)
+![Example-2](https://github.com/RTradeLtd/s3x/blob/master/docs/screenshots/Example-2.jpg?raw=true)
 
 ## <a name="distributed-deployment"></a>2. Distributed Deployment
 
@@ -58,7 +58,7 @@ minio server --address :9003 http://192.168.10.11/data/tenant3 http://192.168.10
 
 **Note:** Execute the commands on all 4 nodes. 
 
-![Example-3](https://github.com/minio/minio/blob/master/docs/screenshots/Example-3.jpg?raw=true)
+![Example-3](https://github.com/RTradeLtd/s3x/blob/master/docs/screenshots/Example-3.jpg?raw=true)
 
 **Note**: On distributed systems, credentials must be defined and exported using the `MINIO_ACCESS_KEY` and  `MINIO_SECRET_KEY` environment variables. If a domain is required, it must be specified by defining and exporting the `MINIO_DOMAIN` environment variable.
 

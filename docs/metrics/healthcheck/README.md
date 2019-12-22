@@ -20,4 +20,4 @@ Platforms like Kubernetes *do not* forward traffic to a pod until its readiness 
 
 ### Configuration example
 
-Sample `liveness` and `readiness` probe configuration in a Kubernetes `yaml` file can be found [here](https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes/minio-standalone-deployment.yaml).
+Sample `liveness` and `readiness` probe configuration in a Kubernetes `yaml` file can be found [here](https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes/minio-standalone-deployment.yaml).

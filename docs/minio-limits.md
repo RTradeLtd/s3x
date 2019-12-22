@@ -33,7 +33,7 @@
 |Maximum number of multipart uploads returned per list multipart uploads request| 1000|
 
 ### List of Amazon S3 API's not supported on MinIO
-We found the following APIs to be redundant or less useful outside of AWS S3. If you have a different view on any of the APIs we missed, please open a [github issue](https://github.com/minio/minio/issues).
+We found the following APIs to be redundant or less useful outside of AWS S3. If you have a different view on any of the APIs we missed, please open a [github issue](https://github.com/RTradeLtd/s3x/issues).
 
 #### List of Amazon S3 Bucket API's not supported on MinIO
 

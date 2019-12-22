@@ -64,7 +64,7 @@ Gateway inherits the following limitations of HDFS storage layer:
 - Additional metadata support for Multipart operations
 - Background append to provide concurrency support for multipart operations
 
-Please open a GitHub issue if you wish these to be fixed https://github.com/minio/minio/issues
+Please open a GitHub issue if you wish these to be fixed https://github.com/RTradeLtd/s3x/issues
 
 ## Explore Further
 - [`mc` command-line interface](https://docs.minio.io/docs/minio-client-quickstart-guide)

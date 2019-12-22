@@ -2,7 +2,7 @@
 
 ## **1. Cloud-native Architecture**
 
-![cloud-native](https://github.com/minio/minio/blob/master/docs/bigdata/images/image1.png?raw=true "cloud native architecture")
+![cloud-native](https://github.com/RTradeLtd/s3x/blob/master/docs/bigdata/images/image1.png?raw=true "cloud native architecture")
 
 Kubernetes manages stateless Spark and Hive containers elastically on the compute nodes. Spark has native scheduler integration with Kubernetes. Hive, for legacy reasons, uses YARN scheduler on top of Kubernetes.
 
@@ -23,17 +23,17 @@ MinIO also supports multi-cluster, multi-site federation similar to AWS regions 
 
 After successful installation navigate to the Ambari UI `http://<ambari-server>:8080/` and login using the default credentials: [**_username: admin, password: admin_**]
 
-![ambari-login](https://github.com/minio/minio/blob/master/docs/bigdata/images/image3.png?raw=true "ambari login")
+![ambari-login](https://github.com/RTradeLtd/s3x/blob/master/docs/bigdata/images/image3.png?raw=true "ambari login")
 
 ### **3.1 Configure Hadoop**
 
 Navigate to **Services** -> **HDFS** -> **CONFIGS** -> **ADVANCED** as shown below
 
-![hdfs-configs](https://github.com/minio/minio/blob/master/docs/bigdata/images/image2.png?raw=true "hdfs advanced configs")
+![hdfs-configs](https://github.com/RTradeLtd/s3x/blob/master/docs/bigdata/images/image2.png?raw=true "hdfs advanced configs")
 
 Navigate to **Custom core-site** to configure MinIO parameters for `_s3a_` connector
 
-![s3a-config](https://github.com/minio/minio/blob/master/docs/bigdata/images/image5.png?raw=true "custom core-site")
+![s3a-config](https://github.com/RTradeLtd/s3x/blob/master/docs/bigdata/images/image5.png?raw=true "custom core-site")
 
 ```
 sudo pip install yq
@@ -100,17 +100,17 @@ The rest of the other optimization options are discussed in the links below
 
 Once the config changes are applied, proceed to restart **Hadoop** services.
 
-![hdfs-services](https://github.com/minio/minio/blob/master/docs/bigdata/images/image7.png?raw=true "hdfs restart services")
+![hdfs-services](https://github.com/RTradeLtd/s3x/blob/master/docs/bigdata/images/image7.png?raw=true "hdfs restart services")
 
 ### **3.2 Configure Spark2**
 
 Navigate to **Services** -> **Spark2** -> **CONFIGS** as shown below
 
-![spark-config](https://github.com/minio/minio/blob/master/docs/bigdata/images/image6.png?raw=true "spark config")
+![spark-config](https://github.com/RTradeLtd/s3x/blob/master/docs/bigdata/images/image6.png?raw=true "spark config")
 
 Navigate to “**Custom spark-defaults**” to configure MinIO parameters for `_s3a_` connector
 
-![spark-config](https://github.com/minio/minio/blob/master/docs/bigdata/images/image9.png?raw=true "spark defaults")
+![spark-config](https://github.com/RTradeLtd/s3x/blob/master/docs/bigdata/images/image9.png?raw=true "spark defaults")
 
 Add the following optimal entries for _spark-defaults.conf_ to configure Spark with **MinIO**.
 
@@ -146,17 +146,17 @@ spark.hadoop.fs.s3a.threads.max 2048 # maximum number of threads for S3A
 
 Once the config changes are applied, proceed to restart **Spark** services.
 
-![spark-config](https://github.com/minio/minio/blob/master/docs/bigdata/images/image12.png?raw=true "spark restart services")
+![spark-config](https://github.com/RTradeLtd/s3x/blob/master/docs/bigdata/images/image12.png?raw=true "spark restart services")
 
 ### **3.3 Configure Hive**
 
 Navigate to **Services** -> **Hive** -> **CONFIGS**-> **ADVANCED** as shown below
 
-![hive-config](https://github.com/minio/minio/blob/master/docs/bigdata/images/image10.png?raw=true "hive advanced config")
+![hive-config](https://github.com/RTradeLtd/s3x/blob/master/docs/bigdata/images/image10.png?raw=true "hive advanced config")
 
 Navigate to “**Custom hive-site**” to configure MinIO parameters for `_s3a_` connector
 
-![hive-config](https://github.com/minio/minio/blob/master/docs/bigdata/images/image11.png?raw=true "hive advanced config")
+![hive-config](https://github.com/RTradeLtd/s3x/blob/master/docs/bigdata/images/image11.png?raw=true "hive advanced config")
 
 Add the following optimal entries for `hive-site.xml` to configure Hive with **MinIO**.
 
@@ -171,11 +171,11 @@ mapreduce.input.fileinputformat.list-status.num-threads=50
 
 For more information about these options please visit [https://www.cloudera.com/documentation/enterprise/5-11-x/topics/admin_hive_on_s3_tuning.html](https://www.cloudera.com/documentation/enterprise/5-11-x/topics/admin_hive_on_s3_tuning.html)
 
-![hive-config](https://github.com/minio/minio/blob/master/docs/bigdata/images/image13.png?raw=true "hive advanced custom config")
+![hive-config](https://github.com/RTradeLtd/s3x/blob/master/docs/bigdata/images/image13.png?raw=true "hive advanced custom config")
 
 Once the config changes are applied, proceed to restart all Hive services.
 
-![hive-config](https://github.com/minio/minio/blob/master/docs/bigdata/images/image14.png?raw=true "restart hive services")
+![hive-config](https://github.com/RTradeLtd/s3x/blob/master/docs/bigdata/images/image14.png?raw=true "restart hive services")
 
 ## **4. Run Sample Applications**
 

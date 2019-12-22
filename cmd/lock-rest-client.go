@@ -26,10 +26,10 @@ import (
 
 	"net/url"
 
-	"github.com/minio/minio/cmd/http"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/cmd/rest"
-	"github.com/minio/minio/pkg/dsync"
+	"github.com/RTradeLtd/s3x/cmd/http"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/cmd/rest"
+	"github.com/RTradeLtd/s3x/pkg/dsync"
 )
 
 // lockRESTClient is authenticable lock REST client

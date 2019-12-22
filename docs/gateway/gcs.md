@@ -42,7 +42,7 @@ minio gateway gcs yourprojectid
 
 MinIO Gateway comes with an embedded web-based object browser that outputs content to http://127.0.0.1:9000. To test that MinIO Gateway is running, open a web browser, navigate to http://127.0.0.1:9000, and ensure that the object browser is displayed.
 
-![Screenshot](https://github.com/minio/minio/blob/master/docs/screenshots/minio-browser-gateway.png?raw=true)
+![Screenshot](https://github.com/RTradeLtd/s3x/blob/master/docs/screenshots/minio-browser-gateway.png?raw=true)
 
 ## <a name="test-using-minio-client"></a>3. Test Using MinIO Client
 

@@ -24,8 +24,8 @@ import (
 	"time"
 
 	c "github.com/minio/mc/pkg/console"
-	"github.com/minio/minio/cmd/logger/message/log"
-	"github.com/minio/minio/pkg/color"
+	"github.com/RTradeLtd/s3x/cmd/logger/message/log"
+	"github.com/RTradeLtd/s3x/pkg/color"
 )
 
 // Logger interface describes the methods that need to be implemented to satisfy the interface requirements.

@@ -11,7 +11,7 @@ Docker Compose允许定义和运行单主机，多容器Docker应用程序。
 
 ## 2. 在Docker Compose上运行分布式MinIO
 
-在Docker Compose上部署分布式MinIO,请下载[docker-compose.yaml](https://github.com/minio/minio/blob/master/docs/orchestration/docker-compose/docker-compose.yaml?raw=true)到你的当前工作目录。Docker Compose会pull MinIO Docker Image,所以你不需要手动去下载MinIO binary。然后运行下面的命令
+在Docker Compose上部署分布式MinIO,请下载[docker-compose.yaml](https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/docker-compose/docker-compose.yaml?raw=true)到你的当前工作目录。Docker Compose会pull MinIO Docker Image,所以你不需要手动去下载MinIO binary。然后运行下面的命令
 
 ### GNU/Linux and macOS
 

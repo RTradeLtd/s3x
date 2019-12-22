@@ -29,11 +29,11 @@ import (
 	"time"
 
 	"github.com/djherbis/atime"
-	"github.com/minio/minio/cmd/config/cache"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/color"
-	"github.com/minio/minio/pkg/sync/errgroup"
-	"github.com/minio/minio/pkg/wildcard"
+	"github.com/RTradeLtd/s3x/cmd/config/cache"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/color"
+	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
+	"github.com/RTradeLtd/s3x/pkg/wildcard"
 )
 
 const (

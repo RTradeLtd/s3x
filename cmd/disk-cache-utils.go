@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/minio/minio/cmd/crypto"
+	"github.com/RTradeLtd/s3x/cmd/crypto"
 )
 
 type cacheControl struct {

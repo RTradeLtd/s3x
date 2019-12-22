@@ -25,8 +25,8 @@ import (
 	"strings"
 
 	humanize "github.com/dustin/go-humanize"
-	color "github.com/minio/minio/pkg/color"
-	xnet "github.com/minio/minio/pkg/net"
+	color "github.com/RTradeLtd/s3x/pkg/color"
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
 )
 
 // Documentation links, these are part of message printing code.

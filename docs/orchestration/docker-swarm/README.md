@@ -47,7 +47,7 @@ docker node update --label-add minio4=true <DOCKER-NODE4>
 
 It is possible to run more than one minio service on one Docker Node. Set the labels accordingly.
 
-Download the [Docker Compose file](https://github.com/minio/minio/blob/master/docs/orchestration/docker-swarm/docker-compose-secrets.yaml?raw=true) on your Swarm master. Then execute the command
+Download the [Docker Compose file](https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/docker-swarm/docker-compose-secrets.yaml?raw=true) on your Swarm master. Then execute the command
 
 ```shell
 docker stack deploy --compose-file=docker-compose-secrets.yaml minio_stack

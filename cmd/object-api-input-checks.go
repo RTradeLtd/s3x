@@ -20,7 +20,7 @@ import (
 	"context"
 
 	"github.com/minio/minio-go/v6/pkg/s3utils"
-	"github.com/minio/minio/cmd/logger"
+	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
 )
 

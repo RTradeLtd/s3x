@@ -46,9 +46,9 @@
 运行下面的命令快速启动
 
 ```sh
-kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes-yaml/minio-standalone-pvc.yaml?raw=true
-kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes-yaml/minio-standalone-deployment.yaml?raw=true
-kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes-yaml/minio-standalone-service.yaml?raw=true
+kubectl create -f https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes-yaml/minio-standalone-pvc.yaml?raw=true
+kubectl create -f https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes-yaml/minio-standalone-deployment.yaml?raw=true
+kubectl create -f https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes-yaml/minio-standalone-service.yaml?raw=true
 ```
 
 ### 创建持久卷声明
@@ -81,7 +81,7 @@ spec:
 创建一个持久卷声明
 
 ```sh
-kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes-yaml/minio-standalone-pvc.yaml?raw=true
+kubectl create -f https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes-yaml/minio-standalone-pvc.yaml?raw=true
 persistentvolumeclaim "minio-pv-claim" created
 ```
 
@@ -136,7 +136,7 @@ spec:
 创建一个部署
 
 ```sh
-kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes-yaml/minio-standalone-deployment.yaml?raw=true
+kubectl create -f https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes-yaml/minio-standalone-deployment.yaml?raw=true
 deployment "minio-deployment" created
 ```
 
@@ -164,7 +164,7 @@ spec:
 创建MinIO服务
 
 ```sh
-kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes-yaml/minio-standalone-service.yaml?raw=true
+kubectl create -f https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes-yaml/minio-standalone-service.yaml?raw=true
 service "minio-service" created
 ```
 
@@ -215,9 +215,9 @@ kubectl delete deployment minio-deployment \
 运行下面的命令快速启动
 
 ```sh
-kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes-yaml/minio-distributed-headless-service.yaml?raw=true
-kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes-yaml/minio-distributed-statefulset.yaml?raw=true
-kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes-yaml/minio-distributed-service.yaml?raw=true
+kubectl create -f https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes-yaml/minio-distributed-headless-service.yaml?raw=true
+kubectl create -f https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes-yaml/minio-distributed-statefulset.yaml?raw=true
+kubectl create -f https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes-yaml/minio-distributed-service.yaml?raw=true
 ```
 
 ###创建MinIO Headless服务
@@ -245,7 +245,7 @@ spec:
 创建Headless服务
 
 ```sh
-$ kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes-yaml/minio-distributed-headless-service.yaml?raw=true
+$ kubectl create -f https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes-yaml/minio-distributed-headless-service.yaml?raw=true
 service "minio" created
 ```
 
@@ -309,7 +309,7 @@ spec:
 创建Statefulset
 
 ```sh
-$ kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes-yaml/minio-distributed-statefulset.yaml?raw=true
+$ kubectl create -f https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes-yaml/minio-distributed-statefulset.yaml?raw=true
 statefulset "minio" created
 ```
 
@@ -337,7 +337,7 @@ spec:
 创建MinIO service
 
 ```sh
-$ kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes-yaml/minio-distributed-service.yaml?raw=true
+$ kubectl create -f https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes-yaml/minio-distributed-service.yaml?raw=true
 service "minio-service" created
 ```
 
@@ -389,7 +389,7 @@ kubectl delete statefulset minio \
 
 ### GCS 网关快速入门
 
-按照 [这里](https://github.com/minio/minio/blob/master/docs/gateway/gcs.md#create-service-account-key-for-gcs-and-get-the-credentials-file)描述的步骤创建Google云服务认证凭据文件。
+按照 [这里](https://github.com/RTradeLtd/s3x/blob/master/docs/gateway/gcs.md#create-service-account-key-for-gcs-and-get-the-credentials-file)描述的步骤创建Google云服务认证凭据文件。
 
 使用上面生成的文件来创建一个Kubernetes`secret`。
 
@@ -400,21 +400,21 @@ kubectl create secret generic gcs-credentials --from-file=/path/to/gcloud/creden
 下载 `minio-gcs-gateway-deployment.yaml` 
 
 ```sh
-wget https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes-yaml/minio-gcs-gateway-deployment.yaml?raw=true
+wget https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes-yaml/minio-gcs-gateway-deployment.yaml?raw=true
 ```
 
 使用你的GCS  project ID更新 `gcp_project_id`部分的内容，然后运行 
 
 ```sh
 kubectl create -f minio-gcs-gateway-deployment.yaml
-kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes-yaml/minio-gcs-gateway-service.yaml?raw=true
+kubectl create -f https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes-yaml/minio-gcs-gateway-service.yaml?raw=true
 ```
 
 ### 创建GCS凭据
 
 `凭据`旨在保存敏感信息，例如密码，OAuth令牌和ssh密钥。 将这些信息放在一个凭据中比将其逐字地放在pod定义或docker镜像中更安全，更灵活。
 
-按照 [这里](https://github.com/minio/minio/blob/master/docs/gateway/gcs.md#create-service-account-key-for-gcs-and-get-the-credentials-file)描述的步骤创建Google云服务认证凭据文件。
+按照 [这里](https://github.com/RTradeLtd/s3x/blob/master/docs/gateway/gcs.md#create-service-account-key-for-gcs-and-get-the-credentials-file)描述的步骤创建Google云服务认证凭据文件。
 
 使用上面生成的文件来创建一个Kubernetes`secret`。
 
@@ -478,7 +478,7 @@ spec:
 创建部署
 
 ```sh
-kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes-yaml/minio-gcs-gateway-deployment.yaml?raw=true
+kubectl create -f https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes-yaml/minio-gcs-gateway-deployment.yaml?raw=true
 deployment "minio-deployment" created
 ```
 
@@ -505,7 +505,7 @@ spec:
 创建MinIO服务
 
 ```sh
-kubectl create -f https://github.com/minio/minio/blob/master/docs/orchestration/kubernetes-yaml/minio-gcs-gateway-service.yaml?raw=true
+kubectl create -f https://github.com/RTradeLtd/s3x/blob/master/docs/orchestration/kubernetes-yaml/minio-gcs-gateway-service.yaml?raw=true
 service "minio-service" created
 ```
 

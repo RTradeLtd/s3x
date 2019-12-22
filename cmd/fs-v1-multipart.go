@@ -29,8 +29,8 @@ import (
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	"github.com/minio/minio/cmd/logger"
-	mioutil "github.com/minio/minio/pkg/ioutil"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	mioutil "github.com/RTradeLtd/s3x/pkg/ioutil"
 )
 
 // Returns EXPORT/.minio.sys/multipart/SHA256/UPLOADID

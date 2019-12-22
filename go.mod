@@ -1,4 +1,4 @@
-module github.com/minio/minio
+module github.com/RTradeLtd/s3x
 
 go 1.13
 
@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go v0.39.0
 	github.com/Azure/azure-pipeline-go v0.2.1
 	github.com/Azure/azure-storage-blob-go v0.8.0
+	github.com/RTradeLtd/TxPB v1.1.1
 	github.com/Shopify/sarama v1.24.1
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/alecthomas/participle v0.2.1
@@ -25,12 +26,14 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-sql-driver/mysql v1.4.1
+	github.com/gogo/protobuf v1.2.1
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/handlers v1.4.0
 	github.com/gorilla/mux v1.7.0
 	github.com/gorilla/rpc v1.2.0+incompatible
 	github.com/hashicorp/vault/api v1.0.4
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf
+	github.com/ipfs/go-datastore v0.3.1
 	github.com/json-iterator/go v1.1.7
 	github.com/klauspost/compress v1.8.3
 	github.com/klauspost/pgzip v1.2.1
@@ -72,6 +75,7 @@ require (
 	golang.org/x/crypto v0.0.0-20191117063200-497ca9f6d64f
 	golang.org/x/sys v0.0.0-20190922100055-0a153f010e69
 	google.golang.org/api v0.5.0
+	google.golang.org/grpc v1.22.0
 	gopkg.in/ldap.v3 v3.0.3
 	gopkg.in/olivere/elastic.v5 v5.0.80
 	gopkg.in/yaml.v2 v2.2.4

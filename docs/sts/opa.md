@@ -1,4 +1,4 @@
-**Using OPA is optional with MinIO. We recommend using [`policy` JWT claims](https://github.com/minio/minio/blob/master/docs/sts/wso2.md#4-jwt-claims) instead, let MinIO manage your policies using `mc admin policy` and apply them on the STS credentials.**
+**Using OPA is optional with MinIO. We recommend using [`policy` JWT claims](https://github.com/RTradeLtd/s3x/blob/master/docs/sts/wso2.md#4-jwt-claims) instead, let MinIO manage your policies using `mc admin policy` and apply them on the STS credentials.**
 
 # OPA Quickstart Guide [![Slack](https://slack.min.io/slack?type=svg)](https://slack.min.io)
 OPA is a lightweight general-purpose policy engine that can be co-located with MinIO server, in this document we talk about how to use OPA HTTP API to authorize MinIO STS credentials.
@@ -81,7 +81,7 @@ go run client-grants.go -cid PoEgXP6uVO45IsENRngDXj5Au5Ya -csec eKsw6z8CtOJVBtrO
 }
 ```
 
-These credentials can now be used to perform MinIO API operations, these credentials automatically expire in 1hr. To understand more about credential expiry duration and client grants STS API read further [here](https://github.com/minio/minio/blob/master/docs/sts/client-grants.md).
+These credentials can now be used to perform MinIO API operations, these credentials automatically expire in 1hr. To understand more about credential expiry duration and client grants STS API read further [here](https://github.com/RTradeLtd/s3x/blob/master/docs/sts/client-grants.md).
 
 ## Explore Further
 - [MinIO STS Quickstart Guide](https://docs.min.io/docs/minio-sts-quickstart-guide)

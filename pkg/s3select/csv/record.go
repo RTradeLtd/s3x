@@ -24,7 +24,7 @@ import (
 	"io"
 
 	"github.com/bcicen/jstream"
-	"github.com/minio/minio/pkg/s3select/sql"
+	"github.com/RTradeLtd/s3x/pkg/s3select/sql"
 )
 
 // Record - is a CSV record.

@@ -28,9 +28,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/handlers"
-	trace "github.com/minio/minio/pkg/trace"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/handlers"
+	trace "github.com/RTradeLtd/s3x/pkg/trace"
 )
 
 // recordRequest - records the first recLen bytes
@@ -80,7 +80,7 @@ func (r *recordRequest) Data() []byte {
 
 // getOpName sanitizes the operation name for mc
 func getOpName(name string) (op string) {
-	op = strings.TrimPrefix(name, "github.com/minio/minio/cmd.")
+	op = strings.TrimPrefix(name, "github.com/RTradeLtd/s3x/cmd.")
 	op = strings.TrimSuffix(op, "Handler-fm")
 	op = strings.Replace(op, "objectAPIHandlers", "s3", 1)
 	op = strings.Replace(op, "webAPIHandlers", "s3", 1)

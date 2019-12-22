@@ -22,8 +22,8 @@ import (
 	"os"
 	"runtime"
 
-	xhttp "github.com/minio/minio/cmd/http"
-	"github.com/minio/minio/cmd/logger"
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
+	"github.com/RTradeLtd/s3x/cmd/logger"
 )
 
 const (
@@ -57,7 +57,7 @@ func LivenessCheckHandler(w http.ResponseWriter, r *http.Request) {
 	if objLayer == nil {
 		// Respond with 200 OK while server initializes to ensure a distributed cluster
 		// is able to start on orchestration platforms like Docker Swarm.
-		// Refer https://github.com/minio/minio/issues/8140 for more details.
+		// Refer https://github.com/RTradeLtd/s3x/issues/8140 for more details.
 		// Make sure to add server not initialized status in header
 		w.Header().Set(xhttp.MinIOServerStatus, "server-not-initialized")
 		writeSuccessResponseHeadersOnly(w)

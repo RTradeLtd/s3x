@@ -252,7 +252,7 @@ MinIO can connect to other servers, including MinIO nodes or other server types 
 * **Windows**: `C:\Users\<Username>\.minio\certs\CAs`
 
 # Explore Further
-* [TLS Configuration for MinIO server on Kubernetes](https://github.com/minio/minio/tree/master/docs/tls/kubernetes)
+* [TLS Configuration for MinIO server on Kubernetes](https://github.com/RTradeLtd/s3x/tree/master/docs/tls/kubernetes)
 * [MinIO Client Complete Guide](https://docs.min.io/docs/minio-client-complete-guide)
 * [Generate Let's Encrypt Certificate](https://docs.min.io/docs/generate-let-s-encypt-certificate-using-concert-for-minio)
 * [Setup nginx Proxy with MinIO Server](https://docs.min.io/docs/setup-nginx-proxy-with-minio)

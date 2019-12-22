@@ -21,7 +21,7 @@ import (
 )
 
 // errUnexpected - unexpected error, requires manual intervention.
-var errUnexpected = errors.New("Unexpected error, please report this issue at https://github.com/minio/minio/issues")
+var errUnexpected = errors.New("Unexpected error, please report this issue at https://github.com/RTradeLtd/s3x/issues")
 
 // errCorruptedFormat - corrupted backend format.
 var errCorruptedFormat = errors.New("corrupted backend format, please join https://slack.min.io for assistance")

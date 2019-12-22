@@ -21,7 +21,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	xnet "github.com/minio/minio/pkg/net"
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
 	natsserver "github.com/nats-io/nats-server/v2/test"
 )
 

@@ -86,7 +86,7 @@ minio server /data
 ```
 
 ### Storage Class
-By default, parity for objects with standard storage class is set to `N/2`, and parity for objects with reduced redundancy storage class objects is set to `2`. Read more about storage class support in MinIO server [here](https://github.com/minio/minio/blob/master/docs/erasure/storage-class/README.md).
+By default, parity for objects with standard storage class is set to `N/2`, and parity for objects with reduced redundancy storage class objects is set to `2`. Read more about storage class support in MinIO server [here](https://github.com/RTradeLtd/s3x/blob/master/docs/erasure/storage-class/README.md).
 
 ```
 KEY:
