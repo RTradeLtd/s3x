@@ -8,16 +8,16 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
 
 	pb "github.com/RTradeLtd/TxPB/go"
+	badger "github.com/RTradeLtd/go-ds-badger/v2"
 	minio "github.com/RTradeLtd/s3x/cmd"
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/policy"
-	"github.com/ipfs/go-datastore"
-	dssync "github.com/ipfs/go-datastore/sync"
 	"github.com/minio/cli"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -42,11 +42,33 @@ func temxGatewayMain(ctx *cli.Context) {
 // TEMX implements MinIO Gateway
 type TEMX struct{}
 
+// newLedgerStore returns an instance of ledgerStore that uses badgerv2
+func (g *TEMX) newLedgerStore(dsPath string) (*ledgerStore, error) {
+	opts := badger.DefaultOptions
+	ds, err := badger.NewDatastore(dsPath, &opts)
+	if err != nil {
+		return nil, err
+	}
+	return newLedgerStore(ds), nil
+}
+
+func (g *TEMX) getDSPath() string {
+	path := os.Getenv("S3X_DS_PATH")
+	if path == "" {
+		path = "s3xstore"
+	}
+	return path
+}
+
 // NewGatewayLayer creates a minio gateway layer powered y TemporalX
 func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error) {
 	conn, err := grpc.Dial("xapi-dev.temporal.cloud:9090", grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		InsecureSkipVerify: true,
 	})))
+	if err != nil {
+		return nil, err
+	}
+	ledger, err := g.newLedgerStore(g.getDSPath())
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +79,7 @@ func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error
 			Transport: minio.NewCustomHTTPTransport(),
 		},
 		ctx:         context.Background(),
-		ledgerStore: newLedgerStore(dssync.MutexWrap(datastore.NewMapDatastore())),
+		ledgerStore: ledger,
 	}, nil
 }
 
