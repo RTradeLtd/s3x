@@ -52,7 +52,7 @@ func (le *ledgerStore) UpdateBucketHash(name, hash string) error {
 	le.locker.Lock()
 	defer le.locker.Unlock()
 	if !le.bucketExists(name) {
-		return errors.New("bucket exists")
+		return errors.New("bucket does not exist")
 	}
 	ledger, err := le.getLedger()
 	if err != nil {
