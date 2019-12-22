@@ -62,6 +62,10 @@ func (le *ledgerStore) AddObjectToBucket(bucketName, objectName, objectHash stri
 	if err != nil {
 		return err
 	}
+	// prevent nil map panic
+	if ledger.GetBuckets()[bucketName].GetObjects() == nil {
+		ledger.Buckets[bucketName].Objects = make(map[string]*LedgerObjectEntry)
+	}
 	ledger.Buckets[bucketName].Objects[objectName] = &LedgerObjectEntry{
 		Name:     objectName,
 		IpfsHash: objectHash,

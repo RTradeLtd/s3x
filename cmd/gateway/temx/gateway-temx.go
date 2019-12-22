@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -106,7 +107,16 @@ func (x *xObjects) MakeBucketWithLocation(ctx context.Context, name, location st
 	if err != nil {
 		return err
 	}
-	return x.ledgerStore.NewBucket(name, hash)
+	log.Printf("bucket-name: %s\tbucket-hash: %s", name, hash)
+	err = x.ledgerStore.NewBucket(name, hash)
+	if err != nil {
+		switch err.Error() {
+		case "bucket exists":
+			err = minio.BucketAlreadyExists{Bucket: name}
+		}
+		return err
+	}
+	return nil
 }
 
 // GetBucketInfo gets bucket metadata..
@@ -277,6 +287,7 @@ func (x *xObjects) PutObject(ctx context.Context, bucket string, object string, 
 			obinfo.ContentType = v
 		}
 	}
+	obinfo.ModTime = time.Now().UTC().String()
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return objInfo, err
