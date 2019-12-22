@@ -302,15 +302,34 @@ func (x *xObjects) PutObject(ctx context.Context, bucket string, object string, 
 	if err != nil {
 		return objInfo, err
 	}
-	// update our internal ledger state
+	// update internal ledger state with bucket hash
+	if err := x.ledgerStore.UpdateBucketHash(bucket, bucketHash); err != nil {
+		return objInfo, err
+	}
+	// update internal ledger state with the new object
 	if err := x.ledgerStore.AddObjectToBucket(bucket, object, objectHash); err != nil {
 		return objInfo, err
 	}
+	// convert the proto object into a minio.ObjectInfo type
 	return x.getMinioObjectInfo(ctx, bucket, object)
 }
 
 // CopyObject copies an object from source bucket to a destination bucket.
-func (x *xObjects) CopyObject(ctx context.Context, srcBucket string, srcObject string, dstBucket string, dstObject string, srcInfo minio.ObjectInfo, srcOpts, dstOpts minio.ObjectOptions) (objInfo minio.ObjectInfo, err error) {
+func (x *xObjects) CopyObject(
+	ctx context.Context,
+	srcBucket string,
+	srcObject string,
+	dstBucket string,
+	dstObject string,
+	srcInfo minio.ObjectInfo,
+	srcOpts, dstOpts minio.ObjectOptions,
+) (objInfo minio.ObjectInfo, err error) {
+	// get the object hash
+	objHash, err := x.ledgerStore.GetObjectHashFromBucket(srcBucket, srcObject)
+	if err != nil {
+		return objInfo, err
+	}
+
 	return objInfo, errors.New("not yet implemented")
 }
 
