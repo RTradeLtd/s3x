@@ -95,36 +95,38 @@ func (x *xObjects) StorageInfo(ctx context.Context) (si minio.StorageInfo) {
 }
 
 // MakeBucket creates a new bucket container within TemporalX.
-func (x *xObjects) MakeBucketWithLocation(ctx context.Context, name, location string) error {
-	buck := &Bucket{
+func (x *xObjects) MakeBucketWithLocation(
+	ctx context.Context,
+	name, location string,
+) error {
+	// check to see whether or not the bucket already exists
+	if x.ledgerStore.BucketExists(name) {
+		return minio.BucketAlreadyExists{Bucket: name}
+	}
+	// create the bucket
+	hash, err := x.bucketToIPFS(ctx, &Bucket{
 		BucketInfo: &BucketInfo{
 			Name:     name,
 			Location: location,
 			Created:  time.Now().UTC().String(),
 		},
-	}
-	hash, err := x.bucketToIPFS(ctx, buck)
+	})
 	if err != nil {
-		return err
+		return x.toMinioErr(err, name, "")
 	}
 	log.Printf("bucket-name: %s\tbucket-hash: %s", name, hash)
-	// TODO(bonedaddy): check at start of call is bucket already exists
-	err = x.ledgerStore.NewBucket(name, hash)
-	if err != nil {
-		switch err {
-		case ErrLedgerBucketExists:
-			err = minio.BucketAlreadyExists{Bucket: name}
-		}
-		return err
-	}
-	return nil
+	//  update internal ledger state
+	return x.toMinioErr(x.ledgerStore.NewBucket(name, hash), name, "")
 }
 
 // GetBucketInfo gets bucket metadata..
-func (x *xObjects) GetBucketInfo(ctx context.Context, name string) (bi minio.BucketInfo, err error) {
+func (x *xObjects) GetBucketInfo(
+	ctx context.Context,
+	name string,
+) (bi minio.BucketInfo, err error) {
 	bucket, err := x.bucketFromIPFS(ctx, name)
 	if err != nil {
-		return bi, err
+		return bi, x.toMinioErr(err, name, "")
 	}
 	created, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", bucket.GetBucketInfo().GetCreated())
 	if err != nil {
@@ -132,7 +134,9 @@ func (x *xObjects) GetBucketInfo(ctx context.Context, name string) (bi minio.Buc
 	}
 	return minio.BucketInfo{
 		Name: bucket.GetBucketInfo().GetName(),
-		// should we do it like this?
+		// TODO(bonedaddy): decide what to do here,
+		// in the examples of other gateway its a nil time
+		// bucket the bucket actually has a created timestamp
 		// Created: time.Unix(0, 0),
 		Created: created,
 	}, nil
@@ -140,6 +144,7 @@ func (x *xObjects) GetBucketInfo(ctx context.Context, name string) (bi minio.Buc
 
 // ListBuckets lists all S3 buckets
 func (x *xObjects) ListBuckets(ctx context.Context) ([]minio.BucketInfo, error) {
+	// TODO(bonedaddy): decide if we should handle a minio error here
 	names, err := x.ledgerStore.GetBucketNames()
 	if err != nil {
 		return nil, err
@@ -148,7 +153,7 @@ func (x *xObjects) ListBuckets(ctx context.Context) ([]minio.BucketInfo, error) 
 	for i, name := range names {
 		info, err := x.GetBucketInfo(ctx, name)
 		if err != nil {
-			return nil, err
+			return nil, x.toMinioErr(err, name, "")
 		}
 		infos[i] = info
 	}
@@ -158,22 +163,32 @@ func (x *xObjects) ListBuckets(ctx context.Context) ([]minio.BucketInfo, error) 
 // DeleteBucket deletes a bucket on S3
 func (x *xObjects) DeleteBucket(ctx context.Context, name string) error {
 	// TODO(bonedaddy): implement removal call from TemporalX
-	// as of right now this just removes the bucket from our
-	// internal ledger tracker
-	return x.ledgerStore.DeleteBucket(name)
+	return x.toMinioErr(x.ledgerStore.DeleteBucket(name), name, "")
 }
 
 // ListObjects lists all blobs in S3 bucket filtered by prefix
 func (x *xObjects) ListObjects(ctx context.Context, bucket string, prefix string, marker string, delimiter string, maxKeys int) (loi minio.ListObjectsInfo, e error) {
-	// TODO(bonedaddy): implement
-	/*	result, err := l.Client.ListObjects(bucket, prefix, marker, delimiter, maxKeys)
+	// TODO(bonedaddy): implement complex search
+	if !x.ledgerStore.BucketExists(bucket) {
+		return loi, minio.BucketNotFound{Bucket: bucket}
+	}
+	objHashes, err := x.ledgerStore.GetObjectHashes(bucket)
+	if err != nil {
+		return loi, x.toMinioErr(err, bucket, "")
+	}
+	loi.Objects = make([]minio.ObjectInfo, len(objHashes))
+	var count int
+	for name := range objHashes {
+		info, err := x.getMinioObjectInfo(ctx, bucket, name)
 		if err != nil {
-			return loi, minio.ErrorRespToObjectError(err, bucket)
+			return loi, x.toMinioErr(err, bucket, name)
 		}
-
-		return minio.FromMinioClientListBucketResult(bucket, result), nil
-	*/
-	return loi, errors.New("not yet implemented")
+		loi.Objects[count] = info
+		count++
+	}
+	// TODO(bonedaddy): consider if we should use the following helper func
+	// return minio.FromMinioClientListBucketResult(bucket, result), nil
+	return loi, nil
 }
 
 // ListObjectsV2 lists all objects in B2 bucket filtered by prefix, returns upto max 1000 entries at a time.
@@ -258,22 +273,38 @@ func (x *xObjects) GetObjectNInfo(ctx context.Context, bucket, object string, rs
 //
 // startOffset indicates the starting read location of the object.
 // length indicates the total length of the object.
-func (x *xObjects) GetObject(ctx context.Context, bucket string, object string, startOffset int64, length int64, writer io.Writer, etag string, opts minio.ObjectOptions) error {
+func (x *xObjects) GetObject(
+	ctx context.Context,
+	bucket, object string,
+	startOffset, length int64,
+	writer io.Writer,
+	etag string,
+	opts minio.ObjectOptions,
+) error {
 	obj, err := x.objectFromBucket(ctx, bucket, object)
 	if err != nil {
-		return err
+		return x.toMinioErr(err, bucket, object)
 	}
 	_, err = writer.Write(obj.GetData())
 	return err
 }
 
 // GetObjectInfo reads object info and replies back ObjectInfo
-func (x *xObjects) GetObjectInfo(ctx context.Context, bucket string, object string, opts minio.ObjectOptions) (objInfo minio.ObjectInfo, err error) {
+func (x *xObjects) GetObjectInfo(
+	ctx context.Context,
+	bucket, object string,
+	opts minio.ObjectOptions,
+) (objInfo minio.ObjectInfo, err error) {
 	return x.getMinioObjectInfo(ctx, bucket, object)
 }
 
 // PutObject creates a new object with the incoming data,
-func (x *xObjects) PutObject(ctx context.Context, bucket string, object string, r *minio.PutObjReader, opts minio.ObjectOptions) (objInfo minio.ObjectInfo, err error) {
+func (x *xObjects) PutObject(
+	ctx context.Context,
+	bucket, object string,
+	r *minio.PutObjReader,
+	opts minio.ObjectOptions,
+) (objInfo minio.ObjectInfo, err error) {
 	// TODO(bonedaddy): ensure consistency with the way s3 and b2 handle this
 	obinfo := &ObjectInfo{}
 	for k, v := range opts.UserDefined {
@@ -332,18 +363,19 @@ func (x *xObjects) CopyObject(
 	// get hash of th eobject
 	objHash, err := x.ledgerStore.GetObjectHashFromBucket(srcBucket, srcObject)
 	if err != nil {
-		return objInfo, err
+		return objInfo, x.toMinioErr(err, srcBucket, srcObject)
 	}
 	// update the destination bucket with the object hash under the destination object
 	dstBucketHash, err := x.addObjectToBucketAndIPFS(ctx, dstObject, objHash, dstBucket)
 	if err != nil {
-		return objInfo, err
+		return objInfo, x.toMinioErr(err, dstBucket, dstObject)
 	}
 	// update the internal ledger state for the destination bucket and destination bucket hash
 	if err := x.ledgerStore.UpdateBucketHash(dstBucket, dstBucketHash); err != nil {
-		return objInfo, err
+		return objInfo, x.toMinioErr(err, dstBucket, dstObject)
 	}
-	return x.getMinioObjectInfo(ctx, dstBucket, dstObject)
+	objInfo, err = x.getMinioObjectInfo(ctx, dstBucket, dstObject)
+	return objInfo, x.toMinioErr(err, dstBucket, dstObject)
 }
 
 // DeleteObject deletes a blob in bucket

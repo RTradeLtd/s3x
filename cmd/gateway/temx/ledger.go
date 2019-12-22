@@ -41,12 +41,12 @@ func newLedgerStore(ds datastore.Batching) *ledgerStore {
 func (le *ledgerStore) NewBucket(name, hash string) error {
 	le.locker.Lock()
 	defer le.locker.Unlock()
-	if le.bucketExists(name) {
-		return ErrLedgerBucketExists
-	}
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
+	}
+	if le.bucketExists(ledger, name) {
+		return ErrLedgerBucketExists
 	}
 	if ledger.GetBuckets() == nil {
 		ledger.Buckets = make(map[string]*LedgerBucketEntry)
@@ -62,12 +62,12 @@ func (le *ledgerStore) NewBucket(name, hash string) error {
 func (le *ledgerStore) UpdateBucketHash(name, hash string) error {
 	le.locker.Lock()
 	defer le.locker.Unlock()
-	if !le.bucketExists(name) {
-		return ErrLedgerBucketDoesNotExist
-	}
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
+	}
+	if !le.bucketExists(ledger, name) {
+		return ErrLedgerBucketDoesNotExist
 	}
 	ledger.Buckets[name].IpfsHash = hash
 	return le.putLedger(ledger)
@@ -90,12 +90,12 @@ func (le *ledgerStore) RemoveObject(bucketName, objectName string) error {
 func (le *ledgerStore) AddObjectToBucket(bucketName, objectName, objectHash string) error {
 	le.locker.Lock()
 	defer le.locker.Unlock()
-	if !le.bucketExists(bucketName) {
-		return ErrLedgerBucketDoesNotExist
-	}
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
+	}
+	if !le.bucketExists(ledger, bucketName) {
+		return ErrLedgerBucketDoesNotExist
 	}
 	// prevent nil map panic
 	if ledger.GetBuckets()[bucketName].GetObjects() == nil {
@@ -108,6 +108,15 @@ func (le *ledgerStore) AddObjectToBucket(bucketName, objectName, objectHash stri
 	return le.putLedger(ledger)
 }
 
+func (le *ledgerStore) BucketExists(name string) bool {
+	le.locker.RLock()
+	defer le.locker.RUnlock()
+	ledger, err := le.getLedger()
+	if err != nil {
+		return false
+	}
+	return le.bucketExists(ledger, name)
+}
 func (le *ledgerStore) GetBucketHash(name string) (string, error) {
 	le.locker.RLock()
 	defer le.locker.RUnlock()
@@ -150,6 +159,24 @@ func (le *ledgerStore) DeleteBucket(name string) error {
 	}
 	delete(ledger.Buckets, name)
 	return le.putLedger(ledger)
+}
+
+func (le *ledgerStore) GetObjectHashes(bucket string) (map[string]string, error) {
+	le.locker.RLock()
+	defer le.locker.RUnlock()
+	ledger, err := le.getLedger()
+	if err != nil {
+		return nil, err
+	}
+	if !le.bucketExists(ledger, bucket) {
+		return nil, ErrLedgerBucketDoesNotExist
+	}
+	// maps object names to hashes
+	var hashes = make(map[string]string, len(ledger.Buckets[bucket].Objects))
+	for _, obj := range ledger.GetBuckets()[bucket].GetObjects() {
+		hashes[obj.GetName()] = obj.GetIpfsHash()
+	}
+	return hashes, err
 }
 
 func (le *ledgerStore) GetBucketNames() ([]string, error) {
@@ -209,17 +236,7 @@ func (le *ledgerStore) objectExists(ledger *Ledger, bucket, object string) error
 	return nil
 }
 
-func (le *ledgerStore) bucketExists(name string) bool {
-	data, err := le.ds.Get(ledgerKey)
-	if err != nil {
-		// this should never happen
-		panic(err)
-	}
-	ledger := new(Ledger)
-	if err := ledger.Unmarshal(data); err != nil {
-		// this should never happen
-		panic(err)
-	}
+func (le *ledgerStore) bucketExists(ledger *Ledger, name string) bool {
 	return ledger.GetBuckets()[name] != nil
 }
 
