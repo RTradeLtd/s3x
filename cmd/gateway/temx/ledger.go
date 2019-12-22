@@ -24,21 +24,28 @@ var (
 	ErrLedgerObjectDoesNotExist = errors.New("object does not exist")
 )
 
-type ledgerStore struct {
+// LedgerStore is an internal bookkeeper that
+// maps ipfs cids to bucket and object names
+type LedgerStore struct {
 	locker *sync.RWMutex
 	ds     datastore.Batching
 }
 
-func newLedgerStore(ds datastore.Batching) *ledgerStore {
-	ledger := &ledgerStore{
+func newLedgerStore(ds datastore.Batching) *LedgerStore {
+	ledger := &LedgerStore{
 		locker: &sync.RWMutex{},
 		ds:     namespace.Wrap(ds, ledgerPrefix),
 	}
-	ledger.createIfNotExist()
+	ledger.createLedgerIfNotExist()
 	return ledger
 }
 
-func (le *ledgerStore) NewBucket(name, hash string) error {
+/////////////////////
+// SETTER FUNCTINS //
+/////////////////////
+
+// NewBucket creates a new ledger bucket entry
+func (le *LedgerStore) NewBucket(name, hash string) error {
 	le.locker.Lock()
 	defer le.locker.Unlock()
 	ledger, err := le.getLedger()
@@ -59,7 +66,9 @@ func (le *ledgerStore) NewBucket(name, hash string) error {
 	return le.putLedger(ledger)
 }
 
-func (le *ledgerStore) UpdateBucketHash(name, hash string) error {
+// UpdateBucketHash is used to update the ledger bucket entry
+// with a new IPFS hash
+func (le *LedgerStore) UpdateBucketHash(name, hash string) error {
 	le.locker.Lock()
 	defer le.locker.Unlock()
 	ledger, err := le.getLedger()
@@ -73,7 +82,8 @@ func (le *ledgerStore) UpdateBucketHash(name, hash string) error {
 	return le.putLedger(ledger)
 }
 
-func (le *ledgerStore) RemoveObject(bucketName, objectName string) error {
+// RemoveObject is used to remove a ledger object entry from a ledger bucket entry
+func (le *LedgerStore) RemoveObject(bucketName, objectName string) error {
 	le.locker.Lock()
 	defer le.locker.Unlock()
 	ledger, err := le.getLedger()
@@ -87,7 +97,8 @@ func (le *ledgerStore) RemoveObject(bucketName, objectName string) error {
 	return nil
 }
 
-func (le *ledgerStore) AddObjectToBucket(bucketName, objectName, objectHash string) error {
+// AddObjectToBucket is used to update a ledger bucket entry with a new ledger object entry
+func (le *LedgerStore) AddObjectToBucket(bucketName, objectName, objectHash string) error {
 	le.locker.Lock()
 	defer le.locker.Unlock()
 	ledger, err := le.getLedger()
@@ -108,7 +119,8 @@ func (le *ledgerStore) AddObjectToBucket(bucketName, objectName, objectHash stri
 	return le.putLedger(ledger)
 }
 
-func (le *ledgerStore) BucketExists(name string) bool {
+// BucketExists is a public function to check if a bucket exists
+func (le *LedgerStore) BucketExists(name string) bool {
 	le.locker.RLock()
 	defer le.locker.RUnlock()
 	ledger, err := le.getLedger()
@@ -117,7 +129,28 @@ func (le *ledgerStore) BucketExists(name string) bool {
 	}
 	return le.bucketExists(ledger, name)
 }
-func (le *ledgerStore) GetBucketHash(name string) (string, error) {
+
+// DeleteBucket is used to remove a ledger bucket entry
+func (le *LedgerStore) DeleteBucket(name string) error {
+	le.locker.Lock()
+	defer le.locker.Unlock()
+	ledger, err := le.getLedger()
+	if err != nil {
+		return err
+	}
+	if ledger.GetBuckets()[name] == nil {
+		return ErrLedgerBucketDoesNotExist
+	}
+	delete(ledger.Buckets, name)
+	return le.putLedger(ledger)
+}
+
+/////////////////////
+// GETTER FUNCTINS //
+/////////////////////
+
+// GetBucketHash is used to get the corresponding IPFS CID for a bucket
+func (le *LedgerStore) GetBucketHash(name string) (string, error) {
 	le.locker.RLock()
 	defer le.locker.RUnlock()
 	ledger, err := le.getLedger()
@@ -130,7 +163,8 @@ func (le *ledgerStore) GetBucketHash(name string) (string, error) {
 	return ledger.Buckets[name].GetIpfsHash(), nil
 }
 
-func (le *ledgerStore) GetObjectHashFromBucket(bucketName, objectName string) (string, error) {
+// GetObjectHash is used to retrive the correspodning IPFS CID for an object
+func (le *LedgerStore) GetObjectHash(bucketName, objectName string) (string, error) {
 	le.locker.RLock()
 	defer le.locker.RUnlock()
 	ledger, err := le.getLedger()
@@ -147,21 +181,8 @@ func (le *ledgerStore) GetObjectHashFromBucket(bucketName, objectName string) (s
 	return bucket.GetObjects()[objectName].GetIpfsHash(), nil
 }
 
-func (le *ledgerStore) DeleteBucket(name string) error {
-	le.locker.Lock()
-	defer le.locker.Unlock()
-	ledger, err := le.getLedger()
-	if err != nil {
-		return err
-	}
-	if ledger.GetBuckets()[name] == nil {
-		return ErrLedgerBucketDoesNotExist
-	}
-	delete(ledger.Buckets, name)
-	return le.putLedger(ledger)
-}
-
-func (le *ledgerStore) GetObjectHashes(bucket string) (map[string]string, error) {
+// GetObjectHashes gets a map of object names to object hashes for all objects in a bucket
+func (le *LedgerStore) GetObjectHashes(bucket string) (map[string]string, error) {
 	le.locker.RLock()
 	defer le.locker.RUnlock()
 	ledger, err := le.getLedger()
@@ -179,7 +200,8 @@ func (le *ledgerStore) GetObjectHashes(bucket string) (map[string]string, error)
 	return hashes, err
 }
 
-func (le *ledgerStore) GetBucketNames() ([]string, error) {
+// GetBucketNames is used to a slice of all bucket names our ledger currently tracks
+func (le *LedgerStore) GetBucketNames() ([]string, error) {
 	le.locker.RLock()
 	defer le.locker.RUnlock()
 	ledger, err := le.getLedger()
@@ -198,9 +220,16 @@ func (le *ledgerStore) GetBucketNames() ([]string, error) {
 	return names, nil
 }
 
-// these functions are never to be accessed directly and instead through the public functions
+///////////////////////
+// INTERNAL FUNCTINS //
+///////////////////////
 
-func (le *ledgerStore) getLedger() (*Ledger, error) {
+// below here are internal functions that should never be accessed directly.
+// they are purposely left without lock/unlocks so that they may be used within
+// the public functions that all have lock/unlocks. It allows to reduce code surface
+
+// getLedger is used to return our Ledger object from storage
+func (le *LedgerStore) getLedger() (*Ledger, error) {
 	ledgerBytes, err := le.ds.Get(ledgerKey)
 	if err != nil {
 		return nil, err
@@ -212,7 +241,9 @@ func (le *ledgerStore) getLedger() (*Ledger, error) {
 	return ledger, nil
 }
 
-func (le *ledgerStore) createIfNotExist() {
+// createLEdgerIfNotExist is a helper function to create our
+// internal ledger store if it does not exist.
+func (le *LedgerStore) createLedgerIfNotExist() {
 	if _, err := le.getLedger(); err == nil {
 		return
 	}
@@ -226,7 +257,8 @@ func (le *ledgerStore) createIfNotExist() {
 	}
 }
 
-func (le *ledgerStore) objectExists(ledger *Ledger, bucket, object string) error {
+// objectExists is a helper function to check if an object exists in our ledger.
+func (le *LedgerStore) objectExists(ledger *Ledger, bucket, object string) error {
 	if ledger.GetBuckets()[bucket] == nil {
 		return ErrLedgerBucketDoesNotExist
 	}
@@ -236,11 +268,13 @@ func (le *ledgerStore) objectExists(ledger *Ledger, bucket, object string) error
 	return nil
 }
 
-func (le *ledgerStore) bucketExists(ledger *Ledger, name string) bool {
+// bucketExists is a helper function to check if a bucket exists in our ledger
+func (le *LedgerStore) bucketExists(ledger *Ledger, name string) bool {
 	return ledger.GetBuckets()[name] != nil
 }
 
-func (le *ledgerStore) putLedger(ledger *Ledger) error {
+// putLedger is a helper function used to update the ledger store on disk
+func (le *LedgerStore) putLedger(ledger *Ledger) error {
 	ledgerBytes, err := ledger.Marshal()
 	if err != nil {
 		return err

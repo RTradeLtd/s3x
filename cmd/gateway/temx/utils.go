@@ -67,7 +67,7 @@ func (x *xObjects) bucketFromIPFS(ctx context.Context, name string) (*Bucket, er
 }
 
 func (x *xObjects) objectFromBucket(ctx context.Context, bucketName, objectName string) (*Object, error) {
-	objectHash, err := x.ledgerStore.GetObjectHashFromBucket(bucketName, objectName)
+	objectHash, err := x.ledgerStore.GetObjectHash(bucketName, objectName)
 	if err != nil {
 		return nil, err
 	}

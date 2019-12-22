@@ -43,7 +43,7 @@ func temxGatewayMain(ctx *cli.Context) {
 type TEMX struct{}
 
 // newLedgerStore returns an instance of ledgerStore that uses badgerv2
-func (g *TEMX) newLedgerStore(dsPath string) (*ledgerStore, error) {
+func (g *TEMX) newLedgerStore(dsPath string) (*LedgerStore, error) {
 	opts := badger.DefaultOptions
 	ds, err := badger.NewDatastore(dsPath, &opts)
 	if err != nil {
@@ -102,7 +102,7 @@ type xObjects struct {
 	ctx        context.Context
 
 	// ledgerStore is responsible for updating our internal ledger state
-	ledgerStore *ledgerStore
+	ledgerStore *LedgerStore
 }
 
 func (x *xObjects) Shutdown(ctx context.Context) error {
@@ -383,7 +383,7 @@ func (x *xObjects) CopyObject(
 	// TODO(bonedaddy): we probably need to implement a check here
 	// that determines whether or not the bucket exists
 	// get hash of th eobject
-	objHash, err := x.ledgerStore.GetObjectHashFromBucket(srcBucket, srcObject)
+	objHash, err := x.ledgerStore.GetObjectHash(srcBucket, srcObject)
 	if err != nil {
 		return objInfo, x.toMinioErr(err, srcBucket, srcObject)
 	}
