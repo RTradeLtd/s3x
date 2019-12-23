@@ -85,6 +85,16 @@ All data, that is all the objects, buckets, metadata, is stored on IPFS. Because
 
 The "ledger" is an internal book keeper responsible for keeping track of the latest IPFS CID's that belong to each and every object, and bucket stored, and is currently implemented as a `dgraph-io/badger/v2` key-value datastore.
 
+# Product Comparisons
+
+## S3X vs Storj IPFS
+
+S3X provides an S3 compatible API via a custom minio gateway that uses TemporalX to facilitate data storage operations. This means that by using TemporalX, all your data is being stored on IPFS, automatically inheriting the benefits that IPFS has into your application. Storj IPFS on the other hand uses the Storj network to provide an S3 datastore for an IPFS node. It is in essence an IPFS node using the `ipfs/go-ds-s3` datastore, connected to Storj instead of an S3 service like AWS. A major downside to Storj IPFS is that it still suffers from the issues `go-ipfs` has, and also inherits all the performance hits.
+
+## S3X vs Storj
+
+Both S3X and Storj provides an S3 compatible API. The main difference is that the Storj S3 API is backed by nodes on the Storj network, while S3X is backd by the IPFS network via TemporalX. That means any application you use S3X with automatically inherits the benefits of the IPFS network. Additionally for STorj to work requires that the Storj network remain online and functional. For S3X to work, all you need is a running version of TemporalX.
+
 # License
 
 All original works and copyrights are those of minio and the corresponding open-source contributors. The only unique code is present in `cmd/gateway/temx`.
