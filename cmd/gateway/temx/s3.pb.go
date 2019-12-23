@@ -317,7 +317,7 @@ func (m *Bucket) GetObjects() map[string]string {
 
 // Object is a singular s3 object.
 // the data field contains the actual data
-// refered to by this object, while the objectInfo
+// referred to by this object, while the objectInfo
 // field is used to contain the information associated
 // wth the object
 type Object struct {
