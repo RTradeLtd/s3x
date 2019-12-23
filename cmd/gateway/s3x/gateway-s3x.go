@@ -3,6 +3,7 @@ package s3x
 import (
 	"context"
 	"crypto/tls"
+	"log"
 	"net"
 	"net/http"
 	"sync"
@@ -117,7 +118,7 @@ func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error
 	if err := RegisterInfoAPIHandlerFromEndpoint(
 		xobj.ctx,
 		xobj.infoAPI.httpMux,
-		g.HTTPAddr,
+		g.GRPCAddr,
 		[]grpc.DialOption{grpc.WithInsecure()},
 	); err != nil {
 		return nil, err
@@ -129,7 +130,7 @@ func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error
 	// TODO(bonedaddy): clean this trash up
 	go func() {
 		httpServer := &http.Server{
-			Addr:    g.GRPCAddr,
+			Addr:    g.HTTPAddr,
 			Handler: xobj.infoAPI.httpMux,
 		}
 		go func() {
@@ -139,8 +140,10 @@ func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error
 				httpServer.Close()
 			}
 		}()
-		go httpServer.ListenAndServe()
-		xobj.infoAPI.grpcServer.Serve(listener)
+		go xobj.infoAPI.grpcServer.Serve(listener)
+		if err := httpServer.ListenAndServe(); err != nil {
+			log.Print("error in http server", err)
+		}
 	}()
 	return xobj, nil
 }
