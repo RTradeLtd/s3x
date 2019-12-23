@@ -1,5 +1,5 @@
 syntax = "proto3"; 
-package temx;
+package s3x;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
 

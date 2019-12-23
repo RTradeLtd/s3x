@@ -24,7 +24,7 @@ import (
 	_ "github.com/RTradeLtd/s3x/cmd/gateway/nas"
 	_ "github.com/RTradeLtd/s3x/cmd/gateway/oss"
 	_ "github.com/RTradeLtd/s3x/cmd/gateway/s3"
-	_ "github.com/RTradeLtd/s3x/cmd/gateway/temx"
+	_ "github.com/RTradeLtd/s3x/cmd/gateway/s3x"
 
 	// B2 is specifically kept here to avoid re-ordering by goimports,
 	// please ask on github.com/RTradeLtd/s3x/issues before changing this.

@@ -1,4 +1,4 @@
-package temx
+package s3x
 
 import (
 	"context"
