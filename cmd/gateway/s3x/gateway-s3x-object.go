@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	fmt "fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -17,7 +16,11 @@ import (
 )
 
 // ListObjects lists all blobs in S3 bucket filtered by prefix
-func (x *xObjects) ListObjects(ctx context.Context, bucket string, prefix string, marker string, delimiter string, maxKeys int) (loi minio.ListObjectsInfo, e error) {
+func (x *xObjects) ListObjects(
+	ctx context.Context,
+	bucket, prefix, marker, delimiter string,
+	maxKeys int,
+) (loi minio.ListObjectsInfo, e error) {
 	// TODO(bonedaddy): implement complex search
 	if !x.ledgerStore.BucketExists(bucket) {
 		return loi, minio.BucketNotFound{Bucket: bucket}
@@ -42,9 +45,13 @@ func (x *xObjects) ListObjects(ctx context.Context, bucket string, prefix string
 }
 
 // ListObjectsV2 lists all objects in B2 bucket filtered by prefix, returns upto max 1000 entries at a time.
-func (x *xObjects) ListObjectsV2(ctx context.Context, bucket, prefix, continuationToken, delimiter string, maxKeys int,
-	fetchOwner bool, startAfter string) (loi minio.ListObjectsV2Info, err error) {
-	fmt.Println("ListObjectsV2")
+func (x *xObjects) ListObjectsV2(
+	ctx context.Context,
+	bucket, prefix, continuationToken, delimiter string,
+	maxKeys int,
+	fetchOwner bool,
+	startAfter string,
+) (loi minio.ListObjectsV2Info, err error) {
 	// TODO(bonedaddy): implement
 	/*
 		// fetchOwner is not supported and unused.
@@ -119,7 +126,7 @@ func (x *xObjects) GetObjectNInfo(
 	return minio.NewGetObjectReaderFromReader(pr, objinfo, opts.CheckCopyPrecondFn, pipeCloser)
 }
 
-// GetObject reads an object from B2. Supports additional
+// GetObject reads an object from TemporalX. Supports additional
 // parameters like offset and length which are synonymous with
 // HTTP Range requests.
 //
@@ -241,7 +248,10 @@ func (x *xObjects) CopyObject(
 }
 
 // DeleteObject deletes a blob in bucket
-func (x *xObjects) DeleteObject(ctx context.Context, bucket, object string) error {
+func (x *xObjects) DeleteObject(
+	ctx context.Context,
+	bucket, object string,
+) error {
 	//TODO(bonedaddy): implement removal from IPFS
 	err := x.ledgerStore.RemoveObject(bucket, object)
 	switch err {
@@ -253,7 +263,11 @@ func (x *xObjects) DeleteObject(ctx context.Context, bucket, object string) erro
 	return x.toMinioErr(err, bucket, object)
 }
 
-func (x *xObjects) DeleteObjects(ctx context.Context, bucket string, objects []string) ([]error, error) {
+func (x *xObjects) DeleteObjects(
+	ctx context.Context,
+	bucket string,
+	objects []string,
+) ([]error, error) {
 	// TODO(bonedaddy): implement removal from ipfs
 	errs := make([]error, len(objects))
 	for i, object := range objects {
