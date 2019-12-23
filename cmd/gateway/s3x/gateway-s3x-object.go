@@ -1,15 +1,19 @@
 package s3x
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	fmt "fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	minio "github.com/RTradeLtd/s3x/cmd"
+	"github.com/RTradeLtd/s3x/cmd/logger"
 )
 
 // ListObjects lists all blobs in S3 bucket filtered by prefix
@@ -40,6 +44,7 @@ func (x *xObjects) ListObjects(ctx context.Context, bucket string, prefix string
 // ListObjectsV2 lists all objects in B2 bucket filtered by prefix, returns upto max 1000 entries at a time.
 func (x *xObjects) ListObjectsV2(ctx context.Context, bucket, prefix, continuationToken, delimiter string, maxKeys int,
 	fetchOwner bool, startAfter string) (loi minio.ListObjectsV2Info, err error) {
+	fmt.Println("ListObjectsV2")
 	// TODO(bonedaddy): implement
 	/*
 		// fetchOwner is not supported and unused.
@@ -85,32 +90,33 @@ func (x *xObjects) ListObjectsV2(ctx context.Context, bucket, prefix, continuati
 }
 
 // GetObjectNInfo - returns object info and locked object ReadCloser
-func (x *xObjects) GetObjectNInfo(ctx context.Context, bucket, object string, rs *minio.HTTPRangeSpec, h http.Header, lockType minio.LockType, opts minio.ObjectOptions) (gr *minio.GetObjectReader, err error) {
-	// TODO(bonedaddy): implement
-	/*
-		var objInfo minio.ObjectInfo
-		objInfo, err = l.GetObjectInfo(ctx, bucket, object, opts)
-		if err != nil {
-			return nil, err
-		}
-
-		var startOffset, length int64
-		startOffset, length, err = rs.GetOffsetLength(objInfo.Size)
-		if err != nil {
-			return nil, err
-		}
-
-		pr, pw := io.Pipe()
-		go func() {
-			err := l.GetObject(ctx, bucket, object, startOffset, length, pw, objInfo.ETag, opts)
-			pw.CloseWithError(err)
-		}()
-		// Setup cleanup function to cause the above go-routine to
-		// exit in case of partial read
-		pipeCloser := func() { pr.Close() }
-		return minio.NewGetObjectReaderFromReader(pr, objInfo, opts.CheckCopyPrecondFn, pipeCloser)
-	*/
-	return gr, errors.New("not yet implemented")
+func (x *xObjects) GetObjectNInfo(
+	ctx context.Context,
+	bucket, object string,
+	rs *minio.HTTPRangeSpec,
+	h http.Header,
+	lockType minio.LockType,
+	opts minio.ObjectOptions,
+) (gr *minio.GetObjectReader, err error) {
+	// TODO(bonedaddy): figure out why this doesn't return anything
+	objinfo, err := x.GetObjectInfo(ctx, bucket, object, opts)
+	if err != nil {
+		return gr, x.toMinioErr(err, bucket, object)
+	}
+	var startOffset, length int64
+	startOffset, length, err = rs.GetOffsetLength(objinfo.Size)
+	if err != nil {
+		return nil, err
+	}
+	pr, pw := io.Pipe()
+	go func() {
+		err := x.GetObject(ctx, bucket, object, startOffset, length, pw, objinfo.ETag, opts)
+		pw.CloseWithError(err)
+	}()
+	// Setup cleanup function to cause the above go-routine to
+	// exit in case of partial read
+	pipeCloser := func() { pr.Close() }
+	return minio.NewGetObjectReaderFromReader(pr, objinfo, opts.CheckCopyPrecondFn, pipeCloser)
 }
 
 // GetObject reads an object from B2. Supports additional
@@ -131,7 +137,9 @@ func (x *xObjects) GetObject(
 	if err != nil {
 		return x.toMinioErr(err, bucket, object)
 	}
-	_, err = writer.Write(obj.GetData())
+	reader := bytes.NewReader(obj.GetData())
+	_, err = reader.WriteTo(writer)
+	logger.LogIf(ctx, err)
 	return err
 }
 
@@ -170,6 +178,7 @@ func (x *xObjects) PutObject(
 	if err != nil {
 		return objInfo, err
 	}
+	obinfo.Size_ = int64(len(data))
 	// add the object to ipfs
 	objectHash, err := x.objectToIPFS(ctx, &Object{
 		Data:       data,
@@ -191,6 +200,10 @@ func (x *xObjects) PutObject(
 	if err := x.ledgerStore.AddObjectToBucket(bucket, object, objectHash); err != nil {
 		return objInfo, err
 	}
+	log.Printf(
+		"bucket-name: %s, bucket-hash: %s, object-name: %s, object-hash: %s",
+		bucket, bucketHash, object, objectHash,
+	)
 	// convert the proto object into a minio.ObjectInfo type
 	return x.getMinioObjectInfo(ctx, bucket, object)
 }

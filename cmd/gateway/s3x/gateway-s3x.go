@@ -17,22 +17,23 @@ import (
 )
 
 const (
-	temxBackend = "temx"
+	temxBackend = "s3x"
 )
 
 func init() {
 	// TODO(bonedaddy): add help command
 	minio.RegisterGatewayCommand(cli.Command{
-		Name:   temxBackend,
-		Usage:  "TemporalX IPFS",
-		Action: temxGatewayMain,
+		Name:        temxBackend,
+		Usage:       "TemporalX IPFS Gateway",
+		Description: "s3x provides a minio gateway that uses IPFS as the datastore through TemporalX's gRPC API",
+		Action:      temxGatewayMain,
 	})
 }
 func temxGatewayMain(ctx *cli.Context) {
 	minio.StartGateway(ctx, &TEMX{})
 }
 
-// TEMX implements MinIO Gateway
+// TEMX implements a MinIO gateway ontop of TemporalX
 type TEMX struct{}
 
 // newLedgerStore returns an instance of ledgerStore that uses badgerv2
