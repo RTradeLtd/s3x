@@ -83,8 +83,8 @@ func (g *TEMX) newLedgerStore(dsPath string) (*LedgerStore, error) {
 	return newLedgerStore(ds), nil
 }
 
-// NewGatewayLayer creates a minio gateway layer powered y TemporalX
-func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error) {
+// returns an instance of xObjects
+func (g *TEMX) getXObjects(creds auth.Credentials) (*xObjects, error) {
 	conn, err := grpc.Dial(g.XAddr,
 		grpc.WithTransportCredentials(
 			credentials.NewTLS(
@@ -121,6 +121,15 @@ func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error
 		g.GRPCAddr,
 		[]grpc.DialOption{grpc.WithInsecure()},
 	); err != nil {
+		return nil, err
+	}
+	return xobj, nil
+}
+
+// NewGatewayLayer creates a minio gateway layer powered y TemporalX
+func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error) {
+	xobj, err := g.getXObjects(creds)
+	if err != nil {
 		return nil, err
 	}
 	listener, err := net.Listen("tcp", g.GRPCAddr)
