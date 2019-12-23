@@ -1,4 +1,4 @@
-go_import_path: github.com/minio/minio
+go_import_path: github.com/RTradeLtd/s3x
 
 language: go
 
