@@ -28,10 +28,12 @@ require (
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gogo/protobuf v1.3.1
+	github.com/golang/protobuf v1.3.2
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/handlers v1.4.0
 	github.com/gorilla/mux v1.7.0
 	github.com/gorilla/rpc v1.2.0+incompatible
+	github.com/grpc-ecosystem/grpc-gateway v1.12.1
 	github.com/hashicorp/vault/api v1.0.4
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf
 	github.com/ipfs/go-datastore v0.3.1
@@ -76,10 +78,12 @@ require (
 	golang.org/x/crypto v0.0.0-20191117063200-497ca9f6d64f
 	golang.org/x/sys v0.0.0-20190922100055-0a153f010e69
 	google.golang.org/api v0.5.0
-	google.golang.org/grpc v1.22.0
+	google.golang.org/genproto v0.0.0-20191220175831-5c49e3ecc1c1
+	google.golang.org/grpc v1.24.0
 	gopkg.in/ldap.v3 v3.0.3
 	gopkg.in/olivere/elastic.v5 v5.0.80
-	gopkg.in/yaml.v2 v2.2.4
+	gopkg.in/yaml.v2 v2.2.7
+	grpc.go4.org v0.0.0-20170609214715-11d0a25b4919
 )
 
 // Added for go1.13 migration https://github.com/golang/go/issues/32805

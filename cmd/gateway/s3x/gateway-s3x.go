@@ -3,6 +3,8 @@ package s3x
 import (
 	"context"
 	"crypto/tls"
+	"errors"
+	"net"
 	"net/http"
 	"os"
 	"sync"
@@ -11,13 +13,16 @@ import (
 	badger "github.com/RTradeLtd/go-ds-badger/v2"
 	minio "github.com/RTradeLtd/s3x/cmd"
 	"github.com/RTradeLtd/s3x/pkg/auth"
+	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/minio/cli"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
 const (
-	temxBackend = "s3x"
+	temxBackend  = "s3x"
+	grpcendpoint = "0.0.0.0:8888"
+	httpendpoint = "0.0.0.0:8889"
 )
 
 func init() {
@@ -27,8 +32,15 @@ func init() {
 		Usage:       "TemporalX IPFS Gateway",
 		Description: "s3x provides a minio gateway that uses IPFS as the datastore through TemporalX's gRPC API",
 		Action:      temxGatewayMain,
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:  "info.endpoint",
+				Usage: "the endpoint to serve the info api on",
+			},
+		},
 	})
 }
+
 func temxGatewayMain(ctx *cli.Context) {
 	minio.StartGateway(ctx, &TEMX{})
 }
@@ -56,9 +68,15 @@ func (g *TEMX) getDSPath() string {
 
 // NewGatewayLayer creates a minio gateway layer powered y TemporalX
 func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error) {
-	conn, err := grpc.Dial("xapi-dev.temporal.cloud:9090", grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		InsecureSkipVerify: true,
-	})))
+	conn, err := grpc.Dial("xapi-dev.temporal.cloud:9090",
+		grpc.WithTransportCredentials(
+			credentials.NewTLS(
+				&tls.Config{
+					InsecureSkipVerify: true,
+				},
+			),
+		),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +84,7 @@ func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error
 	if err != nil {
 		return nil, err
 	}
-	return &xObjects{
+	xobj := &xObjects{
 		creds:     creds,
 		dagClient: pb.NewDagAPIClient(conn),
 		httpClient: &http.Client{
@@ -74,7 +92,40 @@ func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error
 		},
 		ctx:         context.Background(),
 		ledgerStore: ledger,
-	}, nil
+		infoAPI: &apiServer{
+			httpMux:    runtime.NewServeMux(),
+			grpcServer: grpc.NewServer(),
+		},
+	}
+	RegisterInfoAPIServer(xobj.infoAPI.grpcServer, xobj)
+	if err := RegisterInfoAPIHandlerFromEndpoint(
+		xobj.ctx,
+		xobj.infoAPI.httpMux,
+		httpendpoint,
+		[]grpc.DialOption{grpc.WithInsecure()},
+	); err != nil {
+		return nil, err
+	}
+	listener, err := net.Listen("tcp", grpcendpoint)
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		httpServer := &http.Server{
+			Addr:    httpendpoint,
+			Handler: xobj.infoAPI.httpMux,
+		}
+		go func() {
+			select {
+			case <-xobj.ctx.Done():
+				xobj.infoAPI.grpcServer.Stop()
+				httpServer.Close()
+			}
+		}()
+		go httpServer.ListenAndServe()
+		xobj.infoAPI.grpcServer.Serve(listener)
+	}()
+	return xobj, nil
 }
 
 // Name returns the name of the TemporalX gateway backend
@@ -87,6 +138,11 @@ func (g *TEMX) Production() bool {
 	return true
 }
 
+type apiServer struct {
+	InfoAPIServer
+	httpMux    *runtime.ServeMux
+	grpcServer *grpc.Server
+}
 type xObjects struct {
 	minio.GatewayUnsupported
 	mu         sync.Mutex
@@ -97,6 +153,8 @@ type xObjects struct {
 
 	// ledgerStore is responsible for updating our internal ledger state
 	ledgerStore *LedgerStore
+
+	infoAPI *apiServer
 }
 
 func (x *xObjects) Shutdown(ctx context.Context) error {
@@ -118,4 +176,8 @@ func (x *xObjects) IsCompressionSupported() bool {
 // IsEncryptionSupported returns whether server side encryption is implemented for this layer.
 func (x *xObjects) IsEncryptionSupported() bool {
 	return minio.GlobalKMS != nil || len(minio.GlobalGatewaySSE) > 0
+}
+
+func (x *xObjects) GetHash(ctx context.Context, req *InfoRequest) (*InfoRequest, error) {
+	return nil, errors.New("not yet implemented")
 }

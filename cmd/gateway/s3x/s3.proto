@@ -2,6 +2,24 @@ syntax = "proto3";
 package s3x;
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+
+service InfoAPI {
+    rpc GetHash(InfoRequest) returns (InfoRequest) { 
+        option (google.api.http) = { get: "/info" };
+    };
+}
+
+message InfoRequest {
+    string bucket = 1;
+    string object = 2;
+}
+
+message InfoResponse {
+    string bucket = 1;
+    string object = 2;
+    string hash = 3;
+}
 
 // Ledger is our internal state keeper, and is responsible
 // for keeping track of buckets, objects, and their corresponding IPFS hashes
