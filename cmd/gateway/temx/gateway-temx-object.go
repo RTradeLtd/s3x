@@ -175,6 +175,9 @@ func (x *xObjects) PutObject(
 		Data:       data,
 		ObjectInfo: obinfo,
 	})
+	if err != nil {
+		return objInfo, err
+	}
 	// update the bucket on ipfs with the new object
 	bucketHash, err := x.addObjectToBucketAndIPFS(ctx, object, objectHash, bucket)
 	if err != nil {
