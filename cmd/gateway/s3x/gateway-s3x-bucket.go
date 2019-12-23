@@ -2,9 +2,10 @@ package s3x
 
 import (
 	"context"
-	minio "github.com/RTradeLtd/s3x/cmd"
 	"log"
 	"time"
+
+	minio "github.com/RTradeLtd/s3x/cmd"
 )
 
 // MakeBucket creates a new bucket container within TemporalX.

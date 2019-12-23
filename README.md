@@ -22,6 +22,21 @@ $> ./minio gateway s3x
 
 Now you literally have a minio gateway that's serving an IPFS API that can be consumed by S3 applications, and you've made any S3 application an IPFS application. [Pretty cool eh?](https://gateway.temporal.cloud/ipfs/QmZ3MNegfWjDikun6BPRDeJe7NzNUqhEX2oLCf47Fu3Aua)
 
+By default we spin up a gRPC API and a grpc-gateway HTTP API allowing you to interact with our "info api". The info api is used to query the underlying ledger and get the IPFS CID for buckets, or objects.
+
+# End-To-End Example
+
+Note that this example assumes you have a local version of S3X running, for that see the previous section, and have the `mc` command available locally.
+
+```shell
+$> mc config host add s3x http://127.0.0.1:9000 minio miniostorage --api "s3v2"  # add the host
+$> mc mb s3x/testbucket # create "testbucket"
+$> mc cp file.txt s3x/testbucket # copy a local file called file.txt to testbucket
+$> mc cp s3x/testbucket/file.txt lol.txt # copy file.txt out of the testbucket to a local file called lol.txt
+$> curl http://localhost:8889/info?bucket=testbucket # get the hash of the bucket on ipfs
+$>curl "http://localhost:8889/info?bucket=testbucket&object=file.txt" # get the hash of the object in the bucket on ipfs
+```
+
 # Supported Feature Set
 
 Supported Bucket Calls:
