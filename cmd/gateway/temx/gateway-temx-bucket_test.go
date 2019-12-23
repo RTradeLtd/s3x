@@ -2,6 +2,7 @@ package temx
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -13,7 +14,9 @@ const (
 	testBucket1, testBucket2 = "bucket1", "testbucket2"
 )
 
-func TestGateway(t *testing.T) {
+func TestGateway_Bucket(t *testing.T) {
+	testPath := "tmp-bucket-test"
+	os.Setenv("S3X_DS_PATH", testPath)
 	temx := &TEMX{}
 	gateway, err := temx.NewGatewayLayer(auth.Credentials{})
 	if err != nil {
@@ -122,4 +125,6 @@ func TestGateway(t *testing.T) {
 			})
 		}
 	})
+	os.Unsetenv("S3X_DS_PATH")
+	os.RemoveAll(testPath)
 }
