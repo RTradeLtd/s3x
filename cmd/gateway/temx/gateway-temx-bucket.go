@@ -18,7 +18,7 @@ func (x *xObjects) MakeBucketWithLocation(
 	}
 	// create the bucket
 	hash, err := x.bucketToIPFS(ctx, &Bucket{
-		BucketInfo: &BucketInfo{
+		BucketInfo: BucketInfo{
 			Name:     name,
 			Location: location,
 			Created:  time.Now().UTC(),
@@ -42,12 +42,12 @@ func (x *xObjects) GetBucketInfo(
 		return bi, x.toMinioErr(err, name, "")
 	}
 	return minio.BucketInfo{
-		Name: bucket.GetBucketInfo().GetName(),
+		Name: bucket.GetBucketInfo().Name,
 		// TODO(bonedaddy): decide what to do here,
 		// in the examples of other gateway its a nil time
 		// bucket the bucket actually has a created timestamp
 		// Created: time.Unix(0, 0),
-		Created: bucket.GetBucketInfo().GetCreated(),
+		Created: bucket.GetBucketInfo().Created,
 	}, nil
 }
 
