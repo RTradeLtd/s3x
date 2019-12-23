@@ -1,27 +1,23 @@
 package temx
 
 import (
-	"errors"
 	"sync"
 
 	"github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/namespace"
 )
 
+/* Design Notes
+---------------
+
+Internal functions should never claim or release locks.
+Any claiming or releasing of locks should be done in the public setter+getter functions.
+The reason for this is so that we can enable easy reuse of internal code.
+*/
+
 var (
 	ledgerKey    = datastore.NewKey("ledgerstatekey")
 	ledgerPrefix = datastore.NewKey("ledgerRoot")
-	// errors
-
-	// ErrLedgerBucketExists is an error message returned from the internal
-	// ledgerStore indicating that a bucket already exists
-	ErrLedgerBucketExists = errors.New("bucket exists")
-	// ErrLedgerBucketDoesNotExist is an error message returned from the internal
-	// ledgerStore indicating that a bucket does not exist
-	ErrLedgerBucketDoesNotExist = errors.New("bucket does not exist")
-	// ErrLedgerObjectDoesNotExist is an error message returned from the internal
-	// ledgerStore indicating that a object does not exist
-	ErrLedgerObjectDoesNotExist = errors.New("object does not exist")
 )
 
 // LedgerStore is an internal bookkeeper that
@@ -223,10 +219,6 @@ func (le *LedgerStore) GetBucketNames() ([]string, error) {
 ///////////////////////
 // INTERNAL FUNCTINS //
 ///////////////////////
-
-// below here are internal functions that should never be accessed directly.
-// they are purposely left without lock/unlocks so that they may be used within
-// the public functions that all have lock/unlocks. It allows to reduce code surface
 
 // getLedger is used to return our Ledger object from storage
 func (le *LedgerStore) getLedger() (*Ledger, error) {

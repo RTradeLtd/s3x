@@ -8,6 +8,13 @@ import (
 	minio "github.com/RTradeLtd/s3x/cmd"
 )
 
+/* Design Notes
+---------------
+
+These functions should never call `toMinioErr`, and instead bubble up the erorrs.
+Any error parsing to return minio errors should be done in the calling S3 functions.
+*/
+
 func (x *xObjects) bucketToIPFS(ctx context.Context, bucket *Bucket) (string, error) {
 	bucketData, err := bucket.Marshal()
 	if err != nil {
@@ -106,20 +113,4 @@ func (x *xObjects) getMinioObjectInfo(ctx context.Context, bucketName, objectNam
 		ContentType: obj.GetObjectInfo().GetContentType(),
 		UserDefined: obj.GetObjectInfo().GetUserDefined(),
 	}, nil
-}
-
-// toMinioErr converts gRPC or ledger errors into compatible minio errors
-// or if no error is present return nil
-func (x *xObjects) toMinioErr(err error, bucket, object string) error {
-	switch err {
-	case ErrLedgerBucketDoesNotExist:
-		err = minio.BucketNotFound{Bucket: bucket}
-	case ErrLedgerObjectDoesNotExist:
-		err = minio.ObjectNotFound{Bucket: bucket, Object: object}
-	case ErrLedgerBucketExists:
-		err = minio.BucketAlreadyExists{Bucket: bucket}
-	case nil:
-		return nil
-	}
-	return err
 }
