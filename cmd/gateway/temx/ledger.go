@@ -52,10 +52,10 @@ func (le *LedgerStore) NewBucket(name, hash string) error {
 		return ErrLedgerBucketExists
 	}
 	if ledger.GetBuckets() == nil {
-		ledger.Buckets = make(map[string]*LedgerBucketEntry)
+		ledger.Buckets = make(map[string]LedgerBucketEntry)
 	}
-	ledger.Buckets[name] = &LedgerBucketEntry{
-		Objects:  make(map[string]*LedgerObjectEntry),
+	ledger.Buckets[name] = LedgerBucketEntry{
+		Objects:  make(map[string]LedgerObjectEntry),
 		Name:     name,
 		IpfsHash: hash,
 	}
@@ -74,7 +74,9 @@ func (le *LedgerStore) UpdateBucketHash(name, hash string) error {
 	if !le.bucketExists(ledger, name) {
 		return ErrLedgerBucketDoesNotExist
 	}
-	ledger.Buckets[name].IpfsHash = hash
+	entry := ledger.Buckets[name]
+	entry.IpfsHash = hash
+	ledger.Buckets[name] = entry
 	return le.putLedger(ledger)
 }
 
@@ -105,10 +107,12 @@ func (le *LedgerStore) AddObjectToBucket(bucketName, objectName, objectHash stri
 		return ErrLedgerBucketDoesNotExist
 	}
 	// prevent nil map panic
-	if ledger.GetBuckets()[bucketName].GetObjects() == nil {
-		ledger.Buckets[bucketName].Objects = make(map[string]*LedgerObjectEntry)
+	if ledger.GetBuckets()[bucketName].Objects == nil {
+		bucket := ledger.Buckets[bucketName]
+		bucket.Objects = make(map[string]LedgerObjectEntry)
+		ledger.Buckets[bucketName] = bucket
 	}
-	ledger.Buckets[bucketName].Objects[objectName] = &LedgerObjectEntry{
+	ledger.Buckets[bucketName].Objects[objectName] = LedgerObjectEntry{
 		Name:     objectName,
 		IpfsHash: objectHash,
 	}
@@ -134,7 +138,7 @@ func (le *LedgerStore) DeleteBucket(name string) error {
 	if err != nil {
 		return err
 	}
-	if ledger.GetBuckets()[name] == nil {
+	if ledger.GetBuckets()[name].Name == "" {
 		return ErrLedgerBucketDoesNotExist
 	}
 	delete(ledger.Buckets, name)
@@ -153,10 +157,10 @@ func (le *LedgerStore) GetBucketHash(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if ledger.GetBuckets()[name] == nil {
+	if ledger.GetBuckets()[name].Name == "" {
 		return "", ErrLedgerBucketDoesNotExist
 	}
-	return ledger.Buckets[name].GetIpfsHash(), nil
+	return ledger.Buckets[name].IpfsHash, nil
 }
 
 // GetObjectHash is used to retrive the correspodning IPFS CID for an object
@@ -167,14 +171,14 @@ func (le *LedgerStore) GetObjectHash(bucketName, objectName string) (string, err
 	if err != nil {
 		return "", err
 	}
-	if ledger.GetBuckets()[bucketName] == nil {
+	if ledger.GetBuckets()[bucketName].Name == "" {
 		return "", ErrLedgerBucketDoesNotExist
 	}
 	bucket := ledger.GetBuckets()[bucketName]
-	if bucket.GetObjects()[objectName] == nil {
+	if bucket.GetObjects()[objectName].Name == "" {
 		return "", ErrLedgerObjectDoesNotExist
 	}
-	return bucket.GetObjects()[objectName].GetIpfsHash(), nil
+	return bucket.GetObjects()[objectName].IpfsHash, nil
 }
 
 // GetObjectHashes gets a map of object names to object hashes for all objects in a bucket
@@ -190,7 +194,7 @@ func (le *LedgerStore) GetObjectHashes(bucket string) (map[string]string, error)
 	}
 	// maps object names to hashes
 	var hashes = make(map[string]string, len(ledger.Buckets[bucket].Objects))
-	for _, obj := range ledger.GetBuckets()[bucket].GetObjects() {
+	for _, obj := range ledger.GetBuckets()[bucket].Objects {
 		hashes[obj.GetName()] = obj.GetIpfsHash()
 	}
 	return hashes, err
@@ -251,10 +255,10 @@ func (le *LedgerStore) createLedgerIfNotExist() {
 
 // objectExists is a helper function to check if an object exists in our ledger.
 func (le *LedgerStore) objectExists(ledger *Ledger, bucket, object string) error {
-	if ledger.GetBuckets()[bucket] == nil {
+	if ledger.GetBuckets()[bucket].Name == "" {
 		return ErrLedgerBucketDoesNotExist
 	}
-	if ledger.GetBuckets()[bucket].GetObjects()[object] == nil {
+	if ledger.GetBuckets()[bucket].Objects[object].Name == "" {
 		return ErrLedgerObjectDoesNotExist
 	}
 	return nil
@@ -262,7 +266,7 @@ func (le *LedgerStore) objectExists(ledger *Ledger, bucket, object string) error
 
 // bucketExists is a helper function to check if a bucket exists in our ledger
 func (le *LedgerStore) bucketExists(ledger *Ledger, name string) bool {
-	return ledger.GetBuckets()[name] != nil
+	return ledger.GetBuckets()[name].Name != ""
 }
 
 // putLedger is a helper function used to update the ledger store on disk

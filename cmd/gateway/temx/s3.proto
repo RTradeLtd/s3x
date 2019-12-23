@@ -1,6 +1,7 @@
 syntax = "proto3"; 
 package temx;
-
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
 
 service S3API {
     rpc MakeBucket(MakeBucketRequest) returns (BucketInfo) { };
@@ -11,12 +12,12 @@ service S3API {
 // for keeping track of buckets, objects, and their corresponding IPFS hashes
 message Ledger {
     // key = bucket name
-    map<string, LedgerBucketEntry> buckets = 1;
+    map<string, LedgerBucketEntry> buckets = 1 [(gogoproto.nullable) = false];
 }
 
 message LedgerBucketEntry {
     // key = object name
-    map<string, LedgerObjectEntry> objects = 1;
+    map<string, LedgerObjectEntry> objects = 1 [(gogoproto.nullable) = false];
     string name = 2;
     string ipfsHash = 3;
 }
@@ -37,8 +38,7 @@ message MakeBucketRequest {
 message BucketInfo {
     // name is the name of the bucket
     string name = 1;
-    // created is equivalent to golang time.Time as a string
-    string created = 2;
+    google.protobuf.Timestamp created = 2 [(gogoproto.stdtime) = true, (gogoproto.nullable) = false];
     // the location of the bucket
     string location = 3;
 }
@@ -50,7 +50,7 @@ message Bucket {
     // information associated with this bucket
     BucketInfo bucketInfo = 2;
     // maps object names to object hashes
-    map<string, string> objects = 3;
+    map<string, string> objects = 3 [(gogoproto.nullable) = false];
 }
 // Object is a singular s3 object.
 // the data field contains the actual data 
@@ -59,7 +59,7 @@ message Bucket {
 // wth the object
 message Object {
     bytes data = 1;
-    ObjectInfo objectInfo = 2;
+    ObjectInfo objectInfo = 2 [(gogoproto.nullable) = false];
 }
 
 message ObjectInfo {

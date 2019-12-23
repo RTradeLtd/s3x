@@ -21,7 +21,7 @@ func (x *xObjects) MakeBucketWithLocation(
 		BucketInfo: &BucketInfo{
 			Name:     name,
 			Location: location,
-			Created:  time.Now().UTC().String(),
+			Created:  time.Now().UTC(),
 		},
 	})
 	if err != nil {
@@ -41,17 +41,13 @@ func (x *xObjects) GetBucketInfo(
 	if err != nil {
 		return bi, x.toMinioErr(err, name, "")
 	}
-	created, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", bucket.GetBucketInfo().GetCreated())
-	if err != nil {
-		return bi, err
-	}
 	return minio.BucketInfo{
 		Name: bucket.GetBucketInfo().GetName(),
 		// TODO(bonedaddy): decide what to do here,
 		// in the examples of other gateway its a nil time
 		// bucket the bucket actually has a created timestamp
 		// Created: time.Unix(0, 0),
-		Created: created,
+		Created: bucket.GetBucketInfo().GetCreated(),
 	}, nil
 }
 

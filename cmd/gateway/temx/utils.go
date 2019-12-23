@@ -100,17 +100,17 @@ func (x *xObjects) getMinioObjectInfo(ctx context.Context, bucketName, objectNam
 	if err != nil {
 		return minio.ObjectInfo{}, err
 	}
-	modTime, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", obj.GetObjectInfo().GetModTime())
+	modTime, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", obj.GetObjectInfo().ModTime)
 	if err != nil {
 		return minio.ObjectInfo{}, err
 	}
 	return minio.ObjectInfo{
-		Bucket:      obj.GetObjectInfo().GetBucket(),
+		Bucket:      obj.GetObjectInfo().Bucket,
 		Name:        objectName,
-		ETag:        minio.ToS3ETag(obj.GetObjectInfo().GetEtag()),
-		Size:        obj.GetObjectInfo().GetSize_(),
+		ETag:        minio.ToS3ETag(obj.GetObjectInfo().Etag),
+		Size:        obj.GetObjectInfo().Size_,
 		ModTime:     modTime,
-		ContentType: obj.GetObjectInfo().GetContentType(),
-		UserDefined: obj.GetObjectInfo().GetUserDefined(),
+		ContentType: obj.GetObjectInfo().ContentType,
+		UserDefined: obj.GetObjectInfo().UserDefined,
 	}, nil
 }

@@ -152,7 +152,7 @@ func (x *xObjects) PutObject(
 	opts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
 	// TODO(bonedaddy): ensure consistency with the way s3 and b2 handle this
-	obinfo := &ObjectInfo{}
+	obinfo := ObjectInfo{}
 	for k, v := range opts.UserDefined {
 		switch strings.ToLower(k) {
 		case "content-encoding":
