@@ -12,7 +12,6 @@ import (
 	"time"
 
 	minio "github.com/RTradeLtd/s3x/cmd"
-	"github.com/RTradeLtd/s3x/cmd/logger"
 )
 
 // ListObjects lists all blobs in S3 bucket filtered by prefix
@@ -105,6 +104,9 @@ func (x *xObjects) GetObjectNInfo(
 	lockType minio.LockType,
 	opts minio.ObjectOptions,
 ) (gr *minio.GetObjectReader, err error) {
+	if err := x.ledgerStore.ObjectExists(bucket, object); err != nil {
+		return gr, x.toMinioErr(err, bucket, object)
+	}
 	// TODO(bonedaddy): figure out why this doesn't return anything
 	objinfo, err := x.GetObjectInfo(ctx, bucket, object, opts)
 	if err != nil {
@@ -140,13 +142,15 @@ func (x *xObjects) GetObject(
 	etag string,
 	opts minio.ObjectOptions,
 ) error {
+	if err := x.ledgerStore.ObjectExists(bucket, object); err != nil {
+		return x.toMinioErr(err, bucket, object)
+	}
 	obj, err := x.objectFromBucket(ctx, bucket, object)
 	if err != nil {
 		return x.toMinioErr(err, bucket, object)
 	}
 	reader := bytes.NewReader(obj.GetData())
 	_, err = reader.WriteTo(writer)
-	logger.LogIf(ctx, err)
 	return err
 }
 
@@ -156,7 +160,8 @@ func (x *xObjects) GetObjectInfo(
 	bucket, object string,
 	opts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
-	return x.getMinioObjectInfo(ctx, bucket, object)
+	info, err := x.getMinioObjectInfo(ctx, bucket, object)
+	return info, x.toMinioErr(err, bucket, object)
 }
 
 // PutObject creates a new object with the incoming data,
@@ -183,7 +188,7 @@ func (x *xObjects) PutObject(
 	obinfo.ModTime = time.Now().UTC().String()
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
-		return objInfo, err
+		return objInfo, x.toMinioErr(err, bucket, object)
 	}
 	obinfo.Size_ = int64(len(data))
 	// add the object to ipfs
@@ -192,20 +197,20 @@ func (x *xObjects) PutObject(
 		ObjectInfo: obinfo,
 	})
 	if err != nil {
-		return objInfo, err
+		return objInfo, x.toMinioErr(err, bucket, object)
 	}
 	// update the bucket on ipfs with the new object
 	bucketHash, err := x.addObjectToBucketAndIPFS(ctx, object, objectHash, bucket)
 	if err != nil {
-		return objInfo, err
+		return objInfo, x.toMinioErr(err, bucket, object)
 	}
 	// update internal ledger state with bucket hash
 	if err := x.ledgerStore.UpdateBucketHash(bucket, bucketHash); err != nil {
-		return objInfo, err
+		return objInfo, x.toMinioErr(err, bucket, object)
 	}
 	// update internal ledger state with the new object
 	if err := x.ledgerStore.AddObjectToBucket(bucket, object, objectHash); err != nil {
-		return objInfo, err
+		return objInfo, x.toMinioErr(err, bucket, object)
 	}
 	log.Printf(
 		"bucket-name: %s, bucket-hash: %s, object-name: %s, object-hash: %s",
@@ -254,12 +259,6 @@ func (x *xObjects) DeleteObject(
 ) error {
 	//TODO(bonedaddy): implement removal from IPFS
 	err := x.ledgerStore.RemoveObject(bucket, object)
-	switch err {
-	case ErrLedgerBucketDoesNotExist:
-		err = minio.BucketNotFound{Bucket: bucket}
-	case ErrLedgerObjectDoesNotExist:
-		err = minio.ObjectNotFound{Bucket: bucket, Object: object}
-	}
 	return x.toMinioErr(err, bucket, object)
 }
 

@@ -28,7 +28,7 @@ func (x *xObjects) MakeBucketWithLocation(
 		return x.toMinioErr(err, name, "")
 	}
 	log.Printf("bucket-name: %s\tbucket-hash: %s", name, hash)
-	//  update internal ledger state
+	//  update internal ledger state and return
 	return x.toMinioErr(x.ledgerStore.NewBucket(name, hash), name, "")
 }
 

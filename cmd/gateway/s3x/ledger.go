@@ -119,17 +119,6 @@ func (le *LedgerStore) AddObjectToBucket(bucketName, objectName, objectHash stri
 	return le.putLedger(ledger)
 }
 
-// BucketExists is a public function to check if a bucket exists
-func (le *LedgerStore) BucketExists(name string) bool {
-	le.locker.RLock()
-	defer le.locker.RUnlock()
-	ledger, err := le.getLedger()
-	if err != nil {
-		return false
-	}
-	return le.bucketExists(ledger, name)
-}
-
 // DeleteBucket is used to remove a ledger bucket entry
 func (le *LedgerStore) DeleteBucket(name string) error {
 	le.locker.Lock()
@@ -148,6 +137,29 @@ func (le *LedgerStore) DeleteBucket(name string) error {
 /////////////////////
 // GETTER FUNCTINS //
 /////////////////////
+
+// BucketExists is a public function to check if a bucket exists
+func (le *LedgerStore) BucketExists(name string) bool {
+	le.locker.RLock()
+	defer le.locker.RUnlock()
+	ledger, err := le.getLedger()
+	if err != nil {
+		return false
+	}
+	return le.bucketExists(ledger, name)
+}
+
+// ObjectExists is a public function to check if an object exists, and returns the reason
+// the object can't be found if any
+func (le *LedgerStore) ObjectExists(bucketName, objectName string) error {
+	le.locker.RLock()
+	defer le.locker.RUnlock()
+	ledger, err := le.getLedger()
+	if err != nil {
+		return err
+	}
+	return le.objectExists(ledger, bucketName, objectName)
+}
 
 // GetBucketHash is used to get the corresponding IPFS CID for a bucket
 func (le *LedgerStore) GetBucketHash(name string) (string, error) {

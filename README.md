@@ -6,7 +6,7 @@ The long-term goal is to merge the TemporalX gateway upstream, but that will obv
 
 # Development/Testing
 
-The current setup is to use the TemporalX development environment located at `xapi-dev.temporal.cloud:9090`, and this is hard-coded into the TemporalX gateay. If you have a valid copy, and license of TemporalX running you can spin that up, update the hard coded address, and you'll your own S3X running!
+The current setup is using the TemporalX development environment located at `xapi-dev.temporal.cloud:9090`, as a hard coded parameter in the codebase. If you have a valid copy, and license of TemporalX running you can spin that up, update the hard coded address, and you'll your own S3X running!
 
 To develop or test S3X you'll need to have a valid go 1.13 installation, as well as git. To download, install, and run you can use the following commands:
 
@@ -17,7 +17,7 @@ $> go mod download
 $> make
 $> export MINIO_ACCESS_KEY=minio
 $> export MINIO_SECRET_KEY=miniostorage
-$> ./minio gateway temx
+$> ./minio gateway s3x
 ```
 
 Now you literally have a minio gateway that's serving an IPFS API that can be consumed by S3 applications, and you've made any S3 application an IPFS application. [Pretty cool eh?](https://gateway.temporal.cloud/ipfs/QmZ3MNegfWjDikun6BPRDeJe7NzNUqhEX2oLCf47Fu3Aua)
