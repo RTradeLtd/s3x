@@ -5,7 +5,7 @@ import "google/protobuf/timestamp.proto";
 import "google/api/annotations.proto";
 
 service InfoAPI {
-    rpc GetHash(InfoRequest) returns (InfoRequest) { 
+    rpc GetHash(InfoRequest) returns (InfoResponse) { 
         option (google.api.http) = { get: "/info" };
     };
 }

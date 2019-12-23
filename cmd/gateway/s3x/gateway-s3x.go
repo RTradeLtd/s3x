@@ -3,10 +3,8 @@ package s3x
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"net"
 	"net/http"
-	"os"
 	"sync"
 
 	pb "github.com/RTradeLtd/TxPB/go"
@@ -16,13 +14,13 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/minio/cli"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 )
 
 const (
-	temxBackend  = "s3x"
-	grpcendpoint = "0.0.0.0:8888"
-	httpendpoint = "0.0.0.0:8889"
+	temxBackend = "s3x"
 )
 
 func init() {
@@ -34,19 +32,45 @@ func init() {
 		Action:      temxGatewayMain,
 		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name:  "info.endpoint",
-				Usage: "the endpoint to serve the info api on",
+				Name:  "info.http.endpoint",
+				Usage: "the endpoint to serve the info http api on",
+				Value: "0.0.0.0:8889",
+			},
+			cli.StringFlag{
+				Name:  "info.grpc.endpoint",
+				Usage: "the endpoint to serve the info grpc api on",
+				Value: "0.0.0.0:8888",
+			},
+			cli.StringFlag{
+				Name:  "ds.path",
+				Usage: "the path to store ledger data in",
+				Value: "s3xstore",
+			},
+			cli.StringFlag{
+				Name:  "temporalx.endpoint",
+				Usage: "the endpoint of the temporalx api server",
+				Value: "xapi-dev.temporal.cloud:9090",
 			},
 		},
 	})
 }
 
 func temxGatewayMain(ctx *cli.Context) {
-	minio.StartGateway(ctx, &TEMX{})
+	minio.StartGateway(ctx, &TEMX{
+		HTTPAddr: ctx.String("info.http.endpoint"),
+		GRPCAddr: ctx.String("info.grpc.endpoint"),
+		DSPath:   ctx.String("ds.path"),
+		XAddr:    ctx.String("temporalx.endpoint"),
+	})
 }
 
 // TEMX implements a MinIO gateway ontop of TemporalX
-type TEMX struct{}
+type TEMX struct {
+	HTTPAddr string
+	GRPCAddr string
+	DSPath   string
+	XAddr    string
+}
 
 // newLedgerStore returns an instance of ledgerStore that uses badgerv2
 func (g *TEMX) newLedgerStore(dsPath string) (*LedgerStore, error) {
@@ -58,17 +82,9 @@ func (g *TEMX) newLedgerStore(dsPath string) (*LedgerStore, error) {
 	return newLedgerStore(ds), nil
 }
 
-func (g *TEMX) getDSPath() string {
-	path := os.Getenv("S3X_DS_PATH")
-	if path == "" {
-		path = "s3xstore"
-	}
-	return path
-}
-
 // NewGatewayLayer creates a minio gateway layer powered y TemporalX
 func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error) {
-	conn, err := grpc.Dial("xapi-dev.temporal.cloud:9090",
+	conn, err := grpc.Dial(g.XAddr,
 		grpc.WithTransportCredentials(
 			credentials.NewTLS(
 				&tls.Config{
@@ -80,7 +96,7 @@ func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error
 	if err != nil {
 		return nil, err
 	}
-	ledger, err := g.newLedgerStore(g.getDSPath())
+	ledger, err := g.newLedgerStore(g.DSPath)
 	if err != nil {
 		return nil, err
 	}
@@ -101,18 +117,19 @@ func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error
 	if err := RegisterInfoAPIHandlerFromEndpoint(
 		xobj.ctx,
 		xobj.infoAPI.httpMux,
-		httpendpoint,
+		g.HTTPAddr,
 		[]grpc.DialOption{grpc.WithInsecure()},
 	); err != nil {
 		return nil, err
 	}
-	listener, err := net.Listen("tcp", grpcendpoint)
+	listener, err := net.Listen("tcp", g.GRPCAddr)
 	if err != nil {
 		return nil, err
 	}
+	// TODO(bonedaddy): clean this trash up
 	go func() {
 		httpServer := &http.Server{
-			Addr:    httpendpoint,
+			Addr:    g.GRPCAddr,
 			Handler: xobj.infoAPI.httpMux,
 		}
 		go func() {
@@ -178,6 +195,45 @@ func (x *xObjects) IsEncryptionSupported() bool {
 	return minio.GlobalKMS != nil || len(minio.GlobalGatewaySSE) > 0
 }
 
-func (x *xObjects) GetHash(ctx context.Context, req *InfoRequest) (*InfoRequest, error) {
-	return nil, errors.New("not yet implemented")
+func (x *xObjects) GetHash(ctx context.Context, req *InfoRequest) (*InfoResponse, error) {
+	var (
+		err            error
+		resp           *InfoResponse
+		hash           string
+		emptyBucketErr = "bucket name is empty"
+		emptyObjectErr = "object name is empty"
+	)
+	switch req.GetObject() {
+	case "":
+		if req.GetBucket() == "" {
+			err = status.Error(codes.InvalidArgument, emptyBucketErr)
+		}
+		hash, err = x.ledgerStore.GetBucketHash(req.GetBucket())
+		if err != nil {
+			err = status.Error(codes.Internal, err.Error())
+		} else {
+			resp = &InfoResponse{
+				Bucket: req.GetBucket(),
+				Hash:   hash,
+			}
+		}
+	default:
+		if req.GetBucket() == "" {
+			err = status.Error(codes.InvalidArgument, emptyBucketErr)
+		}
+		if req.GetObject() == "" {
+			err = status.Error(codes.InvalidArgument, emptyObjectErr)
+		}
+		hash, err = x.ledgerStore.GetObjectHash(req.GetBucket(), req.GetObject())
+		if err != nil {
+			err = status.Error(codes.Internal, err.Error())
+		} else {
+			resp = &InfoResponse{
+				Bucket: req.GetBucket(),
+				Object: req.GetObject(),
+				Hash:   hash,
+			}
+		}
+	}
+	return resp, err
 }
