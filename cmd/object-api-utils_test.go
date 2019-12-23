@@ -24,9 +24,9 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/klauspost/compress/s2"
 	"github.com/RTradeLtd/s3x/cmd/config/compress"
 	"github.com/RTradeLtd/s3x/cmd/crypto"
+	"github.com/klauspost/compress/s2"
 )
 
 // Tests validate bucket name.

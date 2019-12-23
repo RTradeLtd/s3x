@@ -21,10 +21,10 @@ import (
 	"io"
 	"net/http"
 
-	humanize "github.com/dustin/go-humanize"
-	"github.com/gorilla/mux"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/policy"
+	humanize "github.com/dustin/go-humanize"
+	"github.com/gorilla/mux"
 )
 
 const (

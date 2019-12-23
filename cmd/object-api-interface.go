@@ -21,10 +21,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/minio/minio-go/v6/pkg/encrypt"
 	"github.com/RTradeLtd/s3x/pkg/lifecycle"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
 	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/minio/minio-go/v6/pkg/encrypt"
 )
 
 // CheckCopyPreconditionFn returns true if copy precondition check failed.

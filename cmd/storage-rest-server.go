@@ -28,10 +28,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/RTradeLtd/s3x/cmd/config"
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/gorilla/mux"
 )
 
 var errDiskStale = errors.New("disk stale")

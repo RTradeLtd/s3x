@@ -24,8 +24,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/bcicen/jstream"
 	"github.com/RTradeLtd/s3x/pkg/s3select/sql"
+	"github.com/bcicen/jstream"
 )
 
 // RawJSON is a byte-slice that contains valid JSON

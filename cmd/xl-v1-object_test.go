@@ -27,9 +27,9 @@ import (
 	"testing"
 	"time"
 
-	humanize "github.com/dustin/go-humanize"
 	"github.com/RTradeLtd/s3x/cmd/config/storageclass"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
+	humanize "github.com/dustin/go-humanize"
 )
 
 func TestRepeatPutObjectPart(t *testing.T) {

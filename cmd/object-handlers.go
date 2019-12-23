@@ -33,9 +33,6 @@ import (
 
 	"time"
 
-	"github.com/gorilla/mux"
-	miniogo "github.com/minio/minio-go/v6"
-	"github.com/minio/minio-go/v6/pkg/encrypt"
 	"github.com/RTradeLtd/s3x/cmd/config/etcd/dns"
 	"github.com/RTradeLtd/s3x/cmd/config/storageclass"
 	"github.com/RTradeLtd/s3x/cmd/crypto"
@@ -48,6 +45,9 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/ioutil"
 	"github.com/RTradeLtd/s3x/pkg/policy"
 	"github.com/RTradeLtd/s3x/pkg/s3select"
+	"github.com/gorilla/mux"
+	miniogo "github.com/minio/minio-go/v6"
+	"github.com/minio/minio-go/v6/pkg/encrypt"
 	sha256 "github.com/minio/sha256-simd"
 	"github.com/minio/sio"
 )

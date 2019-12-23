@@ -26,13 +26,13 @@ import (
 	"sync"
 	"time"
 
-	etcd "github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/mvcc/mvccpb"
-	"github.com/minio/minio-go/v6/pkg/set"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
+	etcd "github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/minio/minio-go/v6/pkg/set"
 )
 
 var defaultContextTimeout = 30 * time.Second

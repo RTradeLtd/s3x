@@ -22,8 +22,8 @@ import (
 	"hash"
 	"io"
 
-	"github.com/minio/highwayhash"
 	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/minio/highwayhash"
 	sha256 "github.com/minio/sha256-simd"
 	"golang.org/x/crypto/blake2b"
 )

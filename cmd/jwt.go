@@ -23,10 +23,10 @@ import (
 	"net/http"
 	"time"
 
-	jwtgo "github.com/dgrijalva/jwt-go"
-	jwtreq "github.com/dgrijalva/jwt-go/request"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
+	jwtgo "github.com/dgrijalva/jwt-go"
+	jwtreq "github.com/dgrijalva/jwt-go/request"
 )
 
 const (

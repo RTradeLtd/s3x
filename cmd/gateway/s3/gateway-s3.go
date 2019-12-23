@@ -26,16 +26,16 @@ import (
 	"strings"
 	"time"
 
+	minio "github.com/RTradeLtd/s3x/cmd"
 	"github.com/minio/cli"
 	miniogo "github.com/minio/minio-go/v6"
 	"github.com/minio/minio-go/v6/pkg/credentials"
-	minio "github.com/RTradeLtd/s3x/cmd"
 
-	"github.com/minio/minio-go/v6/pkg/encrypt"
-	"github.com/minio/minio-go/v6/pkg/s3utils"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/minio/minio-go/v6/pkg/encrypt"
+	"github.com/minio/minio-go/v6/pkg/s3utils"
 )
 
 const (

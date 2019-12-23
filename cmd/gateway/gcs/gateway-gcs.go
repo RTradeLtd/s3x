@@ -36,14 +36,14 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
-	humanize "github.com/dustin/go-humanize"
-	"github.com/minio/cli"
-	miniogopolicy "github.com/minio/minio-go/v6/pkg/policy"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/env"
 	"github.com/RTradeLtd/s3x/pkg/policy"
 	"github.com/RTradeLtd/s3x/pkg/policy/condition"
+	humanize "github.com/dustin/go-humanize"
+	"github.com/minio/cli"
+	miniogopolicy "github.com/minio/minio-go/v6/pkg/policy"
 
 	"google.golang.org/api/googleapi"
 	"google.golang.org/api/iterator"

@@ -24,10 +24,10 @@ import (
 	"net/http"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
 	minio "github.com/RTradeLtd/s3x/cmd"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/hash"
+	jsoniter "github.com/json-iterator/go"
 )
 
 var (

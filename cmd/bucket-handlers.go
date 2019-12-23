@@ -31,7 +31,6 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/minio/minio-go/v6/pkg/set"
 	"github.com/RTradeLtd/s3x/cmd/config/etcd/dns"
 	"github.com/RTradeLtd/s3x/cmd/crypto"
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
@@ -42,6 +41,7 @@ import (
 	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
 	"github.com/RTradeLtd/s3x/pkg/policy"
 	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
+	"github.com/minio/minio-go/v6/pkg/set"
 )
 
 const (

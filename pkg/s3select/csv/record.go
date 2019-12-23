@@ -23,8 +23,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/bcicen/jstream"
 	"github.com/RTradeLtd/s3x/pkg/s3select/sql"
+	"github.com/bcicen/jstream"
 )
 
 // Record - is a CSV record.

@@ -26,9 +26,9 @@ import (
 
 	"encoding/hex"
 
-	humanize "github.com/dustin/go-humanize"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
+	humanize "github.com/dustin/go-humanize"
 	sha256 "github.com/minio/sha256-simd"
 )
 

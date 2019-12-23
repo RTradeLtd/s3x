@@ -33,9 +33,6 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/klauspost/compress/s2"
-	"github.com/klauspost/readahead"
-	"github.com/minio/minio-go/v6/pkg/s3utils"
 	"github.com/RTradeLtd/s3x/cmd/config/compress"
 	"github.com/RTradeLtd/s3x/cmd/config/etcd/dns"
 	"github.com/RTradeLtd/s3x/cmd/config/storageclass"
@@ -45,6 +42,9 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/hash"
 	"github.com/RTradeLtd/s3x/pkg/ioutil"
 	"github.com/RTradeLtd/s3x/pkg/wildcard"
+	"github.com/klauspost/compress/s2"
+	"github.com/klauspost/readahead"
+	"github.com/minio/minio-go/v6/pkg/s3utils"
 	"github.com/skyrings/skyring-common/tools/uuid"
 )
 

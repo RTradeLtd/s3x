@@ -1,10 +1,12 @@
 package temx
 
-import "testing"
+import (
+	"testing"
 
-import "github.com/ipfs/go-datastore"
+	"github.com/ipfs/go-datastore"
 
-import dssync "github.com/ipfs/go-datastore/sync"
+	dssync "github.com/ipfs/go-datastore/sync"
+)
 
 func TestLedger(t *testing.T) {
 	ledger := newLedgerStore(dssync.MutexWrap(datastore.NewMapDatastore()))

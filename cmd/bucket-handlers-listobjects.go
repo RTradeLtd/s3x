@@ -20,9 +20,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gorilla/mux"
 	"github.com/RTradeLtd/s3x/cmd/crypto"
 	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/gorilla/mux"
 
 	"github.com/RTradeLtd/s3x/pkg/policy"
 )

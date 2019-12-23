@@ -22,11 +22,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/minio/minio-go/pkg/set"
 	"github.com/RTradeLtd/s3x/pkg/cpu"
 	"github.com/RTradeLtd/s3x/pkg/disk"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
 	"github.com/RTradeLtd/s3x/pkg/mem"
+	"github.com/minio/minio-go/pkg/set"
 
 	cpuhw "github.com/shirou/gopsutil/cpu"
 )

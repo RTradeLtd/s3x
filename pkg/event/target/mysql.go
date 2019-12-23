@@ -66,9 +66,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-sql-driver/mysql"
 	"github.com/RTradeLtd/s3x/pkg/event"
 	xnet "github.com/RTradeLtd/s3x/pkg/net"
+	"github.com/go-sql-driver/mysql"
 )
 
 const (

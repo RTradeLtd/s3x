@@ -25,7 +25,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gorilla/mux"
 	"github.com/RTradeLtd/s3x/cmd/config"
 	"github.com/RTradeLtd/s3x/cmd/config/cache"
 	"github.com/RTradeLtd/s3x/cmd/config/etcd"
@@ -37,6 +36,7 @@ import (
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
+	"github.com/gorilla/mux"
 )
 
 func validateAdminReqConfigKV(ctx context.Context, w http.ResponseWriter, r *http.Request) ObjectLayer {

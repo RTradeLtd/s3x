@@ -28,13 +28,13 @@ import (
 	"net/http"
 	"strings"
 
-	jwtgo "github.com/dgrijalva/jwt-go"
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/hash"
 	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
 	"github.com/RTradeLtd/s3x/pkg/policy"
+	jwtgo "github.com/dgrijalva/jwt-go"
 )
 
 // Verify if request has JWT.

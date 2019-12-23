@@ -25,8 +25,8 @@ import (
 	"strings"
 	"testing"
 
-	humanize "github.com/dustin/go-humanize"
 	"github.com/RTradeLtd/s3x/pkg/hash"
+	humanize "github.com/dustin/go-humanize"
 )
 
 // Wrapper for calling NewMultipartUpload tests for both XL multiple disks and single node setup.

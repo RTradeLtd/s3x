@@ -20,8 +20,8 @@ import (
 	"encoding/xml"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/gorilla/mux"
 )
 
 // Data types used for returning dummy tagging XML.

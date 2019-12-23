@@ -19,8 +19,8 @@ package cmd
 import (
 	"net/http"
 
-	"github.com/gorilla/mux"
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
+	"github.com/gorilla/mux"
 )
 
 func newHTTPServerFn() *xhttp.Server {

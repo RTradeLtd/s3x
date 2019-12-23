@@ -21,10 +21,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/minio/minio-go/v6/pkg/set"
 	"github.com/RTradeLtd/s3x/cmd/config"
 	"github.com/RTradeLtd/s3x/pkg/ellipses"
 	"github.com/RTradeLtd/s3x/pkg/env"
+	"github.com/minio/minio-go/v6/pkg/set"
 )
 
 // This file implements and supports ellipses pattern for

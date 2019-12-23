@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	xldap "github.com/RTradeLtd/s3x/cmd/config/identity/ldap"
 	"github.com/RTradeLtd/s3x/cmd/config/identity/openid"
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
@@ -31,6 +30,7 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
 	"github.com/RTradeLtd/s3x/pkg/wildcard"
+	"github.com/gorilla/mux"
 	ldap "gopkg.in/ldap.v3"
 )
 

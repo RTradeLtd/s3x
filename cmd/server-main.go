@@ -27,7 +27,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/minio/cli"
 	"github.com/RTradeLtd/s3x/cmd/config"
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/cmd/logger"
@@ -35,6 +34,7 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/certs"
 	"github.com/RTradeLtd/s3x/pkg/color"
 	"github.com/RTradeLtd/s3x/pkg/env"
+	"github.com/minio/cli"
 )
 
 func init() {

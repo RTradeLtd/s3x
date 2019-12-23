@@ -28,9 +28,9 @@ import (
 	"net/http"
 	"time"
 
-	humanize "github.com/dustin/go-humanize"
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/pkg/auth"
+	humanize "github.com/dustin/go-humanize"
 	sha256 "github.com/minio/sha256-simd"
 )
 

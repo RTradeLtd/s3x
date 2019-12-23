@@ -23,8 +23,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/RTradeLtd/s3x/cmd/logger/message/audit"
+	"github.com/gorilla/mux"
 )
 
 // ResponseWriter - is a wrapper to trap the http response status code.

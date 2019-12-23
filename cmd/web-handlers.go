@@ -32,12 +32,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/gorilla/rpc/v2/json2"
-	"github.com/klauspost/compress/zip"
-	miniogopolicy "github.com/minio/minio-go/v6/pkg/policy"
-	"github.com/minio/minio-go/v6/pkg/s3utils"
-	"github.com/minio/minio-go/v6/pkg/set"
 	"github.com/RTradeLtd/s3x/browser"
 	"github.com/RTradeLtd/s3x/cmd/config/etcd/dns"
 	"github.com/RTradeLtd/s3x/cmd/config/identity/openid"
@@ -51,6 +45,12 @@ import (
 	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
 	"github.com/RTradeLtd/s3x/pkg/ioutil"
 	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/gorilla/mux"
+	"github.com/gorilla/rpc/v2/json2"
+	"github.com/klauspost/compress/zip"
+	miniogopolicy "github.com/minio/minio-go/v6/pkg/policy"
+	"github.com/minio/minio-go/v6/pkg/s3utils"
+	"github.com/minio/minio-go/v6/pkg/set"
 )
 
 // WebGenericArgs - empty struct for calls that don't accept arguments

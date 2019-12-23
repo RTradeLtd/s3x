@@ -27,11 +27,11 @@ import (
 	pathutil "path"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/lock"
 	"github.com/RTradeLtd/s3x/pkg/mimedb"
+	jsoniter "github.com/json-iterator/go"
 )
 
 // FS format, and object metadata.

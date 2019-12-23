@@ -23,8 +23,8 @@ import (
 
 	"strings"
 
-	humanize "github.com/dustin/go-humanize"
 	"github.com/RTradeLtd/s3x/cmd/logger"
+	humanize "github.com/dustin/go-humanize"
 )
 
 const (

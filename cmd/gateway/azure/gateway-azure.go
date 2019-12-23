@@ -36,14 +36,14 @@ import (
 
 	"github.com/Azure/azure-pipeline-go/pipeline"
 	"github.com/Azure/azure-storage-blob-go/azblob"
-	humanize "github.com/dustin/go-humanize"
-	"github.com/minio/cli"
-	miniogopolicy "github.com/minio/minio-go/v6/pkg/policy"
 	"github.com/RTradeLtd/s3x/cmd"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/policy"
 	"github.com/RTradeLtd/s3x/pkg/policy/condition"
+	humanize "github.com/dustin/go-humanize"
+	"github.com/minio/cli"
+	miniogopolicy "github.com/minio/minio-go/v6/pkg/policy"
 	sha256 "github.com/minio/sha256-simd"
 
 	minio "github.com/RTradeLtd/s3x/cmd"

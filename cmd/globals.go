@@ -23,8 +23,6 @@ import (
 
 	"github.com/minio/minio-go/v6/pkg/set"
 
-	etcd "github.com/coreos/etcd/clientv3"
-	humanize "github.com/dustin/go-humanize"
 	"github.com/RTradeLtd/s3x/cmd/config/cache"
 	"github.com/RTradeLtd/s3x/cmd/config/compress"
 	"github.com/RTradeLtd/s3x/cmd/config/etcd/dns"
@@ -38,6 +36,8 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/certs"
 	"github.com/RTradeLtd/s3x/pkg/event"
 	"github.com/RTradeLtd/s3x/pkg/pubsub"
+	etcd "github.com/coreos/etcd/clientv3"
+	humanize "github.com/dustin/go-humanize"
 )
 
 // minio configuration related constants.

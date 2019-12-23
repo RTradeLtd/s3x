@@ -33,9 +33,9 @@ import (
 	"testing"
 	"time"
 
-	humanize "github.com/dustin/go-humanize"
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/pkg/policy"
+	humanize "github.com/dustin/go-humanize"
 )
 
 // API suite container common to both FS and XL.

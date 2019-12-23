@@ -26,10 +26,10 @@ import (
 	"strconv"
 	"time"
 
-	humanize "github.com/dustin/go-humanize"
 	"github.com/RTradeLtd/s3x/pkg/cpu"
 	"github.com/RTradeLtd/s3x/pkg/disk"
 	"github.com/RTradeLtd/s3x/pkg/mem"
+	humanize "github.com/dustin/go-humanize"
 )
 
 const (

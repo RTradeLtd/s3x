@@ -23,8 +23,8 @@ import (
 	"path"
 	"time"
 
-	"github.com/gorilla/mux"
 	"github.com/RTradeLtd/s3x/pkg/dsync"
+	"github.com/gorilla/mux"
 )
 
 const (

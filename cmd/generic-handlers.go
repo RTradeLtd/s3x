@@ -24,12 +24,12 @@ import (
 
 	"github.com/minio/minio-go/v6/pkg/set"
 
-	humanize "github.com/dustin/go-humanize"
 	"github.com/RTradeLtd/s3x/cmd/config/etcd/dns"
 	"github.com/RTradeLtd/s3x/cmd/crypto"
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/handlers"
+	humanize "github.com/dustin/go-humanize"
 	"github.com/rs/cors"
 )
 

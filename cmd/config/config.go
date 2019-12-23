@@ -24,10 +24,10 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/minio/minio-go/pkg/set"
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/env"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
+	"github.com/minio/minio-go/pkg/set"
 )
 
 // Error config error type

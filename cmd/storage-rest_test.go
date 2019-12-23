@@ -23,9 +23,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gorilla/mux"
 	"github.com/RTradeLtd/s3x/cmd/config"
 	xnet "github.com/RTradeLtd/s3x/pkg/net"
+	"github.com/gorilla/mux"
 )
 
 ///////////////////////////////////////////////////////////////////////////////

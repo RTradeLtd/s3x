@@ -23,8 +23,8 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/bcicen/jstream"
 	"github.com/RTradeLtd/s3x/pkg/s3select/sql"
+	"github.com/bcicen/jstream"
 )
 
 // PReader - JSON record reader for S3Select.

@@ -23,12 +23,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/minio/minio-go/v6/pkg/set"
 	"github.com/RTradeLtd/s3x/cmd/config"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
+	"github.com/minio/minio-go/v6/pkg/set"
 )
 
 // UsersSysType - defines the type of users and groups system that is

@@ -35,11 +35,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/beevik/ntp"
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/handlers"
 	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
+	"github.com/beevik/ntp"
 
 	humanize "github.com/dustin/go-humanize"
 	"github.com/gorilla/mux"

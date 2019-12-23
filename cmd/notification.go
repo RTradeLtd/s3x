@@ -29,7 +29,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/klauspost/compress/zip"
 	"github.com/RTradeLtd/s3x/cmd/crypto"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/event"
@@ -38,6 +37,7 @@ import (
 	xnet "github.com/RTradeLtd/s3x/pkg/net"
 	"github.com/RTradeLtd/s3x/pkg/policy"
 	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
+	"github.com/klauspost/compress/zip"
 )
 
 // NotificationSys - notification system.

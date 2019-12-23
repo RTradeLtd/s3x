@@ -24,9 +24,9 @@ import (
 	"runtime"
 	"strings"
 
-	humanize "github.com/dustin/go-humanize"
 	color "github.com/RTradeLtd/s3x/pkg/color"
 	xnet "github.com/RTradeLtd/s3x/pkg/net"
+	humanize "github.com/dustin/go-humanize"
 )
 
 // Documentation links, these are part of message printing code.

@@ -27,9 +27,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gomodule/redigo/redis"
 	"github.com/RTradeLtd/s3x/pkg/event"
 	xnet "github.com/RTradeLtd/s3x/pkg/net"
+	"github.com/gomodule/redigo/redis"
 )
 
 // Redis constants

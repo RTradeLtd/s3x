@@ -25,6 +25,7 @@ import (
 	_ "github.com/RTradeLtd/s3x/cmd/gateway/oss"
 	_ "github.com/RTradeLtd/s3x/cmd/gateway/s3"
 	_ "github.com/RTradeLtd/s3x/cmd/gateway/temx"
+
 	// B2 is specifically kept here to avoid re-ordering by goimports,
 	// please ask on github.com/RTradeLtd/s3x/issues before changing this.
 	_ "github.com/RTradeLtd/s3x/cmd/gateway/b2"

@@ -24,14 +24,14 @@ import (
 	"strings"
 	"time"
 
-	dns2 "github.com/miekg/dns"
-	"github.com/minio/cli"
-	"github.com/minio/minio-go/v6/pkg/set"
 	"github.com/RTradeLtd/s3x/cmd/config"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/certs"
 	"github.com/RTradeLtd/s3x/pkg/env"
+	dns2 "github.com/miekg/dns"
+	"github.com/minio/cli"
+	"github.com/minio/minio-go/v6/pkg/set"
 )
 
 func verifyObjectLayerFeatures(name string, objAPI ObjectLayer) {

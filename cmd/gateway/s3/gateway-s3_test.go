@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"testing"
 
-	miniogo "github.com/minio/minio-go/v6"
 	"github.com/RTradeLtd/s3x/pkg/hash"
+	miniogo "github.com/minio/minio-go/v6"
 
 	minio "github.com/RTradeLtd/s3x/cmd"
 )

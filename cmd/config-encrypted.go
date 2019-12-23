@@ -24,12 +24,12 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	etcd "github.com/coreos/etcd/clientv3"
 	"github.com/RTradeLtd/s3x/cmd/config"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/env"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
+	etcd "github.com/coreos/etcd/clientv3"
 )
 
 func handleEncryptedConfigBackend(objAPI ObjectLayer, server bool) error {

@@ -28,14 +28,14 @@ import (
 	"sync"
 	"time"
 
-	b2 "github.com/kurin/blazer/base"
-	"github.com/minio/cli"
-	miniogopolicy "github.com/minio/minio-go/v6/pkg/policy"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	h2 "github.com/RTradeLtd/s3x/pkg/hash"
 	"github.com/RTradeLtd/s3x/pkg/policy"
 	"github.com/RTradeLtd/s3x/pkg/policy/condition"
+	b2 "github.com/kurin/blazer/base"
+	"github.com/minio/cli"
+	miniogopolicy "github.com/minio/minio-go/v6/pkg/policy"
 
 	minio "github.com/RTradeLtd/s3x/cmd"
 )

@@ -34,9 +34,9 @@ import (
 
 	"golang.org/x/oauth2"
 
+	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/minio/minio-go/v6"
 	"github.com/minio/minio-go/v6/pkg/credentials"
-	"github.com/RTradeLtd/s3x/pkg/auth"
 )
 
 // AssumedRoleUser - The identifiers for the temporary security credentials that

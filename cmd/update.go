@@ -32,11 +32,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/go-update"
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/env"
 	xnet "github.com/RTradeLtd/s3x/pkg/net"
+	"github.com/inconshreveable/go-update"
 	_ "github.com/minio/sha256-simd" // Needed for sha256 hash verifier.
 )
 

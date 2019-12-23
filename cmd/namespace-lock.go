@@ -27,9 +27,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/minio/lsync"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/dsync"
+	"github.com/minio/lsync"
 )
 
 // local lock servers

@@ -26,11 +26,11 @@ import (
 	"strconv"
 	"time"
 
-	jwtgo "github.com/dgrijalva/jwt-go"
 	"github.com/RTradeLtd/s3x/cmd/config"
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/env"
 	xnet "github.com/RTradeLtd/s3x/pkg/net"
+	jwtgo "github.com/dgrijalva/jwt-go"
 )
 
 // Config - OpenID Config

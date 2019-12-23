@@ -26,8 +26,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/minio/minio-go/v6/pkg/encrypt"
 	minio "github.com/RTradeLtd/s3x/cmd"
+	"github.com/minio/minio-go/v6/pkg/encrypt"
 
 	"github.com/RTradeLtd/s3x/cmd/logger"
 )

@@ -32,8 +32,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
-	"github.com/minio/minio-go/v6/pkg/s3utils"
 	"github.com/RTradeLtd/s3x/cmd/config"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/lifecycle"
@@ -42,6 +40,8 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/mimedb"
 	"github.com/RTradeLtd/s3x/pkg/mountinfo"
 	"github.com/RTradeLtd/s3x/pkg/policy"
+	jsoniter "github.com/json-iterator/go"
+	"github.com/minio/minio-go/v6/pkg/s3utils"
 )
 
 // Default etag is used for pre-existing objects.

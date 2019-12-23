@@ -27,13 +27,13 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"google.golang.org/api/googleapi"
 
-	minio "github.com/minio/minio-go/v6"
 	"github.com/RTradeLtd/s3x/cmd/config/etcd/dns"
 	"github.com/RTradeLtd/s3x/cmd/crypto"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/event"
 	"github.com/RTradeLtd/s3x/pkg/hash"
+	minio "github.com/minio/minio-go/v6"
 )
 
 // APIError structure
