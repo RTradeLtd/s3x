@@ -36,7 +36,7 @@ matrix:
         - make verifiers
         - make crosscompile
         - make verify
-        - cd browser && npm install && npm run test && cd ..
+        #- cd browser && npm install && npm run test && cd ..
         - bash -c 'shopt -s globstar; shellcheck mint/**/*.sh'
 
     - os: windows
