@@ -39,7 +39,7 @@ Supported Object Calls:
 |------|-----------|
 | ListObjects | Yes (partial) |
 | ListObjectsV2 | No |
-| GetObjectNInfo | No |
+| GetObjectNInfo | Yes (partial) |
 | GetObject | Yes (partial) |
 | GetObjectInfo | Yes (fully) |
 | PutObject | Yes (fully) |
