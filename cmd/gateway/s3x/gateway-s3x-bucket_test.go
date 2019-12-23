@@ -17,7 +17,12 @@ const (
 func TestGateway_Bucket(t *testing.T) {
 	testPath := "tmp-bucket-test"
 	os.Setenv("S3X_DS_PATH", testPath)
-	temx := &TEMX{}
+	temx := &TEMX{
+		HTTPAddr: "0.0.0.0:8889",
+		GRPCAddr: "0.0.0.0:8888",
+		DSPath:   "s3xstore",
+		XAddr:    "xapi-dev.temporal.cloud:9090",
+	}
 	gateway, err := temx.NewGatewayLayer(auth.Credentials{})
 	if err != nil {
 		t.Fatal(err)
