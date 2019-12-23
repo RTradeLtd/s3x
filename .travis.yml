@@ -57,3 +57,8 @@ before_script:
 
 before_install:
  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then nvm install stable ; fi
+
+cache:
+  directories:
+    - $GOPATH/pkg/mod
+    - $HOME/.cache/go-build
