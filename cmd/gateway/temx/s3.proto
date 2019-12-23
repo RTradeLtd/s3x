@@ -67,10 +67,10 @@ message ObjectInfo {
     string expires = 9;
     string storageClass = 10;
     repeated ObjectPartInfo parts = 11 [(gogoproto.nullable) = false];
-    bool metadataOnly = 12;
-    string accTime = 13;
-    string backendType = 14;
-    map<string, string> userDefined = 15;
+    map<string, string> userDefined = 12;
+    bool metadataOnly = 13;
+    string accTime = 14;
+    string backendType = 15;
     string contentDisposition = 16;
     string contentLanguage = 17;
 }
