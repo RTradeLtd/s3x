@@ -23,14 +23,13 @@ var (
 // LedgerStore is an internal bookkeeper that
 // maps ipfs cids to bucket and object names
 type LedgerStore struct {
-	locker *sync.RWMutex
-	ds     datastore.Batching
+	sync.RWMutex
+	ds datastore.Batching
 }
 
 func newLedgerStore(ds datastore.Batching) *LedgerStore {
 	ledger := &LedgerStore{
-		locker: &sync.RWMutex{},
-		ds:     namespace.Wrap(ds, ledgerPrefix),
+		ds: namespace.Wrap(ds, ledgerPrefix),
 	}
 	ledger.createLedgerIfNotExist()
 	return ledger
@@ -42,8 +41,8 @@ func newLedgerStore(ds datastore.Batching) *LedgerStore {
 
 // NewBucket creates a new ledger bucket entry
 func (le *LedgerStore) NewBucket(name, hash string) error {
-	le.locker.Lock()
-	defer le.locker.Unlock()
+	le.Lock()
+	defer le.Unlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
@@ -65,8 +64,8 @@ func (le *LedgerStore) NewBucket(name, hash string) error {
 // UpdateBucketHash is used to update the ledger bucket entry
 // with a new IPFS hash
 func (le *LedgerStore) UpdateBucketHash(name, hash string) error {
-	le.locker.Lock()
-	defer le.locker.Unlock()
+	le.Lock()
+	defer le.Unlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
@@ -82,8 +81,8 @@ func (le *LedgerStore) UpdateBucketHash(name, hash string) error {
 
 // RemoveObject is used to remove a ledger object entry from a ledger bucket entry
 func (le *LedgerStore) RemoveObject(bucketName, objectName string) error {
-	le.locker.Lock()
-	defer le.locker.Unlock()
+	le.Lock()
+	defer le.Unlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
@@ -97,8 +96,8 @@ func (le *LedgerStore) RemoveObject(bucketName, objectName string) error {
 
 // AddObjectToBucket is used to update a ledger bucket entry with a new ledger object entry
 func (le *LedgerStore) AddObjectToBucket(bucketName, objectName, objectHash string) error {
-	le.locker.Lock()
-	defer le.locker.Unlock()
+	le.Lock()
+	defer le.Unlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
@@ -121,8 +120,8 @@ func (le *LedgerStore) AddObjectToBucket(bucketName, objectName, objectHash stri
 
 // DeleteBucket is used to remove a ledger bucket entry
 func (le *LedgerStore) DeleteBucket(name string) error {
-	le.locker.Lock()
-	defer le.locker.Unlock()
+	le.Lock()
+	defer le.Unlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
@@ -140,8 +139,8 @@ func (le *LedgerStore) DeleteBucket(name string) error {
 
 // BucketExists is a public function to check if a bucket exists
 func (le *LedgerStore) BucketExists(name string) bool {
-	le.locker.RLock()
-	defer le.locker.RUnlock()
+	le.RLock()
+	defer le.RUnlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return false
@@ -152,8 +151,8 @@ func (le *LedgerStore) BucketExists(name string) bool {
 // ObjectExists is a public function to check if an object exists, and returns the reason
 // the object can't be found if any
 func (le *LedgerStore) ObjectExists(bucketName, objectName string) error {
-	le.locker.RLock()
-	defer le.locker.RUnlock()
+	le.RLock()
+	defer le.RUnlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
@@ -163,8 +162,8 @@ func (le *LedgerStore) ObjectExists(bucketName, objectName string) error {
 
 // GetBucketHash is used to get the corresponding IPFS CID for a bucket
 func (le *LedgerStore) GetBucketHash(name string) (string, error) {
-	le.locker.RLock()
-	defer le.locker.RUnlock()
+	le.RLock()
+	defer le.RUnlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return "", err
@@ -177,8 +176,8 @@ func (le *LedgerStore) GetBucketHash(name string) (string, error) {
 
 // GetObjectHash is used to retrive the correspodning IPFS CID for an object
 func (le *LedgerStore) GetObjectHash(bucketName, objectName string) (string, error) {
-	le.locker.RLock()
-	defer le.locker.RUnlock()
+	le.RLock()
+	defer le.RUnlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return "", err
@@ -195,8 +194,8 @@ func (le *LedgerStore) GetObjectHash(bucketName, objectName string) (string, err
 
 // GetObjectHashes gets a map of object names to object hashes for all objects in a bucket
 func (le *LedgerStore) GetObjectHashes(bucket string) (map[string]string, error) {
-	le.locker.RLock()
-	defer le.locker.RUnlock()
+	le.RLock()
+	defer le.RUnlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return nil, err
@@ -214,8 +213,8 @@ func (le *LedgerStore) GetObjectHashes(bucket string) (map[string]string, error)
 
 // GetBucketNames is used to a slice of all bucket names our ledger currently tracks
 func (le *LedgerStore) GetBucketNames() ([]string, error) {
-	le.locker.RLock()
-	defer le.locker.RUnlock()
+	le.RLock()
+	defer le.RUnlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return nil, err
