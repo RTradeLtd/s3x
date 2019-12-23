@@ -20,7 +20,7 @@ $> export MINIO_SECRET_KEY=miniostorage
 $> ./minio gateway s3x
 ```
 
-Now you literally have a minio gateway that's serving an IPFS API that can be consumed by S3 applications, and you've made any S3 application an IPFS application. [Pretty cool eh?](https://gateway.temporal.cloud/ipfs/QmZ3MNegfWjDikun6BPRDeJe7NzNUqhEX2oLCf47Fu3Aua)
+Now you literally have a minio gateway that's serving an IPFS API that can be consumed by S3 applications, and you've made any S3 application an IPFS application. Pretty cool eh?
 
 By default we spin up a gRPC API and a grpc-gateway HTTP API allowing you to interact with our "info api". The info api is used to query the underlying ledger and get the IPFS CID for buckets, or objects.
 
