@@ -3,7 +3,6 @@ package s3x
 import (
 	"bytes"
 	"context"
-	"errors"
 	"io"
 	"io/ioutil"
 	"log"
@@ -51,48 +50,29 @@ func (x *xObjects) ListObjectsV2(
 	fetchOwner bool,
 	startAfter string,
 ) (loi minio.ListObjectsV2Info, err error) {
-	// TODO(bonedaddy): implement
-	/*
-		// fetchOwner is not supported and unused.
-		marker := continuationToken
-		if marker == "" {
-			// B2's continuation token is an object name to "start at" rather than "start after"
-			// startAfter plus the lowest character B2 supports is used so that the startAfter
-			// object isn't included in the results
-			marker = startAfter + " "
-		}
+	if !x.ledgerStore.BucketExists(bucket) {
+		return loi, minio.BucketNotFound{Bucket: bucket}
+	}
+	objHashes, err := x.ledgerStore.GetObjectHashes(bucket)
+	if err != nil {
+		return loi, x.toMinioErr(err, bucket, "")
+	}
 
-		bkt, err := l.Bucket(ctx, bucket)
+	if len(objHashes) >= 1000 {
+		loi.Objects = make([]minio.ObjectInfo, 1000)
+	} else {
+		loi.Objects = make([]minio.ObjectInfo, len(objHashes))
+	}
+	var count int
+	for name := range objHashes {
+		info, err := x.getMinioObjectInfo(ctx, bucket, name)
 		if err != nil {
-			return loi, err
+			return loi, x.toMinioErr(err, bucket, name)
 		}
-		files, next, lerr := bkt.ListFileNames(l.ctx, maxKeys, marker, prefix, delimiter)
-		if lerr != nil {
-			logger.LogIf(ctx, lerr)
-			return loi, b2ToObjectError(lerr, bucket)
-		}
-		loi.IsTruncated = next != ""
-		loi.ContinuationToken = continuationToken
-		loi.NextContinuationToken = next
-		for _, file := range files {
-			switch file.Status {
-			case "folder":
-				loi.Prefixes = append(loi.Prefixes, file.Name)
-			case "upload":
-				loi.Objects = append(loi.Objects, minio.ObjectInfo{
-					Bucket:      bucket,
-					Name:        file.Name,
-					ModTime:     file.Timestamp,
-					Size:        file.Size,
-					ETag:        minio.ToS3ETag(file.ID),
-					ContentType: file.Info.ContentType,
-					UserDefined: file.Info.Info,
-				})
-			}
-		}
-		return loi, nil
-	*/
-	return loi, errors.New("not yet implemented")
+		loi.Objects[count] = info
+		count++
+	}
+	return loi, nil
 }
 
 // GetObjectNInfo - returns object info and locked object ReadCloser
