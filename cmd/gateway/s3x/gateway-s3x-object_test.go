@@ -74,4 +74,22 @@ func TestGateway_Object(t *testing.T) {
 			t.Fatal("error expected")
 		}
 	})
+	t.Run("GetObjectNInfo", func(t *testing.T) {
+		t.Skip("TODO")
+	})
+	t.Run("GetObject", func(t *testing.T) {
+		t.Skip("TODO")
+	})
+	t.Run("PutObject", func(t *testing.T) {
+		t.Skip("TODO")
+	})
+	t.Run("CopyObject", func(t *testing.T) {
+		t.Skip("TODO")
+	})
+	t.Run("DeleteObject", func(t *testing.T) {
+		t.Skip("TODO")
+	})
+	t.Run("DeleteObjects", func(t *testing.T) {
+		t.Skip("TODO")
+	})
 }

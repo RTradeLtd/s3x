@@ -171,6 +171,9 @@ func (x *xObjects) PutObject(
 	r *minio.PutObjReader,
 	opts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
+	if !x.ledgerStore.BucketExists(bucket) {
+		return objInfo, minio.BucketAlreadyExists{Bucket: bucket, Object: object}
+	}
 	// TODO(bonedaddy): ensure consistency with the way s3 and b2 handle this
 	obinfo := ObjectInfo{}
 	for k, v := range opts.UserDefined {
