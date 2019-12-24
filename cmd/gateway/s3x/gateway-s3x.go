@@ -3,7 +3,6 @@ package s3x
 import (
 	"context"
 	"crypto/tls"
-	"log"
 	"net"
 	"net/http"
 	"sync"
@@ -168,17 +167,8 @@ func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error
 	if err != nil {
 		return nil, err
 	}
-	go func() {
-		go func() {
-			<-xobj.ctx.Done()
-			xobj.infoAPI.grpcServer.Stop()
-			xobj.infoAPI.httpServer.Close()
-		}()
-		go xobj.infoAPI.grpcServer.Serve(xobj.listener)
-		if err := xobj.infoAPI.httpServer.ListenAndServe(); err != nil {
-			log.Print("error in http server", err)
-		}
-	}()
+	go xobj.infoAPI.grpcServer.Serve(xobj.listener)
+	go xobj.infoAPI.httpServer.ListenAndServe()
 	return xobj, nil
 }
 
@@ -194,6 +184,8 @@ func (g *TEMX) Production() bool {
 
 // Shutdown is used to shutdown our xObjects service layer
 func (x *xObjects) Shutdown(ctx context.Context) error {
+	x.infoAPI.grpcServer.Stop()
+	x.infoAPI.httpServer.Close()
 	return x.ledgerStore.Close()
 }
 
