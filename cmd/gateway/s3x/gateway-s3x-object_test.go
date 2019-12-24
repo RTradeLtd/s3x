@@ -2,6 +2,7 @@ package s3x
 
 import (
 	"context"
+	fmt "fmt"
 	"io"
 	"os"
 	"strings"
@@ -98,6 +99,7 @@ func TestGateway_Object(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
+				fmt.Println("using bucket", tt.args.bucketName)
 				resp, err := gateway.PutObject(
 					context.Background(),
 					tt.args.bucketName,
@@ -116,6 +118,7 @@ func TestGateway_Object(t *testing.T) {
 					t.Fatalf("PutObject() err %v, wantErr %v", err, tt.wantErr)
 				}
 				if err == nil && resp.Bucket != tt.args.bucketName {
+					fmt.Println("got bad bucket name: ", resp.Bucket)
 					t.Fatal("bad bucket name")
 				}
 			})

@@ -175,7 +175,11 @@ func (x *xObjects) PutObject(
 		return objInfo, minio.BucketAlreadyExists{Bucket: bucket, Object: object}
 	}
 	// TODO(bonedaddy): ensure consistency with the way s3 and b2 handle this
-	obinfo := ObjectInfo{}
+	obinfo := ObjectInfo{
+		Bucket:  bucket,
+		Name:    object,
+		ModTime: time.Now().UTC(),
+	}
 	for k, v := range opts.UserDefined {
 		switch strings.ToLower(k) {
 		case "content-encoding":
@@ -188,7 +192,6 @@ func (x *xObjects) PutObject(
 			obinfo.ContentType = v
 		}
 	}
-	obinfo.ModTime = time.Now().UTC()
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return objInfo, x.toMinioErr(err, bucket, object)
