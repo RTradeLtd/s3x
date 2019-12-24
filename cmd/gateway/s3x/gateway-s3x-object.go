@@ -104,6 +104,9 @@ func (x *xObjects) GetObjectNInfo(
 	lockType minio.LockType,
 	opts minio.ObjectOptions,
 ) (gr *minio.GetObjectReader, err error) {
+	if !x.ledgerStore.BucketExists(bucket) {
+		return gr, minio.BucketNotFound{Bucket: bucket}
+	}
 	if err := x.ledgerStore.ObjectExists(bucket, object); err != nil {
 		return gr, x.toMinioErr(err, bucket, object)
 	}

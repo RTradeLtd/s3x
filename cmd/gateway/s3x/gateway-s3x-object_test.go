@@ -45,45 +45,6 @@ func TestGateway_Object(t *testing.T) {
 	); err != nil {
 		t.Fatal(err)
 	}
-	t.Run("ListObjects", func(t *testing.T) {
-		tests := []struct {
-			name    string
-			args    args
-			wantErr bool
-		}{
-			{"Fail-BucketNotExist", args{testBucket2, ""}, true},
-			{"Success", args{testBucket1, ""}, false},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				if _, err := gateway.ListObjects(
-					context.Background(),
-					tt.args.bucketName,
-					"", "", "",
-					500,
-				); (err != nil) != tt.wantErr {
-					t.Fatalf("ListObjects() err %v, wantErr %v", err, tt.wantErr)
-				}
-			})
-		}
-	})
-	t.Run("ListObjectsV2", func(t *testing.T) {
-		if _, err := gateway.ListObjectsV2(
-			context.Background(),
-			testBucket1, "", "", "",
-			1000,
-			true,
-			"",
-		); err == nil {
-			t.Fatal("error expected")
-		}
-	})
-	t.Run("GetObjectNInfo", func(t *testing.T) {
-		t.Skip("TODO")
-	})
-	t.Run("GetObject", func(t *testing.T) {
-		t.Skip("TODO")
-	})
 	t.Run("PutObject", func(t *testing.T) {
 		type args struct {
 			bucketName, objectName, objectData string
@@ -121,6 +82,77 @@ func TestGateway_Object(t *testing.T) {
 			})
 		}
 	})
+	t.Run("ListObjects", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{"Fail-BucketNotExist", args{testBucket2, ""}, true},
+			{"Success", args{testBucket1, ""}, false},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				if _, err := gateway.ListObjects(
+					context.Background(),
+					tt.args.bucketName,
+					"", "", "",
+					500,
+				); (err != nil) != tt.wantErr {
+					t.Fatalf("ListObjects() err %v, wantErr %v", err, tt.wantErr)
+				}
+			})
+		}
+	})
+	t.Run("GetObjectInfo", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{"Ok", args{testBucket1, testObject1}, false},
+			{"Fail-Bad-Object", args{testBucket1, "notarealobj"}, true},
+			{"Fail-Bad-Bucket", args{"notarealbucket", testObject1}, true},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				info, err := gateway.GetObjectInfo(
+					context.Background(),
+					tt.args.bucketName,
+					tt.args.objectName,
+					cmd.ObjectOptions{},
+				)
+				if (err != nil) != tt.wantErr {
+					t.Fatalf("GetObjectInfo() err %v, wantErr %v", err, tt.wantErr)
+				}
+				if tt.wantErr {
+					return
+				}
+				if info.Bucket != tt.args.bucketName {
+					t.Fatal("bad bucket")
+				}
+				if info.Name != tt.args.objectName {
+					t.Fatal("bad object")
+				}
+			})
+		}
+
+	})
+	t.Run("ListObjectsV2", func(t *testing.T) {
+		if _, err := gateway.ListObjectsV2(
+			context.Background(),
+			testBucket1, "", "", "",
+			1000,
+			true,
+			"",
+		); err == nil {
+			t.Fatal("error expected")
+		}
+	})
+	t.Run("GetObjectNInfo", func(t *testing.T) {
+		t.Skip("TODO")
+	})
+
 	t.Run("CopyObject", func(t *testing.T) {
 		t.Skip("TODO")
 	})
