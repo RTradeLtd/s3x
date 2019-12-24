@@ -2,7 +2,6 @@ package s3x
 
 import (
 	"context"
-	fmt "fmt"
 	"io"
 	"os"
 	"strings"
@@ -86,24 +85,41 @@ func TestGateway_Object(t *testing.T) {
 		t.Skip("TODO")
 	})
 	t.Run("PutObject", func(t *testing.T) {
-		resp, err := gateway.PutObject(
-			context.Background(),
-			testBucket1,
-			testObject1,
-			cmd.NewPutObjReader(
-				toObjectReader(
-					t,
-					strings.NewReader(testObject1Data),
-					int64(len(testObject1Data)),
-				),
-				nil, nil,
-			),
-			cmd.ObjectOptions{},
-		)
-		if err != nil {
-			t.Fatal(err)
+		type args struct {
+			bucketName, objectName, objectData string
 		}
-		fmt.Printf("%+v\n", resp)
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{"OK-Bucket-Exists", args{testBucket1, testObject1, testObject1Data}, false},
+			{"Fail-No-Bucket", args{testBucket2, testObject1, testObject1Data}, true},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				resp, err := gateway.PutObject(
+					context.Background(),
+					tt.args.bucketName,
+					tt.args.objectName,
+					cmd.NewPutObjReader(
+						toObjectReader(
+							t,
+							strings.NewReader(tt.args.objectData),
+							int64(len(testObject1Data)),
+						),
+						nil, nil,
+					),
+					cmd.ObjectOptions{},
+				)
+				if (err != nil) != tt.wantErr {
+					t.Fatalf("PutObject() err %v, wantErr %v", err, tt.wantErr)
+				}
+				if err == nil && resp.Bucket != tt.args.bucketName {
+					t.Fatal("bad bucket name")
+				}
+			})
+		}
 	})
 	t.Run("CopyObject", func(t *testing.T) {
 		t.Skip("TODO")
