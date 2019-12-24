@@ -9,3 +9,4 @@ gen:
 		--gogofaster_out=plugins=grpc:. \
 		--grpc-gateway_out=.
 	sed -i '/_ \"google\/protobuf\"/d' s3.pb.go
+	go vet ./...

@@ -76,7 +76,7 @@ message Object {
 message ObjectInfo {
     string bucket = 1;
     string name = 2;
-    string modTime = 3;
+    google.protobuf.Timestamp modTime = 3 [(gogoproto.stdtime) = true, (gogoproto.nullable) = false];
     int64 size = 4;
     bool isDir = 5;
     string etag = 6;
@@ -87,7 +87,7 @@ message ObjectInfo {
     repeated ObjectPartInfo parts = 11 [(gogoproto.nullable) = false];
     map<string, string> userDefined = 12;
     bool metadataOnly = 13;
-    string accTime = 14;
+    google.protobuf.Timestamp accTime = 14 [(gogoproto.stdtime) = true, (gogoproto.nullable) = true];
     string backendType = 15;
     string contentDisposition = 16;
     string contentLanguage = 17;

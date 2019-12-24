@@ -188,7 +188,7 @@ func (x *xObjects) PutObject(
 			obinfo.ContentType = v
 		}
 	}
-	obinfo.ModTime = time.Now().UTC().String()
+	obinfo.ModTime = time.Now().UTC()
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return objInfo, x.toMinioErr(err, bucket, object)

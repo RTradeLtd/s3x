@@ -2,7 +2,6 @@ package s3x
 
 import (
 	"context"
-	"time"
 
 	pb "github.com/RTradeLtd/TxPB/go"
 	minio "github.com/RTradeLtd/s3x/cmd"
@@ -100,16 +99,12 @@ func (x *xObjects) getMinioObjectInfo(ctx context.Context, bucketName, objectNam
 	if err != nil {
 		return minio.ObjectInfo{}, err
 	}
-	modTime, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", obj.GetObjectInfo().ModTime)
-	if err != nil {
-		return minio.ObjectInfo{}, err
-	}
 	return minio.ObjectInfo{
 		Bucket:      obj.GetObjectInfo().Bucket,
 		Name:        objectName,
 		ETag:        minio.ToS3ETag(obj.GetObjectInfo().Etag),
 		Size:        obj.GetObjectInfo().Size_,
-		ModTime:     modTime,
+		ModTime:     obj.GetObjectInfo().ModTime,
 		ContentType: obj.GetObjectInfo().ContentType,
 		UserDefined: obj.GetObjectInfo().UserDefined,
 	}, nil
