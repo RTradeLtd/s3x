@@ -133,6 +133,13 @@ func (le *LedgerStore) DeleteBucket(name string) error {
 	return le.putLedger(ledger)
 }
 
+// Close shuts down the ledger datastore
+func (le *LedgerStore) Close() error {
+	le.Lock()
+	defer le.Unlock()
+	return le.ds.Close()
+}
+
 /////////////////////
 // GETTER FUNCTINS //
 /////////////////////

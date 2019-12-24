@@ -24,8 +24,40 @@ const (
 	temxBackend = "s3x"
 )
 
+// TEMX implements a MinIO gateway ontop of TemporalX
+type TEMX struct {
+	HTTPAddr string
+	GRPCAddr string
+	DSPath   string
+	XAddr    string
+}
+
+// infoAPIServer provides access to the InfoAPI
+// allowing retrieval of the corresponding ipfs cids
+// for our various buckets and objects
+type infoAPIServer struct {
+	InfoAPIServer
+	httpServer *http.Server
+	httpMux    *runtime.ServeMux
+	grpcServer *grpc.Server
+}
+
+// xObjects bridges S3 -> TemporalX (IPFS)
+type xObjects struct {
+	minio.GatewayUnsupported
+	mu        sync.Mutex
+	dagClient pb.DagAPIClient
+	ctx       context.Context
+
+	// ledgerStore is responsible for updating our internal ledger state
+	ledgerStore *LedgerStore
+
+	infoAPI *infoAPIServer
+
+	listener net.Listener
+}
+
 func init() {
-	// TODO(bonedaddy): add help command
 	minio.RegisterGatewayCommand(cli.Command{
 		Name:        temxBackend,
 		Usage:       "TemporalX IPFS Gateway",
@@ -65,14 +97,6 @@ func temxGatewayMain(ctx *cli.Context) {
 	})
 }
 
-// TEMX implements a MinIO gateway ontop of TemporalX
-type TEMX struct {
-	HTTPAddr string
-	GRPCAddr string
-	DSPath   string
-	XAddr    string
-}
-
 // newLedgerStore returns an instance of ledgerStore that uses badgerv2
 func (g *TEMX) newLedgerStore(dsPath string) (*LedgerStore, error) {
 	opts := badger.DefaultOptions
@@ -85,6 +109,7 @@ func (g *TEMX) newLedgerStore(dsPath string) (*LedgerStore, error) {
 
 // returns an instance of xObjects
 func (g *TEMX) getXObjects(creds auth.Credentials) (*xObjects, error) {
+	// connect to TemporalX
 	conn, err := grpc.Dial(g.XAddr,
 		grpc.WithTransportCredentials(
 			credentials.NewTLS(
@@ -97,24 +122,35 @@ func (g *TEMX) getXObjects(creds auth.Credentials) (*xObjects, error) {
 	if err != nil {
 		return nil, err
 	}
+	// instantiate our internal ledger
 	ledger, err := g.newLedgerStore(g.DSPath)
 	if err != nil {
 		return nil, err
 	}
+	// create a grpc listener
+	listener, err := net.Listen("tcp", g.GRPCAddr)
+	if err != nil {
+		return nil, err
+	}
+	// instantiate initial xObjects type
+	// responsible for bridging S3 -> TemporalX (IPFS)
 	xobj := &xObjects{
-		creds:     creds,
-		dagClient: pb.NewDagAPIClient(conn),
-		httpClient: &http.Client{
-			Transport: minio.NewCustomHTTPTransport(),
-		},
+		dagClient:   pb.NewDagAPIClient(conn),
 		ctx:         context.Background(),
 		ledgerStore: ledger,
-		infoAPI: &apiServer{
+		infoAPI: &infoAPIServer{
 			httpMux:    runtime.NewServeMux(),
 			grpcServer: grpc.NewServer(),
 		},
+		listener: listener,
 	}
+	xobj.infoAPI.httpServer = &http.Server{
+		Addr:    g.HTTPAddr,
+		Handler: xobj.infoAPI.httpMux,
+	}
+	// register the grpc server
 	RegisterInfoAPIServer(xobj.infoAPI.grpcServer, xobj)
+	// register the grpc-gateway http endpoint
 	if err := RegisterInfoAPIHandlerFromEndpoint(
 		xobj.ctx,
 		xobj.infoAPI.httpMux,
@@ -132,25 +168,16 @@ func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error
 	if err != nil {
 		return nil, err
 	}
-	listener, err := net.Listen("tcp", g.GRPCAddr)
-	if err != nil {
-		return nil, err
-	}
-	// TODO(bonedaddy): clean this trash up
 	go func() {
-		httpServer := &http.Server{
-			Addr:    g.HTTPAddr,
-			Handler: xobj.infoAPI.httpMux,
-		}
 		go func() {
 			select {
 			case <-xobj.ctx.Done():
 				xobj.infoAPI.grpcServer.Stop()
-				httpServer.Close()
+				xobj.infoAPI.httpServer.Close()
 			}
 		}()
-		go xobj.infoAPI.grpcServer.Serve(listener)
-		if err := httpServer.ListenAndServe(); err != nil {
+		go xobj.infoAPI.grpcServer.Serve(xobj.listener)
+		if err := xobj.infoAPI.httpServer.ListenAndServe(); err != nil {
 			log.Print("error in http server", err)
 		}
 	}()
@@ -167,27 +194,9 @@ func (g *TEMX) Production() bool {
 	return true
 }
 
-type apiServer struct {
-	InfoAPIServer
-	httpMux    *runtime.ServeMux
-	grpcServer *grpc.Server
-}
-type xObjects struct {
-	minio.GatewayUnsupported
-	mu         sync.Mutex
-	creds      auth.Credentials
-	dagClient  pb.DagAPIClient
-	httpClient *http.Client
-	ctx        context.Context
-
-	// ledgerStore is responsible for updating our internal ledger state
-	ledgerStore *LedgerStore
-
-	infoAPI *apiServer
-}
-
+// Shutdown is used to shutdown our xObjects service layer
 func (x *xObjects) Shutdown(ctx context.Context) error {
-	return nil
+	return x.ledgerStore.Close()
 }
 
 // StorageInfo is not relevant to TemporalX backend.
