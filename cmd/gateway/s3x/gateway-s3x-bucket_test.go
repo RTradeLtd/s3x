@@ -16,11 +16,15 @@ const (
 
 func TestGateway_Bucket(t *testing.T) {
 	testPath := "tmp-bucket-test"
+	defer func() {
+		os.Unsetenv("S3X_DS_PATH")
+		os.RemoveAll(testPath)
+	}()
 	os.Setenv("S3X_DS_PATH", testPath)
 	temx := &TEMX{
 		HTTPAddr: "0.0.0.0:8889",
 		GRPCAddr: "0.0.0.0:8888",
-		DSPath:   "s3xstore",
+		DSPath:   testPath,
 		XAddr:    "xapi-dev.temporal.cloud:9090",
 	}
 	gateway, err := temx.NewGatewayLayer(auth.Credentials{})
@@ -130,6 +134,4 @@ func TestGateway_Bucket(t *testing.T) {
 			})
 		}
 	})
-	os.Unsetenv("S3X_DS_PATH")
-	os.RemoveAll(testPath)
 }
