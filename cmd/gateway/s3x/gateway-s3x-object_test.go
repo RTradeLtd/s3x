@@ -150,7 +150,40 @@ func TestGateway_Object(t *testing.T) {
 		}
 	})
 	t.Run("GetObjectNInfo", func(t *testing.T) {
-		t.Skip("TODO")
+		tests := []struct {
+			name    string
+			args    args
+			wantErr bool
+		}{
+			{"Ok", args{testBucket1, testObject1}, false},
+			{"Fail-Bad-Object", args{testBucket1, "notarealobj"}, true},
+			{"Fail-Bad-Bucket", args{"notarealbucket", testObject1}, true},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				resp, err := gateway.GetObjectNInfo(
+					context.Background(),
+					tt.args.bucketName,
+					tt.args.objectName,
+					&cmd.HTTPRangeSpec{},
+					nil,
+					0,
+					cmd.ObjectOptions{},
+				)
+				if (err != nil) != tt.wantErr {
+					t.Fatalf("GetObjectNInfo() err %v, wantErr %v", err, tt.wantErr)
+				}
+				if tt.wantErr {
+					return
+				}
+				if resp.ObjInfo.Bucket != tt.args.bucketName {
+					t.Fatal("bad bucket")
+				}
+				if resp.ObjInfo.Name != tt.args.objectName {
+					t.Fatal("bad object")
+				}
+			})
+		}
 	})
 
 	t.Run("CopyObject", func(t *testing.T) {

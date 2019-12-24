@@ -104,16 +104,9 @@ func (x *xObjects) GetObjectNInfo(
 	lockType minio.LockType,
 	opts minio.ObjectOptions,
 ) (gr *minio.GetObjectReader, err error) {
-	if !x.ledgerStore.BucketExists(bucket) {
-		return gr, minio.BucketNotFound{Bucket: bucket}
-	}
-	if err := x.ledgerStore.ObjectExists(bucket, object); err != nil {
-		return gr, x.toMinioErr(err, bucket, object)
-	}
-	// TODO(bonedaddy): figure out why this doesn't return anything
 	objinfo, err := x.GetObjectInfo(ctx, bucket, object, opts)
 	if err != nil {
-		return gr, x.toMinioErr(err, bucket, object)
+		return gr, err // the error from this is already properly converted
 	}
 	var startOffset, length int64
 	startOffset, length, err = rs.GetOffsetLength(objinfo.Size)
