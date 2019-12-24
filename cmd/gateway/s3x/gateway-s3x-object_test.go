@@ -2,10 +2,15 @@ package s3x
 
 import (
 	"context"
+	fmt "fmt"
+	"io"
 	"os"
+	"strings"
 	"testing"
 
+	"github.com/RTradeLtd/s3x/cmd"
 	"github.com/RTradeLtd/s3x/pkg/auth"
+	"github.com/RTradeLtd/s3x/pkg/hash"
 )
 
 const (
@@ -81,7 +86,24 @@ func TestGateway_Object(t *testing.T) {
 		t.Skip("TODO")
 	})
 	t.Run("PutObject", func(t *testing.T) {
-		t.Skip("TODO")
+		resp, err := gateway.PutObject(
+			context.Background(),
+			testBucket1,
+			testObject1,
+			cmd.NewPutObjReader(
+				toObjectReader(
+					t,
+					strings.NewReader(testObject1Data),
+					int64(len(testObject1Data)),
+				),
+				nil, nil,
+			),
+			cmd.ObjectOptions{},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Printf("%+v\n", resp)
 	})
 	t.Run("CopyObject", func(t *testing.T) {
 		t.Skip("TODO")
@@ -92,4 +114,12 @@ func TestGateway_Object(t *testing.T) {
 	t.Run("DeleteObjects", func(t *testing.T) {
 		t.Skip("TODO")
 	})
+}
+
+func toObjectReader(t *testing.T, input io.Reader, size int64) *hash.Reader {
+	r, err := hash.NewReader(input, size, "", "", size, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return r
 }
