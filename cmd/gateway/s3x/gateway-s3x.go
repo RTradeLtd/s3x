@@ -170,11 +170,9 @@ func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error
 	}
 	go func() {
 		go func() {
-			select {
-			case <-xobj.ctx.Done():
-				xobj.infoAPI.grpcServer.Stop()
-				xobj.infoAPI.httpServer.Close()
-			}
+			<-xobj.ctx.Done()
+			xobj.infoAPI.grpcServer.Stop()
+			xobj.infoAPI.httpServer.Close()
 		}()
 		go xobj.infoAPI.grpcServer.Serve(xobj.listener)
 		if err := xobj.infoAPI.httpServer.ListenAndServe(); err != nil {
@@ -228,6 +226,7 @@ func (x *xObjects) GetHash(ctx context.Context, req *InfoRequest) (*InfoResponse
 	case "":
 		if req.GetBucket() == "" {
 			err = status.Error(codes.InvalidArgument, emptyBucketErr)
+			break
 		}
 		hash, err = x.ledgerStore.GetBucketHash(req.GetBucket())
 		if err != nil {
@@ -241,9 +240,11 @@ func (x *xObjects) GetHash(ctx context.Context, req *InfoRequest) (*InfoResponse
 	default:
 		if req.GetBucket() == "" {
 			err = status.Error(codes.InvalidArgument, emptyBucketErr)
+			break
 		}
 		if req.GetObject() == "" {
 			err = status.Error(codes.InvalidArgument, emptyObjectErr)
+			break
 		}
 		hash, err = x.ledgerStore.GetObjectHash(req.GetBucket(), req.GetObject())
 		if err != nil {
