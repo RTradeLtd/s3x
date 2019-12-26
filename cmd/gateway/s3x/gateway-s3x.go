@@ -44,9 +44,10 @@ type infoAPIServer struct {
 // xObjects bridges S3 -> TemporalX (IPFS)
 type xObjects struct {
 	minio.GatewayUnsupported
-	mu        sync.Mutex
-	dagClient pb.DagAPIClient
-	ctx       context.Context
+	mu         sync.Mutex
+	dagClient  pb.DagAPIClient
+	fileClient pb.FileAPIClient
+	ctx        context.Context
 
 	// ledgerStore is responsible for updating our internal ledger state
 	ledgerStore *LedgerStore
@@ -135,6 +136,7 @@ func (g *TEMX) getXObjects(creds auth.Credentials) (*xObjects, error) {
 	// responsible for bridging S3 -> TemporalX (IPFS)
 	xobj := &xObjects{
 		dagClient:   pb.NewDagAPIClient(conn),
+		fileClient:  pb.NewFileAPIClient(conn),
 		ctx:         context.Background(),
 		ledgerStore: ledger,
 		infoAPI: &infoAPIServer{

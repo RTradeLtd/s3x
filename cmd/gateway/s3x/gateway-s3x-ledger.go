@@ -39,6 +39,50 @@ func newLedgerStore(ds datastore.Batching) *LedgerStore {
 // SETTER FUNCTINS //
 /////////////////////
 
+// NewMultipartUpload is used to store the initial start of a multipart upload request
+func (le *LedgerStore) NewMultipartUpload(bucketName, objectName, multipartID string) error {
+	le.Lock()
+	defer le.Unlock()
+	ledger, err := le.getLedger()
+	if err != nil {
+		return err
+	}
+	if err := le.bucketExists(ledger, bucketName); err != nil {
+		return err
+	}
+	if ledger.MultipartUploads == nil {
+		ledger.MultipartUploads = make(map[string]MultipartUpload)
+	}
+	ledger.MultipartUploads[multipartID] = MultipartUpload{
+		Bucket: bucketName,
+		Object: objectName,
+		Id:     multipartID,
+	}
+	return le.putLedger(ledger)
+}
+
+func (le *LedgerStore) PutObjectPart(bucketName, objectName, partHash, multipartID string, partNumber int64) error {
+	le.Lock()
+	defer le.Unlock()
+	ledger, err := le.getLedger()
+	if err != nil {
+		return err
+	}
+	if err := le.bucketExists(ledger, bucketName); err != nil {
+		return err
+	}
+	if err := le.multipartExists(ledger, multipartID); err != nil {
+		return err
+	}
+	mpart := ledger.MultipartUploads[multipartID]
+	mpart.ObjectParts = append(mpart.ObjectParts, ObjectPartInfo{
+		Number:   partNumber,
+		DataHash: partHash,
+	})
+	ledger.MultipartUploads[multipartID] = mpart
+	return le.putLedger(ledger)
+}
+
 // NewBucket creates a new ledger bucket entry
 func (le *LedgerStore) NewBucket(name, hash string) error {
 	le.Lock()
@@ -143,6 +187,17 @@ func (le *LedgerStore) Close() error {
 /////////////////////
 // GETTER FUNCTINS //
 /////////////////////
+
+// MultipartIDExists is used to lookup if the given multipart id exists
+func (le *LedgerStore) MultipartIDExists(id string) error {
+	le.RLock()
+	defer le.RUnlock()
+	ledger, err := le.getLedger()
+	if err != nil {
+		return err
+	}
+	return le.multipartExists(ledger, id)
+}
 
 // BucketExists is a public function to check if a bucket exists
 func (le *LedgerStore) BucketExists(name string) error {
@@ -269,6 +324,17 @@ func (le *LedgerStore) createLedgerIfNotExist() {
 	if err := le.ds.Put(ledgerKey, ledgerBytes); err != nil {
 		panic(err)
 	}
+}
+
+// multipartExists is a helper function to check if a multispart id exists in our ledger
+func (le *LedgerStore) multipartExists(ledger *Ledger, id string) error {
+	if ledger.MultipartUploads == nil {
+		return ErrInvalidUploadID
+	}
+	if ledger.MultipartUploads[id].Id == "" {
+		return ErrInvalidUploadID
+	}
+	return nil
 }
 
 // objectExists is a helper function to check if an object exists in our ledger.

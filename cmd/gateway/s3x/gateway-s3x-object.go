@@ -21,18 +21,18 @@ func (x *xObjects) ListObjects(
 ) (loi minio.ListObjectsInfo, e error) {
 	// TODO(bonedaddy): implement complex search
 	if err := x.ledgerStore.BucketExists(bucket); err != nil {
-		return loi, x.toMinioErr(err, bucket, "")
+		return loi, x.toMinioErr(err, bucket, "", "")
 	}
 	objHashes, err := x.ledgerStore.GetObjectHashes(bucket)
 	if err != nil {
-		return loi, x.toMinioErr(err, bucket, "")
+		return loi, x.toMinioErr(err, bucket, "", "")
 	}
 	loi.Objects = make([]minio.ObjectInfo, len(objHashes))
 	var count int
 	for name := range objHashes {
 		info, err := x.getMinioObjectInfo(ctx, bucket, name)
 		if err != nil {
-			return loi, x.toMinioErr(err, bucket, name)
+			return loi, x.toMinioErr(err, bucket, name, "")
 		}
 		loi.Objects[count] = info
 		count++
@@ -51,11 +51,11 @@ func (x *xObjects) ListObjectsV2(
 	startAfter string,
 ) (loi minio.ListObjectsV2Info, err error) {
 	if err := x.ledgerStore.BucketExists(bucket); err != nil {
-		return loi, x.toMinioErr(err, bucket, "")
+		return loi, x.toMinioErr(err, bucket, "", "")
 	}
 	objHashes, err := x.ledgerStore.GetObjectHashes(bucket)
 	if err != nil {
-		return loi, x.toMinioErr(err, bucket, "")
+		return loi, x.toMinioErr(err, bucket, "", "")
 	}
 
 	if len(objHashes) >= 1000 {
@@ -67,7 +67,7 @@ func (x *xObjects) ListObjectsV2(
 	for name := range objHashes {
 		info, err := x.getMinioObjectInfo(ctx, bucket, name)
 		if err != nil {
-			return loi, x.toMinioErr(err, bucket, name)
+			return loi, x.toMinioErr(err, bucket, name, "")
 		}
 		loi.Objects[count] = info
 		count++
@@ -119,11 +119,11 @@ func (x *xObjects) GetObject(
 	opts minio.ObjectOptions,
 ) error {
 	if err := x.ledgerStore.ObjectExists(bucket, object); err != nil {
-		return x.toMinioErr(err, bucket, object)
+		return x.toMinioErr(err, bucket, object, "")
 	}
 	obj, err := x.objectFromBucket(ctx, bucket, object)
 	if err != nil {
-		return x.toMinioErr(err, bucket, object)
+		return x.toMinioErr(err, bucket, object, "")
 	}
 	reader := bytes.NewReader(obj.GetData())
 	_, err = reader.WriteTo(writer)
@@ -137,7 +137,7 @@ func (x *xObjects) GetObjectInfo(
 	opts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
 	info, err := x.getMinioObjectInfo(ctx, bucket, object)
-	return info, x.toMinioErr(err, bucket, object)
+	return info, x.toMinioErr(err, bucket, object, "")
 }
 
 // PutObject creates a new object with the incoming data,
@@ -148,7 +148,7 @@ func (x *xObjects) PutObject(
 	opts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
 	if err := x.ledgerStore.BucketExists(bucket); err != nil {
-		return objInfo, x.toMinioErr(err, bucket, "")
+		return objInfo, x.toMinioErr(err, bucket, "", "")
 	}
 	// TODO(bonedaddy): ensure consistency with the way s3 and b2 handle this
 	obinfo := ObjectInfo{
@@ -170,7 +170,7 @@ func (x *xObjects) PutObject(
 	}
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
-		return objInfo, x.toMinioErr(err, bucket, object)
+		return objInfo, x.toMinioErr(err, bucket, object, "")
 	}
 	obinfo.Size_ = int64(len(data))
 	// add the object to ipfs
@@ -179,20 +179,20 @@ func (x *xObjects) PutObject(
 		ObjectInfo: obinfo,
 	})
 	if err != nil {
-		return objInfo, x.toMinioErr(err, bucket, object)
+		return objInfo, x.toMinioErr(err, bucket, object, "")
 	}
 	// update the bucket on ipfs with the new object
 	bucketHash, err := x.addObjectToBucketAndIPFS(ctx, object, objectHash, bucket)
 	if err != nil {
-		return objInfo, x.toMinioErr(err, bucket, object)
+		return objInfo, x.toMinioErr(err, bucket, object, "")
 	}
 	// update internal ledger state with bucket hash
 	if err := x.ledgerStore.UpdateBucketHash(bucket, bucketHash); err != nil {
-		return objInfo, x.toMinioErr(err, bucket, object)
+		return objInfo, x.toMinioErr(err, bucket, object, "")
 	}
 	// update internal ledger state with the new object
 	if err := x.ledgerStore.AddObjectToBucket(bucket, object, objectHash); err != nil {
-		return objInfo, x.toMinioErr(err, bucket, object)
+		return objInfo, x.toMinioErr(err, bucket, object, "")
 	}
 	log.Printf(
 		"bucket-name: %s, bucket-hash: %s, object-name: %s, object-hash: %s",
@@ -219,19 +219,19 @@ func (x *xObjects) CopyObject(
 	// get hash of th eobject
 	objHash, err := x.ledgerStore.GetObjectHash(srcBucket, srcObject)
 	if err != nil {
-		return objInfo, x.toMinioErr(err, srcBucket, srcObject)
+		return objInfo, x.toMinioErr(err, srcBucket, srcObject, "")
 	}
 	// update the destination bucket with the object hash under the destination object
 	dstBucketHash, err := x.addObjectToBucketAndIPFS(ctx, dstObject, objHash, dstBucket)
 	if err != nil {
-		return objInfo, x.toMinioErr(err, dstBucket, dstObject)
+		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 	}
 	// update the internal ledger state for the destination bucket and destination bucket hash
 	if err := x.ledgerStore.UpdateBucketHash(dstBucket, dstBucketHash); err != nil {
-		return objInfo, x.toMinioErr(err, dstBucket, dstObject)
+		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 	}
 	objInfo, err = x.getMinioObjectInfo(ctx, dstBucket, dstObject)
-	return objInfo, x.toMinioErr(err, dstBucket, dstObject)
+	return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 }
 
 // DeleteObject deletes a blob in bucket
@@ -241,7 +241,7 @@ func (x *xObjects) DeleteObject(
 ) error {
 	//TODO(bonedaddy): implement removal from IPFS
 	err := x.ledgerStore.RemoveObject(bucket, object)
-	return x.toMinioErr(err, bucket, object)
+	return x.toMinioErr(err, bucket, object, "")
 }
 
 func (x *xObjects) DeleteObjects(
@@ -254,7 +254,7 @@ func (x *xObjects) DeleteObjects(
 	for i, object := range objects {
 		errs[i] = x.toMinioErr(
 			x.ledgerStore.RemoveObject(bucket, object),
-			bucket, object,
+			bucket, object, "",
 		)
 	}
 	return errs, nil

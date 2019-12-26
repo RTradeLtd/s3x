@@ -15,7 +15,7 @@ func (x *xObjects) MakeBucketWithLocation(
 ) error {
 	// check to see whether or not the bucket already exists
 	if err := x.ledgerStore.BucketExists(name); err != nil {
-		return x.toMinioErr(err, name, "")
+		return x.toMinioErr(err, name, "", "")
 	}
 	// create the bucket
 	hash, err := x.bucketToIPFS(ctx, &Bucket{
@@ -26,11 +26,11 @@ func (x *xObjects) MakeBucketWithLocation(
 		},
 	})
 	if err != nil {
-		return x.toMinioErr(err, name, "")
+		return x.toMinioErr(err, name, "", "")
 	}
 	log.Printf("bucket-name: %s\tbucket-hash: %s", name, hash)
 	//  update internal ledger state and return
-	return x.toMinioErr(x.ledgerStore.NewBucket(name, hash), name, "")
+	return x.toMinioErr(x.ledgerStore.NewBucket(name, hash), name, "", "")
 }
 
 // GetBucketInfo gets bucket metadata..
@@ -40,7 +40,7 @@ func (x *xObjects) GetBucketInfo(
 ) (bi minio.BucketInfo, err error) {
 	bucket, err := x.bucketFromIPFS(ctx, name)
 	if err != nil {
-		return bi, x.toMinioErr(err, name, "")
+		return bi, x.toMinioErr(err, name, "", "")
 	}
 	return minio.BucketInfo{
 		Name: bucket.GetBucketInfo().Name,
@@ -63,7 +63,7 @@ func (x *xObjects) ListBuckets(ctx context.Context) ([]minio.BucketInfo, error) 
 	for i, name := range names {
 		info, err := x.GetBucketInfo(ctx, name)
 		if err != nil {
-			return nil, x.toMinioErr(err, name, "")
+			return nil, x.toMinioErr(err, name, "", "")
 		}
 		infos[i] = info
 	}
@@ -73,5 +73,5 @@ func (x *xObjects) ListBuckets(ctx context.Context) ([]minio.BucketInfo, error) 
 // DeleteBucket deletes a bucket on S3
 func (x *xObjects) DeleteBucket(ctx context.Context, name string) error {
 	// TODO(bonedaddy): implement removal call from TemporalX
-	return x.toMinioErr(x.ledgerStore.DeleteBucket(name), name, "")
+	return x.toMinioErr(x.ledgerStore.DeleteBucket(name), name, "", "")
 }

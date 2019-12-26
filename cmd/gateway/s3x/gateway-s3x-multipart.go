@@ -4,8 +4,13 @@ import (
 	"context"
 	"errors"
 	fmt "fmt"
+	"io"
+	"io/ioutil"
+	"time"
 
+	pb "github.com/RTradeLtd/TxPB/go"
 	minio "github.com/RTradeLtd/s3x/cmd"
+	"github.com/segmentio/ksuid"
 )
 
 // ListMultipartUploads lists all multipart uploads.
@@ -15,15 +20,72 @@ func (x *xObjects) ListMultipartUploads(ctx context.Context, bucket string, pref
 }
 
 // NewMultipartUpload upload object in multiple parts
-func (x *xObjects) NewMultipartUpload(ctx context.Context, bucket string, object string, o minio.ObjectOptions) (uploadID string, err error) {
-	fmt.Println("new multipart upload")
-	return uploadID, errors.New("not yet implemented")
+func (x *xObjects) NewMultipartUpload(
+	ctx context.Context,
+	bucket, object string,
+	o minio.ObjectOptions,
+) (uploadID string, err error) {
+	if err := x.ledgerStore.BucketExists(bucket); err != nil {
+		return "", x.toMinioErr(err, bucket, "", "")
+	}
+	uploadID = ksuid.New().String()
+	return uploadID, x.toMinioErr(
+		x.ledgerStore.NewMultipartUpload(bucket, object, uploadID),
+		bucket, object, uploadID,
+	)
 }
 
 // PutObjectPart puts a part of object in bucket
-func (x *xObjects) PutObjectPart(ctx context.Context, bucket string, object string, uploadID string, partID int, r *minio.PutObjReader, opts minio.ObjectOptions) (pi minio.PartInfo, e error) {
-	fmt.Println("put object part")
-	return pi, errors.New("not yet implemented")
+func (x *xObjects) PutObjectPart(
+	ctx context.Context,
+	bucket, object, uploadID string,
+	partID int,
+	r *minio.PutObjReader,
+	opts minio.ObjectOptions,
+) (pi minio.PartInfo, e error) {
+	if err := x.ledgerStore.BucketExists(bucket); err != nil {
+		return pi, x.toMinioErr(err, bucket, "", "")
+	}
+	// add the given data to ipfs
+	ioutil.ReadAll(r)
+	stream, err := x.fileClient.UploadFile(ctx)
+	if err != nil {
+		return pi, err
+	}
+	var (
+		buf  = make([]byte, 4194294)
+		size int
+	)
+	for {
+		n, err := r.Read(buf)
+		if err != nil && err == io.EOF {
+			if n == 0 {
+				break
+			}
+		} else if err != nil && err != io.EOF {
+			return pi, err
+		}
+		size = size + n
+		if err := stream.Send(&pb.UploadRequest{
+			Blob: &pb.Blob{Content: buf[:n]},
+		}); err != nil {
+			return pi, err
+		}
+	}
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		return pi, err
+	}
+	err = x.ledgerStore.PutObjectPart(bucket, object, resp.GetHash(), uploadID, int64(partID))
+	if err != nil {
+		return pi, x.toMinioErr(err, bucket, object, uploadID)
+	}
+	return minio.PartInfo{
+		PartNumber:   partID,
+		LastModified: time.Now().UTC(),
+		//ETag: someEtagNum,
+		Size: int64(size),
+	}, nil
 }
 
 // CopyObjectPart creates a part in a multipart upload by copying
