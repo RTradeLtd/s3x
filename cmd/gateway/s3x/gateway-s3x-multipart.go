@@ -5,7 +5,6 @@ import (
 	"errors"
 	fmt "fmt"
 	"io"
-	"io/ioutil"
 	"time"
 
 	pb "github.com/RTradeLtd/TxPB/go"
@@ -47,7 +46,6 @@ func (x *xObjects) PutObjectPart(
 		return pi, x.toMinioErr(err, bucket, "", "")
 	}
 	// add the given data to ipfs
-	ioutil.ReadAll(r)
 	stream, err := x.fileClient.UploadFile(ctx)
 	if err != nil {
 		return pi, err
