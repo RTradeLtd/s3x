@@ -61,6 +61,7 @@ func (le *LedgerStore) NewMultipartUpload(bucketName, objectName, multipartID st
 	return le.putLedger(ledger)
 }
 
+// PutObjectPart is used to record an individual object part within a multipart upload
 func (le *LedgerStore) PutObjectPart(bucketName, objectName, partHash, multipartID string, partNumber int64) error {
 	le.Lock()
 	defer le.Unlock()
