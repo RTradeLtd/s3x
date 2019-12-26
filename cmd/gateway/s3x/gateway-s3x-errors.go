@@ -32,7 +32,7 @@ func (x *xObjects) toMinioErr(err error, bucket, object, id string) error {
 	case ErrLedgerBucketExists:
 		err = minio.BucketAlreadyExists{Bucket: bucket}
 	case ErrInvalidUploadID:
-		err = minio.InvalidUploadID{UploadID: id}
+		err = minio.InvalidUploadID{Bucket: bucket, Object: object, UploadID: id}
 	case nil:
 		return nil
 	}
