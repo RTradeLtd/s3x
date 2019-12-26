@@ -14,8 +14,8 @@ func (x *xObjects) MakeBucketWithLocation(
 	name, location string,
 ) error {
 	// check to see whether or not the bucket already exists
-	if x.ledgerStore.BucketExists(name) {
-		return minio.BucketAlreadyExists{Bucket: name}
+	if err := x.ledgerStore.BucketExists(name); err != nil {
+		return x.toMinioErr(err, name, "")
 	}
 	// create the bucket
 	hash, err := x.bucketToIPFS(ctx, &Bucket{

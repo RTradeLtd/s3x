@@ -47,8 +47,8 @@ func (le *LedgerStore) NewBucket(name, hash string) error {
 	if err != nil {
 		return err
 	}
-	if le.bucketExists(ledger, name) {
-		return ErrLedgerBucketExists
+	if err := le.bucketExists(ledger, name); err != nil {
+		return err
 	}
 	if ledger.GetBuckets() == nil {
 		ledger.Buckets = make(map[string]LedgerBucketEntry)
@@ -70,8 +70,8 @@ func (le *LedgerStore) UpdateBucketHash(name, hash string) error {
 	if err != nil {
 		return err
 	}
-	if !le.bucketExists(ledger, name) {
-		return ErrLedgerBucketDoesNotExist
+	if err := le.bucketExists(ledger, name); err != nil {
+		return err
 	}
 	entry := ledger.Buckets[name]
 	entry.IpfsHash = hash
@@ -102,8 +102,8 @@ func (le *LedgerStore) AddObjectToBucket(bucketName, objectName, objectHash stri
 	if err != nil {
 		return err
 	}
-	if !le.bucketExists(ledger, bucketName) {
-		return ErrLedgerBucketDoesNotExist
+	if err := le.bucketExists(ledger, bucketName); err != nil {
+		return err
 	}
 	// prevent nil map panic
 	if ledger.GetBuckets()[bucketName].Objects == nil {
@@ -145,12 +145,12 @@ func (le *LedgerStore) Close() error {
 /////////////////////
 
 // BucketExists is a public function to check if a bucket exists
-func (le *LedgerStore) BucketExists(name string) bool {
+func (le *LedgerStore) BucketExists(name string) error {
 	le.RLock()
 	defer le.RUnlock()
 	ledger, err := le.getLedger()
 	if err != nil {
-		return false
+		return err
 	}
 	return le.bucketExists(ledger, name)
 }
@@ -207,8 +207,8 @@ func (le *LedgerStore) GetObjectHashes(bucket string) (map[string]string, error)
 	if err != nil {
 		return nil, err
 	}
-	if !le.bucketExists(ledger, bucket) {
-		return nil, ErrLedgerBucketDoesNotExist
+	if err := le.bucketExists(ledger, bucket); err != nil {
+		return nil, err
 	}
 	// maps object names to hashes
 	var hashes = make(map[string]string, len(ledger.Buckets[bucket].Objects))
@@ -283,8 +283,11 @@ func (le *LedgerStore) objectExists(ledger *Ledger, bucket, object string) error
 }
 
 // bucketExists is a helper function to check if a bucket exists in our ledger
-func (le *LedgerStore) bucketExists(ledger *Ledger, name string) bool {
-	return ledger.GetBuckets()[name].Name != ""
+func (le *LedgerStore) bucketExists(ledger *Ledger, name string) error {
+	if ledger.GetBuckets()[name].Name != "" {
+		return ErrLedgerBucketDoesNotExist
+	}
+	return nil
 }
 
 // putLedger is a helper function used to update the ledger store on disk

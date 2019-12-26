@@ -20,8 +20,8 @@ func (x *xObjects) ListObjects(
 	maxKeys int,
 ) (loi minio.ListObjectsInfo, e error) {
 	// TODO(bonedaddy): implement complex search
-	if !x.ledgerStore.BucketExists(bucket) {
-		return loi, minio.BucketNotFound{Bucket: bucket}
+	if err := x.ledgerStore.BucketExists(bucket); err != nil {
+		return loi, x.toMinioErr(err, bucket, "")
 	}
 	objHashes, err := x.ledgerStore.GetObjectHashes(bucket)
 	if err != nil {
@@ -50,8 +50,8 @@ func (x *xObjects) ListObjectsV2(
 	fetchOwner bool,
 	startAfter string,
 ) (loi minio.ListObjectsV2Info, err error) {
-	if !x.ledgerStore.BucketExists(bucket) {
-		return loi, minio.BucketNotFound{Bucket: bucket}
+	if err := x.ledgerStore.BucketExists(bucket); err != nil {
+		return loi, x.toMinioErr(err, bucket, "")
 	}
 	objHashes, err := x.ledgerStore.GetObjectHashes(bucket)
 	if err != nil {
@@ -147,8 +147,8 @@ func (x *xObjects) PutObject(
 	r *minio.PutObjReader,
 	opts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
-	if !x.ledgerStore.BucketExists(bucket) {
-		return objInfo, minio.BucketAlreadyExists{Bucket: bucket, Object: object}
+	if err := x.ledgerStore.BucketExists(bucket); err != nil {
+		return objInfo, x.toMinioErr(err, bucket, "")
 	}
 	// TODO(bonedaddy): ensure consistency with the way s3 and b2 handle this
 	obinfo := ObjectInfo{
