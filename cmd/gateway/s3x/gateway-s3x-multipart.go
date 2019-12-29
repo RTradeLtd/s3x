@@ -81,8 +81,7 @@ func (x *xObjects) PutObjectPart(
 	return minio.PartInfo{
 		PartNumber:   partID,
 		LastModified: time.Now().UTC(),
-		//ETag: someEtagNum,
-		Size: int64(size),
+		Size:         int64(size),
 	}, nil
 }
 
@@ -123,9 +122,17 @@ func (x *xObjects) ListObjectParts(
 }
 
 // AbortMultipartUpload aborts a ongoing multipart upload
-func (x *xObjects) AbortMultipartUpload(ctx context.Context, bucket string, object string, uploadID string) error {
-	fmt.Println("abort multipart upload")
-	return errors.New("not yet implemented")
+func (x *xObjects) AbortMultipartUpload(
+	ctx context.Context,
+	bucket, object, uploadID string,
+) error {
+	// TODO(bonedaddy): remove the corresponding objects from ipfs
+	return x.toMinioErr(
+		x.ledgerStore.AbortMultipartUpload(bucket, uploadID),
+		bucket,
+		object,
+		uploadID,
+	)
 }
 
 // CompleteMultipartUpload completes ongoing multipart upload and finalizes object.
@@ -139,7 +146,6 @@ func (x *xObjects) CompleteMultipartUpload(
 	if err := x.ledgerStore.BucketExists(bucket); err != nil {
 		return oi, x.toMinioErr(err, bucket, object, uploadID)
 	}
-	fmt.Println("complete multipart uplaod")
-	return oi, errors.New("not yet implemented")
+	return oi, errors.New("not finished yet")
 
 }

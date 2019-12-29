@@ -39,6 +39,24 @@ func newLedgerStore(ds datastore.Batching) *LedgerStore {
 // SETTER FUNCTINS //
 /////////////////////
 
+// AbortMultipartUpload is used to abort a multipart upload
+func (le *LedgerStore) AbortMultipartUpload(bucketName, multipartID string) error {
+	le.Lock()
+	defer le.Unlock()
+	ledger, err := le.getLedger()
+	if err != nil {
+		return err
+	}
+	if err := le.bucketExists(ledger, bucketName); err != nil {
+		return err
+	}
+	if err := le.multipartExists(ledger, multipartID); err != nil {
+		return err
+	}
+	delete(ledger.MultipartUploads, multipartID)
+	return le.putLedger(ledger)
+}
+
 // NewMultipartUpload is used to store the initial start of a multipart upload request
 func (le *LedgerStore) NewMultipartUpload(bucketName, objectName, multipartID string) error {
 	le.Lock()
