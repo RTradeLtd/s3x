@@ -14,8 +14,10 @@ func (x *xObjects) MakeBucketWithLocation(
 	name, location string,
 ) error {
 	// check to see whether or not the bucket already exists
-	if err := x.ledgerStore.BucketExists(name); err != nil {
-		return x.toMinioErr(err, name, "", "")
+	// if this returns no error it means the bucket exists
+	// and we should abort
+	if err := x.ledgerStore.BucketExists(name); err == nil {
+		return x.toMinioErr(ErrLedgerBucketExists, name, "", "")
 	}
 	// create the bucket
 	hash, err := x.bucketToIPFS(ctx, &Bucket{

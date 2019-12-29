@@ -47,8 +47,8 @@ func (le *LedgerStore) AbortMultipartUpload(bucketName, multipartID string) erro
 	if err != nil {
 		return err
 	}
-	if err := le.bucketExists(ledger, bucketName); err != nil {
-		return err
+	if !le.bucketExists(ledger, bucketName) {
+		return ErrLedgerBucketDoesNotExist
 	}
 	if err := le.multipartExists(ledger, multipartID); err != nil {
 		return err
@@ -65,8 +65,8 @@ func (le *LedgerStore) NewMultipartUpload(bucketName, objectName, multipartID st
 	if err != nil {
 		return err
 	}
-	if err := le.bucketExists(ledger, bucketName); err != nil {
-		return err
+	if !le.bucketExists(ledger, bucketName) {
+		return ErrLedgerBucketDoesNotExist
 	}
 	if ledger.MultipartUploads == nil {
 		ledger.MultipartUploads = make(map[string]MultipartUpload)
@@ -87,8 +87,8 @@ func (le *LedgerStore) PutObjectPart(bucketName, objectName, partHash, multipart
 	if err != nil {
 		return err
 	}
-	if err := le.bucketExists(ledger, bucketName); err != nil {
-		return err
+	if !le.bucketExists(ledger, bucketName) {
+		return ErrLedgerBucketDoesNotExist
 	}
 	if err := le.multipartExists(ledger, multipartID); err != nil {
 		return err
@@ -110,8 +110,8 @@ func (le *LedgerStore) NewBucket(name, hash string) error {
 	if err != nil {
 		return err
 	}
-	if err := le.bucketExists(ledger, name); err != nil {
-		return err
+	if le.bucketExists(ledger, name) {
+		return ErrLedgerBucketExists
 	}
 	if ledger.GetBuckets() == nil {
 		ledger.Buckets = make(map[string]LedgerBucketEntry)
@@ -133,8 +133,8 @@ func (le *LedgerStore) UpdateBucketHash(name, hash string) error {
 	if err != nil {
 		return err
 	}
-	if err := le.bucketExists(ledger, name); err != nil {
-		return err
+	if !le.bucketExists(ledger, name) {
+		return ErrLedgerBucketDoesNotExist
 	}
 	entry := ledger.Buckets[name]
 	entry.IpfsHash = hash
@@ -165,8 +165,8 @@ func (le *LedgerStore) AddObjectToBucket(bucketName, objectName, objectHash stri
 	if err != nil {
 		return err
 	}
-	if err := le.bucketExists(ledger, bucketName); err != nil {
-		return err
+	if !le.bucketExists(ledger, bucketName) {
+		return ErrLedgerBucketDoesNotExist
 	}
 	// prevent nil map panic
 	if ledger.GetBuckets()[bucketName].Objects == nil {
@@ -240,7 +240,10 @@ func (le *LedgerStore) BucketExists(name string) error {
 	if err != nil {
 		return err
 	}
-	return le.bucketExists(ledger, name)
+	if !le.bucketExists(ledger, name) {
+		err = ErrLedgerBucketDoesNotExist
+	}
+	return err
 }
 
 // ObjectExists is a public function to check if an object exists, and returns the reason
@@ -295,8 +298,8 @@ func (le *LedgerStore) GetObjectHashes(bucket string) (map[string]string, error)
 	if err != nil {
 		return nil, err
 	}
-	if err := le.bucketExists(ledger, bucket); err != nil {
-		return nil, err
+	if !le.bucketExists(ledger, bucket) {
+		return nil, ErrLedgerBucketDoesNotExist
 	}
 	// maps object names to hashes
 	var hashes = make(map[string]string, len(ledger.Buckets[bucket].Objects))
@@ -314,8 +317,8 @@ func (le *LedgerStore) GetMultipartHashes(bucket, multipartID string) ([]string,
 	if err != nil {
 		return nil, err
 	}
-	if err := le.bucketExists(ledger, bucket); err != nil {
-		return nil, err
+	if !le.bucketExists(ledger, bucket) {
+		return nil, ErrLedgerBucketDoesNotExist
 	}
 	if err := le.multipartExists(ledger, multipartID); err != nil {
 		return nil, err
@@ -404,11 +407,8 @@ func (le *LedgerStore) objectExists(ledger *Ledger, bucket, object string) error
 }
 
 // bucketExists is a helper function to check if a bucket exists in our ledger
-func (le *LedgerStore) bucketExists(ledger *Ledger, name string) error {
-	if ledger.GetBuckets()[name].Name != "" {
-		return ErrLedgerBucketDoesNotExist
-	}
-	return nil
+func (le *LedgerStore) bucketExists(ledger *Ledger, name string) bool {
+	return ledger.GetBuckets()[name].Name != ""
 }
 
 // putLedger is a helper function used to update the ledger store on disk
