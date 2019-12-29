@@ -259,6 +259,10 @@ func (x *xObjects) CopyObject(
 	if err := x.ledgerStore.UpdateBucketHash(dstBucket, dstBucketHash); err != nil {
 		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 	}
+	log.Printf(
+		"dst-bucket: %s, dst-bucket-hash: %s, dst-object: %s, dst-object-hash: %s\n",
+		dstBucket, dstBucketHash, dstObject, dstObjHash,
+	)
 	objInfo, err = x.getMinioObjectInfo(ctx, dstBucket, dstObject)
 	return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 }
