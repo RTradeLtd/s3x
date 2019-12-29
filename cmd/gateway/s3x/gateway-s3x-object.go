@@ -217,6 +217,8 @@ func (x *xObjects) CopyObject(
 	srcOpts, dstOpts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
 	// TODO(bonedaddy): implement usage of options
+	// TODO(bonedaddy): ensure we properly update the ledger with the destination object
+	// TODO(bonedaddy): ensure the destination object is properly adjusted with metadata
 	// ensure source bucket exists
 	if !x.ledgerStore.BucketExists(srcBucket) {
 		return objInfo, x.toMinioErr(ErrLedgerBucketDoesNotExist, srcBucket, "", "")
@@ -230,8 +232,19 @@ func (x *xObjects) CopyObject(
 	if err != nil {
 		return objInfo, x.toMinioErr(err, srcBucket, srcObject, "")
 	}
+	// we need to update the object info to list the bucket it is in
+	obj, err := x.objectFromBucket(ctx, srcBucket, srcObject)
+	if err != nil {
+		return objInfo, x.toMinioErr(err, srcBucket, srcObject, "")
+	}
+	obj.ObjectInfo.Bucket = dstBucket
+	// store the updated bucket on ipfs
+	dstObjHash, err := x.objectToIPFS(ctx, obj)
+	if err != nil {
+		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
+	}
 	// update the destination bucket object on ipfs to the newly added object
-	dstBucketHash, err := x.addObjectToBucketAndIPFS(ctx, dstObject, objHash, dstBucket)
+	dstBucketHash, err := x.addObjectToBucketAndIPFS(ctx, dstObject, dstObjHash, dstBucket)
 	if err != nil {
 		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 	}
