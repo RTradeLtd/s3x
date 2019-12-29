@@ -9,18 +9,14 @@ import (
 func (x *xObjects) getObjectData(
 	ctx context.Context,
 	obj *Object,
-) (*ObjectData, error) {
+) ([]byte, error) {
 	resp, err := x.dagClient.DagGet(ctx, &pb.DagGetRequest{
 		Hash: obj.DataHash,
 	})
 	if err != nil {
 		return nil, err
 	}
-	objData := new(ObjectData)
-	if err := objData.Unmarshal(resp.GetRawData()); err != nil {
-		return nil, err
-	}
-	return objData, nil
+	return resp.GetRawData(), nil
 }
 
 // store the objectData on ipfs and returns its hash

@@ -130,7 +130,7 @@ func (x *xObjects) GetObject(
 	if err != nil {
 		return x.toMinioErr(err, bucket, object, "")
 	}
-	reader := bytes.NewReader(objData.GetData())
+	reader := bytes.NewReader(objData)
 	_, err = reader.WriteTo(writer)
 	return err
 }

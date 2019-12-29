@@ -74,13 +74,6 @@ message Object {
     ObjectInfo objectInfo = 2 [(gogoproto.nullable) = false];
 }
 
-// ObjectData is the actual data that is contained by the object.
-// It is a wrapper such that the object doesn't have to contain 
-// the data
-message ObjectData {
-    bytes data = 1;
-}
-
 // ObjectInfo contains ifnormation about the object
 message ObjectInfo {
     string bucket = 1;
