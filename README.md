@@ -41,6 +41,8 @@ $> mc cp s3x/testbucket/file.txt lol.txt
 $> curl http://localhost:8889/info?bucket=testbucket 
 # get the hash of the object in the bucket on ipfs
 $> curl "http://localhost:8889/info?bucket=testbucket&object=file.txt"
+# get the hash of the object data on ipfs, this will return only the data contained by the object
+$> curl "http://localhost:8889/info?bucket=testbucket&object=file.txt&objectDataOnly=true"
 ```
 
 # Supported Feature Set
