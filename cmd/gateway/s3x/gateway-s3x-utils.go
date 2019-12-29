@@ -42,17 +42,17 @@ func (x *xObjects) addObjectToBucketAndIPFS(ctx context.Context, objectName, obj
 	return x.bucketToIPFS(ctx, bucket)
 }
 
-func (x *xObjects) bucketFromIPFS(ctx context.Context, name string) (*Bucket, error) {
+func (x *xObjects) bucketFromIPFS(ctx context.Context, name string) (bucket *Bucket, err error) {
 	hash, err := x.ledgerStore.GetBucketHash(name)
 	if err != nil {
 		return nil, err
 	}
 	data, err := x.dagGet(ctx, hash)
-	bucket := &Bucket{}
-	if err := bucket.Unmarshal(data); err != nil {
+	if err != nil {
 		return nil, err
 	}
-	return bucket, nil
+	err = bucket.Unmarshal(data)
+	return
 }
 
 func (x *xObjects) objectFromBucket(ctx context.Context, bucketName, objectName string) (*Object, error) {
@@ -63,16 +63,13 @@ func (x *xObjects) objectFromBucket(ctx context.Context, bucketName, objectName 
 	return x.objectFromHash(ctx, objectHash)
 }
 
-func (x *xObjects) objectFromHash(ctx context.Context, objectHash string) (*Object, error) {
+func (x *xObjects) objectFromHash(ctx context.Context, objectHash string) (obj *Object, err error) {
 	data, err := x.dagGet(ctx, objectHash)
 	if err != nil {
 		return nil, err
 	}
-	object := &Object{}
-	if err := object.Unmarshal(data); err != nil {
-		return nil, err
-	}
-	return object, nil
+	err = obj.Unmarshal(data)
+	return
 }
 
 func (x *xObjects) getMinioObjectInfo(ctx context.Context, bucketName, objectName string) (minio.ObjectInfo, error) {
