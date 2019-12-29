@@ -59,7 +59,7 @@ Supported Object Calls:
 | Name | Supported |
 |------|-----------|
 | ListObjects | Yes (partial) |
-| ListObjectsV2 | No |
+| ListObjectsV2 | Yes (partial) |
 | GetObjectNInfo | Yes (partial) |
 | GetObject | Yes (partial) |
 | GetObjectInfo | Yes (fully) |
@@ -72,13 +72,13 @@ Supported Multipart Calls:
 
 | Name | Supported |
 |------|-----------|
-| ListMultipartUploads | No |
-| NewMultipartUpload | No |
-| PutObjectPart | No |
-| CopyObjectPart | No |
-| ListObjectParts | No |
-| AbortMultipartUpload | No |
-| CompleteMultipartUpload | No | 
+| ListMultipartUploads | In-Development |
+| NewMultipartUpload | In-Development |
+| PutObjectPart | In-Development |
+| CopyObjectPart | In-Development |
+| ListObjectParts | In-Development |
+| AbortMultipartUpload | In-Development |
+| CompleteMultipartUpload | In-Development | 
 
 Supported Policy Calls:
 
