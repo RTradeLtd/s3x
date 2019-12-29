@@ -67,7 +67,7 @@ func (x *xObjects) ListBuckets(ctx context.Context) ([]minio.BucketInfo, error) 
 	for i, name := range names {
 		info, err := x.GetBucketInfo(ctx, name)
 		if err != nil {
-			return nil, x.toMinioErr(err, name, "", "")
+			return nil, err // no need to handle GetBucketInfo parses error accordingly
 		}
 		infos[i] = info
 	}
