@@ -126,7 +126,7 @@ func (x *xObjects) GetObject(
 	if err != nil {
 		return x.toMinioErr(err, bucket, object, "")
 	}
-	objData, err := x.getObjectData(ctx, obj)
+	objData, err := x.dagGet(ctx, obj.GetDataHash())
 	if err != nil {
 		return x.toMinioErr(err, bucket, object, "")
 	}
@@ -181,7 +181,7 @@ func (x *xObjects) PutObject(
 		return objInfo, x.toMinioErr(err, bucket, object, "")
 	}
 	obinfo.Size_ = int64(len(data))
-	dataHash, err := x.storeObjectData(ctx, data)
+	dataHash, err := x.dagPut(ctx, data)
 	if err != nil {
 		return objInfo, x.toMinioErr(err, bucket, object, "")
 	}

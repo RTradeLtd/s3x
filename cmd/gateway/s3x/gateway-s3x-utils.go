@@ -19,13 +19,7 @@ func (x *xObjects) bucketToIPFS(ctx context.Context, bucket *Bucket) (string, er
 	if err != nil {
 		return "", err
 	}
-	resp, err := x.dagClient.DagPut(ctx, &pb.DagPutRequest{
-		Data: bucketData,
-	})
-	if err != nil {
-		return "", err
-	}
-	return resp.GetHashes()[0], nil
+	return x.dagPut(ctx, bucketData)
 }
 
 func (x *xObjects) objectToIPFS(ctx context.Context, obj *Object) (string, error) {
@@ -33,13 +27,7 @@ func (x *xObjects) objectToIPFS(ctx context.Context, obj *Object) (string, error
 	if err != nil {
 		return "", err
 	}
-	resp, err := x.dagClient.DagPut(ctx, &pb.DagPutRequest{
-		Data: objData,
-	})
-	if err != nil {
-		return "", err
-	}
-	return resp.GetHashes()[0], nil
+	return x.dagPut(ctx, objData)
 }
 
 func (x *xObjects) addObjectToBucketAndIPFS(ctx context.Context, objectName, objectHash, bucketName string) (string, error) {
@@ -59,14 +47,9 @@ func (x *xObjects) bucketFromIPFS(ctx context.Context, name string) (*Bucket, er
 	if err != nil {
 		return nil, err
 	}
-	resp, err := x.dagClient.DagGet(ctx, &pb.DagGetRequest{
-		Hash: hash,
-	})
-	if err != nil {
-		return nil, err
-	}
+	data, err := x.dagGet(ctx, hash)
 	bucket := &Bucket{}
-	if err := bucket.Unmarshal(resp.GetRawData()); err != nil {
+	if err := bucket.Unmarshal(data); err != nil {
 		return nil, err
 	}
 	return bucket, nil
@@ -81,14 +64,12 @@ func (x *xObjects) objectFromBucket(ctx context.Context, bucketName, objectName 
 }
 
 func (x *xObjects) objectFromHash(ctx context.Context, objectHash string) (*Object, error) {
-	resp, err := x.dagClient.DagGet(ctx, &pb.DagGetRequest{
-		Hash: objectHash,
-	})
+	data, err := x.dagGet(ctx, objectHash)
 	if err != nil {
 		return nil, err
 	}
 	object := &Object{}
-	if err := object.Unmarshal(resp.GetRawData()); err != nil {
+	if err := object.Unmarshal(data); err != nil {
 		return nil, err
 	}
 	return object, nil
@@ -110,27 +91,20 @@ func (x *xObjects) getMinioObjectInfo(ctx context.Context, bucketName, objectNam
 	}, nil
 }
 
-func (x *xObjects) getObjectData(
-	ctx context.Context,
-	obj *Object,
-) ([]byte, error) {
-	resp, err := x.dagClient.DagGet(ctx, &pb.DagGetRequest{
-		Hash: obj.DataHash,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return resp.GetRawData(), nil
-}
-
-// store the objectData on ipfs and returns its hash
-func (x *xObjects) storeObjectData(
-	ctx context.Context,
-	data []byte,
-) (string, error) {
+func (x *xObjects) dagPut(ctx context.Context, data []byte) (string, error) {
 	resp, err := x.dagClient.DagPut(ctx, &pb.DagPutRequest{Data: data})
 	if err != nil {
 		return "", err
 	}
 	return resp.GetHashes()[0], nil
+}
+
+func (x *xObjects) dagGet(ctx context.Context, hash string) ([]byte, error) {
+	resp, err := x.dagClient.DagGet(ctx, &pb.DagGetRequest{
+		Hash: hash,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp.GetRawData(), nil
 }
