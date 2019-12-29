@@ -237,7 +237,10 @@ func (x *xObjects) CopyObject(
 	if err != nil {
 		return objInfo, x.toMinioErr(err, srcBucket, srcObject, "")
 	}
+	// update relevant fields
+	obj.ObjectInfo.Name = dstObject
 	obj.ObjectInfo.Bucket = dstBucket
+	obj.ObjectInfo.ModTime = time.Now().UTC()
 	// store the updated bucket on ipfs
 	dstObjHash, err := x.objectToIPFS(ctx, obj)
 	if err != nil {
