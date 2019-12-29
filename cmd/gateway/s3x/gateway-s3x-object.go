@@ -217,31 +217,29 @@ func (x *xObjects) CopyObject(
 	srcOpts, dstOpts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
 	// TODO(bonedaddy): implement usage of options
+	// ensure source bucket exists
 	if !x.ledgerStore.BucketExists(srcBucket) {
 		return objInfo, x.toMinioErr(ErrLedgerBucketDoesNotExist, srcBucket, "", "")
 	}
+	// ensure destination bucket exists
 	if !x.ledgerStore.BucketExists(dstBucket) {
 		return objInfo, x.toMinioErr(ErrLedgerBucketDoesNotExist, dstBucket, "", "")
 	}
-	// TODO(bonedaddy): we probably need to implement a check here
-	// that determines whether or not the bucket exists
-	// get hash of th eobject
+	// get hash of the source object we are copying
 	objHash, err := x.ledgerStore.GetObjectHash(srcBucket, srcObject)
 	if err != nil {
 		return objInfo, x.toMinioErr(err, srcBucket, srcObject, "")
 	}
-	// update the destination bucket with the object hash under the destination object
-	// note that this only updates the bucket on ipfs, we need to update the internal ledger
+	// update the destination bucket object on ipfs to the newly added object
 	dstBucketHash, err := x.addObjectToBucketAndIPFS(ctx, dstObject, objHash, dstBucket)
 	if err != nil {
 		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 	}
-
-	// now we need to add the object to the bucket within our ledger
+	// now we need to update our ledger with the newly updated object for future lookups
 	if err := x.ledgerStore.AddObjectToBucket(dstBucket, dstObject, objHash); err != nil {
 		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 	}
-	// update the internal ledger state for the destination bucket and destination bucket hash
+	// then we must also update the newly updated bucket hash in the ledger as well
 	if err := x.ledgerStore.UpdateBucketHash(dstBucket, dstBucketHash); err != nil {
 		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 	}
