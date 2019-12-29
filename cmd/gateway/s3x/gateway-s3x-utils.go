@@ -14,6 +14,7 @@ These functions should never call `toMinioErr`, and instead bubble up the erorrs
 Any error parsing to return minio errors should be done in the calling S3 functions.
 */
 
+// bucketToIPFS takes a bucket and stores it on IPFS
 func (x *xObjects) bucketToIPFS(ctx context.Context, bucket *Bucket) (string, error) {
 	bucketData, err := bucket.Marshal()
 	if err != nil {
@@ -22,6 +23,7 @@ func (x *xObjects) bucketToIPFS(ctx context.Context, bucket *Bucket) (string, er
 	return x.dagPut(ctx, bucketData)
 }
 
+// objectToIPFS takes an object and stores it on IPFs
 func (x *xObjects) objectToIPFS(ctx context.Context, obj *Object) (string, error) {
 	objData, err := obj.Marshal()
 	if err != nil {
@@ -30,6 +32,7 @@ func (x *xObjects) objectToIPFS(ctx context.Context, obj *Object) (string, error
 	return x.dagPut(ctx, objData)
 }
 
+// addObjectToBucketandIPFS is used to update a bucket with the ipfs hash, and name of an object that belongs to it.
 func (x *xObjects) addObjectToBucketAndIPFS(ctx context.Context, objectName, objectHash, bucketName string) (string, error) {
 	bucket, err := x.bucketFromIPFS(ctx, bucketName)
 	if err != nil {
@@ -42,6 +45,7 @@ func (x *xObjects) addObjectToBucketAndIPFS(ctx context.Context, objectName, obj
 	return x.bucketToIPFS(ctx, bucket)
 }
 
+// bucketFromIPFS returns a bucket from IPFS using its name
 func (x *xObjects) bucketFromIPFS(ctx context.Context, name string) (bucket *Bucket, err error) {
 	hash, err := x.ledgerStore.GetBucketHash(name)
 	if err != nil {
@@ -56,6 +60,7 @@ func (x *xObjects) bucketFromIPFS(ctx context.Context, name string) (bucket *Buc
 	return
 }
 
+// objectFromBucket returns an object from IPFS using its name, and the bucket it belongs to
 func (x *xObjects) objectFromBucket(ctx context.Context, bucketName, objectName string) (*Object, error) {
 	objectHash, err := x.ledgerStore.GetObjectHash(bucketName, objectName)
 	if err != nil {
@@ -64,6 +69,7 @@ func (x *xObjects) objectFromBucket(ctx context.Context, bucketName, objectName 
 	return x.objectFromHash(ctx, objectHash)
 }
 
+// objectFromHash returns an object from IPFS using its hash
 func (x *xObjects) objectFromHash(ctx context.Context, objectHash string) (obj *Object, err error) {
 	data, err := x.dagGet(ctx, objectHash)
 	if err != nil {
@@ -74,6 +80,7 @@ func (x *xObjects) objectFromHash(ctx context.Context, objectHash string) (obj *
 	return
 }
 
+// getMinioObjectInfo is used to convert between object info in our protocol buffer format, to a minio object layer info type
 func (x *xObjects) getMinioObjectInfo(ctx context.Context, bucketName, objectName string) (minio.ObjectInfo, error) {
 	obj, err := x.objectFromBucket(ctx, bucketName, objectName)
 	if err != nil {
@@ -90,6 +97,7 @@ func (x *xObjects) getMinioObjectInfo(ctx context.Context, bucketName, objectNam
 	}, nil
 }
 
+// dagPut is a helper function to store arbitrary byte slices on IPFS as IPLD objects
 func (x *xObjects) dagPut(ctx context.Context, data []byte) (string, error) {
 	resp, err := x.dagClient.DagPut(ctx, &pb.DagPutRequest{Data: data})
 	if err != nil {
@@ -98,6 +106,7 @@ func (x *xObjects) dagPut(ctx context.Context, data []byte) (string, error) {
 	return resp.GetHashes()[0], nil
 }
 
+// dagGet is a helper function to return byte slices from IPLD objects on IPFS
 func (x *xObjects) dagGet(ctx context.Context, hash string) ([]byte, error) {
 	resp, err := x.dagClient.DagGet(ctx, &pb.DagGetRequest{
 		Hash: hash,
