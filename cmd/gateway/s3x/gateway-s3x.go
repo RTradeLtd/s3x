@@ -217,7 +217,7 @@ func (x *xObjects) GetHash(ctx context.Context, req *InfoRequest) (*InfoResponse
 		emptyObjectErr = "object name is empty"
 	)
 	switch req.GetObject() {
-	case "":
+	case "": // indicates that we just want to process bucket data
 		if req.GetBucket() == "" {
 			err = status.Error(codes.InvalidArgument, emptyBucketErr)
 			break
@@ -231,13 +231,28 @@ func (x *xObjects) GetHash(ctx context.Context, req *InfoRequest) (*InfoResponse
 				Hash:   hash,
 			}
 		}
-	default:
+	default: // indicates we want to process object data
 		if req.GetBucket() == "" {
 			err = status.Error(codes.InvalidArgument, emptyBucketErr)
 			break
 		}
 		if req.GetObject() == "" {
 			err = status.Error(codes.InvalidArgument, emptyObjectErr)
+			break
+		}
+		// if this is set, then lets return the hash of the object data
+		// instead of the hash of the protocol buffer object.
+		if req.ObjectDataOnly {
+			obj, err := x.objectFromBucket(ctx, req.GetBucket(), req.GetObject())
+			if err != nil {
+				err = status.Error(codes.Internal, err.Error())
+				break
+			}
+			resp = &InfoResponse{
+				Bucket: req.GetBucket(),
+				Object: req.GetObject(),
+				Hash:   obj.GetDataHash(),
+			}
 			break
 		}
 		hash, err = x.ledgerStore.GetObjectHash(req.GetBucket(), req.GetObject())
