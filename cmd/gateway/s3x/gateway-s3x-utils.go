@@ -51,6 +51,7 @@ func (x *xObjects) bucketFromIPFS(ctx context.Context, name string) (bucket *Buc
 	if err != nil {
 		return nil, err
 	}
+	bucket = new(Bucket)
 	err = bucket.Unmarshal(data)
 	return
 }
@@ -68,6 +69,7 @@ func (x *xObjects) objectFromHash(ctx context.Context, objectHash string) (obj *
 	if err != nil {
 		return nil, err
 	}
+	obj = new(Object)
 	err = obj.Unmarshal(data)
 	return
 }
