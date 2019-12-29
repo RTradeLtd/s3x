@@ -95,9 +95,31 @@ func (x *xObjects) CopyObjectPart(ctx context.Context, srcBucket, srcObject, des
 }
 
 // ListObjectParts returns all object parts for specified object in specified bucket
-func (x *xObjects) ListObjectParts(ctx context.Context, bucket string, object string, uploadID string, partNumberMarker int, maxParts int, opts minio.ObjectOptions) (lpi minio.ListPartsInfo, e error) {
-	fmt.Println("list object parts")
-	return lpi, errors.New("not yet implemented")
+func (x *xObjects) ListObjectParts(
+	ctx context.Context,
+	bucket, object, uploadID string,
+	partNumberMarker, maxParts int,
+	opts minio.ObjectOptions,
+) (lpi minio.ListPartsInfo, e error) {
+	lpi = minio.ListPartsInfo{
+		Bucket:           bucket,
+		Object:           object,
+		UploadID:         uploadID,
+		MaxParts:         maxParts,
+		PartNumberMarker: partNumberMarker,
+	}
+	parts, err := x.ledgerStore.GetObjectParts(uploadID)
+	if err != nil {
+		return lpi, x.toMinioErr(err, bucket, object, uploadID)
+	}
+	for _, part := range parts {
+		lpi.Parts = append(lpi.Parts, minio.PartInfo{
+			PartNumber: int(part.GetNumber()),
+			ETag:       minio.ToS3ETag(part.GetEtag()),
+			Size:       part.GetSize_(),
+		})
+	}
+	return lpi, nil
 }
 
 // AbortMultipartUpload aborts a ongoing multipart upload
@@ -106,8 +128,17 @@ func (x *xObjects) AbortMultipartUpload(ctx context.Context, bucket string, obje
 	return errors.New("not yet implemented")
 }
 
-// CompleteMultipartUpload completes ongoing multipart upload and finalizes object
-func (x *xObjects) CompleteMultipartUpload(ctx context.Context, bucket string, object string, uploadID string, uploadedParts []minio.CompletePart, opts minio.ObjectOptions) (oi minio.ObjectInfo, e error) {
+// CompleteMultipartUpload completes ongoing multipart upload and finalizes object.
+// uploadID is interchangeable with multipart id
+func (x *xObjects) CompleteMultipartUpload(
+	ctx context.Context,
+	bucket, object, uploadID string,
+	uploadedParts []minio.CompletePart,
+	opts minio.ObjectOptions,
+) (oi minio.ObjectInfo, e error) {
+	if err := x.ledgerStore.BucketExists(bucket); err != nil {
+		return oi, x.toMinioErr(err, bucket, object, uploadID)
+	}
 	fmt.Println("complete multipart uplaod")
 	return oi, errors.New("not yet implemented")
 

@@ -189,6 +189,20 @@ func (le *LedgerStore) Close() error {
 // GETTER FUNCTINS //
 /////////////////////
 
+// GetObjectParts is used to return multipart upload parts
+func (le *LedgerStore) GetObjectParts(id string) ([]ObjectPartInfo, error) {
+	le.RLock()
+	defer le.RUnlock()
+	ledger, err := le.getLedger()
+	if err != nil {
+		return nil, err
+	}
+	if err := le.multipartExists(ledger, id); err != nil {
+		return nil, err
+	}
+	return ledger.GetMultipartUploads()[id].ObjectParts, nil
+}
+
 // MultipartIDExists is used to lookup if the given multipart id exists
 func (le *LedgerStore) MultipartIDExists(id string) error {
 	le.RLock()
@@ -272,6 +286,28 @@ func (le *LedgerStore) GetObjectHashes(bucket string) (map[string]string, error)
 		hashes[obj.GetName()] = obj.GetIpfsHash()
 	}
 	return hashes, err
+}
+
+// GetMultipartHashes returns the hashes of all multipart upload object parts
+func (le *LedgerStore) GetMultipartHashes(bucket, multipartID string) ([]string, error) {
+	le.RLock()
+	defer le.RUnlock()
+	ledger, err := le.getLedger()
+	if err != nil {
+		return nil, err
+	}
+	if err := le.bucketExists(ledger, bucket); err != nil {
+		return nil, err
+	}
+	if err := le.multipartExists(ledger, multipartID); err != nil {
+		return nil, err
+	}
+	mpart := ledger.MultipartUploads[bucket]
+	var hashes = make([]string, len(mpart.ObjectParts))
+	for i, objpart := range mpart.ObjectParts {
+		hashes[i] = objpart.GetDataHash()
+	}
+	return hashes, nil
 }
 
 // GetBucketNames is used to a slice of all bucket names our ledger currently tracks
