@@ -235,11 +235,6 @@ func (x *xObjects) CopyObject(
 	if !x.ledgerStore.BucketExists(dstBucket) {
 		return objInfo, x.toMinioErr(ErrLedgerBucketDoesNotExist, dstBucket, "", "")
 	}
-	// get hash of the source object we are copying
-	objHash, err := x.ledgerStore.GetObjectHash(srcBucket, srcObject)
-	if err != nil {
-		return objInfo, x.toMinioErr(err, srcBucket, srcObject, "")
-	}
 	// we need to update the object info to list the bucket it is in
 	obj, err := x.objectFromBucket(ctx, srcBucket, srcObject)
 	if err != nil {
@@ -260,7 +255,7 @@ func (x *xObjects) CopyObject(
 		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 	}
 	// now we need to update our ledger with the newly updated object for future lookups
-	if err := x.ledgerStore.AddObjectToBucket(dstBucket, dstObject, objHash); err != nil {
+	if err := x.ledgerStore.AddObjectToBucket(dstBucket, dstObject, dstObjHash); err != nil {
 		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 	}
 	// then we must also update the newly updated bucket hash in the ledger as well
