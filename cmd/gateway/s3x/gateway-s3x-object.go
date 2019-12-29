@@ -3,7 +3,6 @@ package s3x
 import (
 	"bytes"
 	"context"
-	fmt "fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -217,10 +216,6 @@ func (x *xObjects) CopyObject(
 	srcInfo minio.ObjectInfo,
 	srcOpts, dstOpts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
-	fmt.Printf(
-		"src-bucket: %s, src-object: %s, dst-bucket: %s, dst-object: %s\n",
-		srcBucket, srcObject, dstBucket, dstObject,
-	)
 	// TODO(bonedaddy): implement usage of options
 	if !x.ledgerStore.BucketExists(srcBucket) {
 		return objInfo, x.toMinioErr(ErrLedgerBucketDoesNotExist, srcBucket, "", "")
@@ -228,7 +223,6 @@ func (x *xObjects) CopyObject(
 	if !x.ledgerStore.BucketExists(dstBucket) {
 		return objInfo, x.toMinioErr(ErrLedgerBucketDoesNotExist, dstBucket, "", "")
 	}
-	fmt.Println("getting object hash")
 	// TODO(bonedaddy): we probably need to implement a check here
 	// that determines whether or not the bucket exists
 	// get hash of th eobject
@@ -236,22 +230,22 @@ func (x *xObjects) CopyObject(
 	if err != nil {
 		return objInfo, x.toMinioErr(err, srcBucket, srcObject, "")
 	}
-	fmt.Println("adding src object to destination bucket+object")
 	// update the destination bucket with the object hash under the destination object
+	// note that this only updates the bucket on ipfs, we need to update the internal ledger
 	dstBucketHash, err := x.addObjectToBucketAndIPFS(ctx, dstObject, objHash, dstBucket)
 	if err != nil {
 		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 	}
-	fmt.Println("updating destination bucket hash")
+
+	// now we need to add the object to the bucket within our ledger
+	if err := x.ledgerStore.AddObjectToBucket(dstBucket, dstObject, objHash); err != nil {
+		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
+	}
 	// update the internal ledger state for the destination bucket and destination bucket hash
 	if err := x.ledgerStore.UpdateBucketHash(dstBucket, dstBucketHash); err != nil {
 		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 	}
-	fmt.Println("getting destination object info")
 	objInfo, err = x.getMinioObjectInfo(ctx, dstBucket, dstObject)
-	if err != nil {
-		fmt.Println("failed to get destination object info", err)
-	}
 	return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 }
 
