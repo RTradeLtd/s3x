@@ -126,7 +126,11 @@ func (x *xObjects) GetObject(
 	if err != nil {
 		return x.toMinioErr(err, bucket, object, "")
 	}
-	reader := bytes.NewReader(obj.GetData())
+	objData, err := x.getObjectData(ctx, obj)
+	if err != nil {
+		return x.toMinioErr(err, bucket, object, "")
+	}
+	reader := bytes.NewReader(objData.GetData())
 	_, err = reader.WriteTo(writer)
 	return err
 }
@@ -177,9 +181,13 @@ func (x *xObjects) PutObject(
 		return objInfo, x.toMinioErr(err, bucket, object, "")
 	}
 	obinfo.Size_ = int64(len(data))
+	dataHash, err := x.storeObjectData(ctx, data)
+	if err != nil {
+		return objInfo, x.toMinioErr(err, bucket, object, "")
+	}
 	// add the object to ipfs
 	objectHash, err := x.objectToIPFS(ctx, &Object{
-		Data:       data,
+		DataHash:   dataHash,
 		ObjectInfo: obinfo,
 	})
 	if err != nil {
