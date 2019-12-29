@@ -118,6 +118,7 @@ func (x *xObjects) GetObject(
 	etag string,
 	opts minio.ObjectOptions,
 ) error {
+	// this will return whether or not the bucket or object does not exist
 	if err := x.ledgerStore.ObjectExists(bucket, object); err != nil {
 		return x.toMinioErr(err, bucket, object, "")
 	}
@@ -136,6 +137,9 @@ func (x *xObjects) GetObjectInfo(
 	bucket, object string,
 	opts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
+	if !x.ledgerStore.BucketExists(bucket) {
+		return objInfo, x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, "", "")
+	}
 	info, err := x.getMinioObjectInfo(ctx, bucket, object)
 	return info, x.toMinioErr(err, bucket, object, "")
 }
@@ -213,7 +217,9 @@ func (x *xObjects) CopyObject(
 	srcOpts, dstOpts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
 	// TODO(bonedaddy): implement usage of options
-
+	if !x.ledgerStore.BucketExists(srcBucket) {
+		return objInfo, x.toMinioErr(ErrLedgerBucketDoesNotExist, srcBucket, "", "")
+	}
 	// TODO(bonedaddy): we probably need to implement a check here
 	// that determines whether or not the bucket exists
 	// get hash of th eobject
