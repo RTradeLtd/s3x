@@ -252,6 +252,11 @@ func (x *xObjects) DeleteObject(
 	ctx context.Context,
 	bucket, object string,
 ) error {
+	// this handles returning an error indicating whether
+	// or not the bucket/object is not present
+	if err := x.ledgerStore.ObjectExists(bucket, object); err != nil {
+		return x.toMinioErr(err, bucket, object, "")
+	}
 	//TODO(bonedaddy): implement removal from IPFS
 	err := x.ledgerStore.RemoveObject(bucket, object)
 	return x.toMinioErr(err, bucket, object, "")
@@ -262,6 +267,9 @@ func (x *xObjects) DeleteObjects(
 	bucket string,
 	objects []string,
 ) ([]error, error) {
+	if !x.ledgerStore.BucketExists(bucket) {
+		return nil, x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, "", "")
+	}
 	// TODO(bonedaddy): implement removal from ipfs
 	errs := make([]error, len(objects))
 	for i, object := range objects {
