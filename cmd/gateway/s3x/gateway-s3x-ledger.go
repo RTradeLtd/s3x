@@ -233,17 +233,14 @@ func (le *LedgerStore) MultipartIDExists(id string) error {
 }
 
 // BucketExists is a public function to check if a bucket exists
-func (le *LedgerStore) BucketExists(name string) error {
+func (le *LedgerStore) BucketExists(name string) bool {
 	le.RLock()
 	defer le.RUnlock()
 	ledger, err := le.getLedger()
 	if err != nil {
-		return err
+		return false
 	}
-	if !le.bucketExists(ledger, name) {
-		err = ErrLedgerBucketDoesNotExist
-	}
-	return err
+	return le.bucketExists(ledger, name)
 }
 
 // ObjectExists is a public function to check if an object exists, and returns the reason

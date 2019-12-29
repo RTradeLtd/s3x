@@ -16,7 +16,7 @@ func (x *xObjects) MakeBucketWithLocation(
 	// check to see whether or not the bucket already exists
 	// if this returns no error it means the bucket exists
 	// and we should abort
-	if err := x.ledgerStore.BucketExists(name); err == nil {
+	if x.ledgerStore.BucketExists(name) {
 		return x.toMinioErr(ErrLedgerBucketExists, name, "", "")
 	}
 	// create the bucket
