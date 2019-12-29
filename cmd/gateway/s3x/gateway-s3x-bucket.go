@@ -14,8 +14,6 @@ func (x *xObjects) MakeBucketWithLocation(
 	name, location string,
 ) error {
 	// check to see whether or not the bucket already exists
-	// if this returns no error it means the bucket exists
-	// and we should abort
 	if x.ledgerStore.BucketExists(name) {
 		return x.toMinioErr(ErrLedgerBucketExists, name, "", "")
 	}
@@ -40,6 +38,10 @@ func (x *xObjects) GetBucketInfo(
 	ctx context.Context,
 	name string,
 ) (bi minio.BucketInfo, err error) {
+	// check to see whether or not the bucket exists
+	if !x.ledgerStore.BucketExists(name) {
+		return bi, x.toMinioErr(ErrLedgerBucketDoesNotExist, name, "", "")
+	}
 	bucket, err := x.bucketFromIPFS(ctx, name)
 	if err != nil {
 		return bi, x.toMinioErr(err, name, "", "")
@@ -74,6 +76,10 @@ func (x *xObjects) ListBuckets(ctx context.Context) ([]minio.BucketInfo, error) 
 
 // DeleteBucket deletes a bucket on S3
 func (x *xObjects) DeleteBucket(ctx context.Context, name string) error {
+	// check to see whether or not the bucket exists
+	if !x.ledgerStore.BucketExists(name) {
+		return x.toMinioErr(ErrLedgerBucketDoesNotExist, name, "", "")
+	}
 	// TODO(bonedaddy): implement removal call from TemporalX
 	return x.toMinioErr(x.ledgerStore.DeleteBucket(name), name, "", "")
 }
