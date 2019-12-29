@@ -18,6 +18,7 @@ const (
 )
 
 func TestGateway_Object(t *testing.T) {
+	testDial(t)
 	testPath := "tmp-bucket-test"
 	defer func() {
 		os.Unsetenv("S3X_DS_PATH")
