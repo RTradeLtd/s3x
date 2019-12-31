@@ -84,7 +84,6 @@ require (
 	gopkg.in/ldap.v3 v3.0.3
 	gopkg.in/olivere/elastic.v5 v5.0.80
 	gopkg.in/yaml.v2 v2.2.7
-	grpc.go4.org v0.0.0-20170609214715-11d0a25b4919
 )
 
 // Added for go1.13 migration https://github.com/golang/go/issues/32805
