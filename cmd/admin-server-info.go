@@ -26,7 +26,7 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/disk"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
 	"github.com/RTradeLtd/s3x/pkg/mem"
-	"github.com/minio/minio-go/pkg/set"
+	"github.com/minio/minio-go/v6/pkg/set"
 
 	cpuhw "github.com/shirou/gopsutil/cpu"
 )

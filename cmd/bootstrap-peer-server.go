@@ -32,7 +32,7 @@ import (
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/cmd/rest"
 	"github.com/gorilla/mux"
-	"github.com/minio/minio-go/pkg/set"
+	"github.com/minio/minio-go/v6/pkg/set"
 )
 
 const (
