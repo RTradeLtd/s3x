@@ -7,7 +7,7 @@ import (
 	"io"
 	"time"
 
-	pb "github.com/RTradeLtd/TxPB/go"
+	pb "github.com/RTradeLtd/TxPB/v3/go"
 	minio "github.com/RTradeLtd/s3x/cmd"
 	"github.com/segmentio/ksuid"
 )

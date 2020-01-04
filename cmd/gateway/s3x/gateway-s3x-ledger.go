@@ -232,6 +232,20 @@ func (le *LedgerStore) MultipartIDExists(id string) error {
 	return le.multipartExists(ledger, id)
 }
 
+// IsEmptyBucket checks if a bucket is empty or not
+func (le *LedgerStore) IsEmptyBucket(name string) error {
+	le.RLock()
+	defer le.RUnlock()
+	ledger, err := le.getLedger()
+	if err != nil {
+		return err
+	}
+	if len(ledger.Buckets[name].Objects) == 0 {
+		return nil
+	}
+	return ErrLedgerNonEmptyBucket
+}
+
 // BucketExists is a public function to check if a bucket exists
 func (le *LedgerStore) BucketExists(name string) bool {
 	le.RLock()

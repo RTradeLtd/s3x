@@ -15,6 +15,7 @@ const (
 )
 
 func TestGateway_Bucket(t *testing.T) {
+	//	testDial(t)
 	testPath := "tmp-bucket-test"
 	defer func() {
 		os.Unsetenv("S3X_DS_PATH")
@@ -31,6 +32,7 @@ func TestGateway_Bucket(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer gateway.Shutdown(context.Background())
 	sinfo := gateway.StorageInfo(context.Background())
 	if sinfo.Backend.Type != minio.BackendGateway {
 		t.Fatal("bad type")

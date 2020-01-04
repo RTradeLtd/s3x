@@ -126,7 +126,11 @@ func (x *xObjects) GetObject(
 	if err != nil {
 		return x.toMinioErr(err, bucket, object, "")
 	}
-	reader := bytes.NewReader(obj.GetData())
+	objData, err := x.dagGet(ctx, obj.GetDataHash())
+	if err != nil {
+		return x.toMinioErr(err, bucket, object, "")
+	}
+	reader := bytes.NewReader(objData)
 	_, err = reader.WriteTo(writer)
 	return err
 }
@@ -177,9 +181,13 @@ func (x *xObjects) PutObject(
 		return objInfo, x.toMinioErr(err, bucket, object, "")
 	}
 	obinfo.Size_ = int64(len(data))
+	dataHash, err := x.dagPut(ctx, data)
+	if err != nil {
+		return objInfo, x.toMinioErr(err, bucket, object, "")
+	}
 	// add the object to ipfs
 	objectHash, err := x.objectToIPFS(ctx, &Object{
-		Data:       data,
+		DataHash:   dataHash,
 		ObjectInfo: obinfo,
 	})
 	if err != nil {
@@ -227,11 +235,6 @@ func (x *xObjects) CopyObject(
 	if !x.ledgerStore.BucketExists(dstBucket) {
 		return objInfo, x.toMinioErr(ErrLedgerBucketDoesNotExist, dstBucket, "", "")
 	}
-	// get hash of the source object we are copying
-	objHash, err := x.ledgerStore.GetObjectHash(srcBucket, srcObject)
-	if err != nil {
-		return objInfo, x.toMinioErr(err, srcBucket, srcObject, "")
-	}
 	// we need to update the object info to list the bucket it is in
 	obj, err := x.objectFromBucket(ctx, srcBucket, srcObject)
 	if err != nil {
@@ -252,7 +255,7 @@ func (x *xObjects) CopyObject(
 		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 	}
 	// now we need to update our ledger with the newly updated object for future lookups
-	if err := x.ledgerStore.AddObjectToBucket(dstBucket, dstObject, objHash); err != nil {
+	if err := x.ledgerStore.AddObjectToBucket(dstBucket, dstObject, dstObjHash); err != nil {
 		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 	}
 	// then we must also update the newly updated bucket hash in the ledger as well

@@ -41,6 +41,8 @@ $> mc cp s3x/testbucket/file.txt lol.txt
 $> curl http://localhost:8889/info?bucket=testbucket 
 # get the hash of the object in the bucket on ipfs
 $> curl "http://localhost:8889/info?bucket=testbucket&object=file.txt"
+# get the hash of the object data on ipfs, this will return only the data contained by the object
+$> curl "http://localhost:8889/info?bucket=testbucket&object=file.txt&objectDataOnly=true"
 ```
 
 # Supported Feature Set
@@ -59,7 +61,7 @@ Supported Object Calls:
 | Name | Supported |
 |------|-----------|
 | ListObjects | Yes (partial) |
-| ListObjectsV2 | No |
+| ListObjectsV2 | Yes (partial) |
 | GetObjectNInfo | Yes (partial) |
 | GetObject | Yes (partial) |
 | GetObjectInfo | Yes (fully) |
@@ -72,13 +74,13 @@ Supported Multipart Calls:
 
 | Name | Supported |
 |------|-----------|
-| ListMultipartUploads | No |
-| NewMultipartUpload | No |
-| PutObjectPart | No |
-| CopyObjectPart | No |
-| ListObjectParts | No |
-| AbortMultipartUpload | No |
-| CompleteMultipartUpload | No | 
+| ListMultipartUploads | In-Development |
+| NewMultipartUpload | In-Development |
+| PutObjectPart | In-Development |
+| CopyObjectPart | In-Development |
+| ListObjectParts | In-Development |
+| AbortMultipartUpload | In-Development |
+| CompleteMultipartUpload | In-Development | 
 
 Supported Policy Calls:
 

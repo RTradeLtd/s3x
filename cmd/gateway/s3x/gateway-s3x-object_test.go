@@ -18,6 +18,7 @@ const (
 )
 
 func TestGateway_Object(t *testing.T) {
+	//testDial(t)
 	testPath := "tmp-bucket-test"
 	defer func() {
 		os.Unsetenv("S3X_DS_PATH")
@@ -34,6 +35,7 @@ func TestGateway_Object(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer gateway.Shutdown(context.Background())
 	type args struct {
 		bucketName, objectName string
 	}
