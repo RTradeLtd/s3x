@@ -13,12 +13,15 @@ service InfoAPI {
 message InfoRequest {
     string bucket = 1;
     string object = 2;
+    // if set return the object data hash, not the hash of the protocol buffer object
+    // this is only applicable to requests for object info
+    bool objectDataOnly = 3;
 }
 
 message InfoResponse {
     string bucket = 1;
     string object = 2;
-    string hash = 3;
+    string hash = 3; 
 }
 
 // Ledger is our internal state keeper, and is responsible
@@ -70,7 +73,7 @@ message Bucket {
 // field is used to contain the information associated
 // wth the object
 message Object {
-    bytes data = 1;
+    string dataHash = 1;
     ObjectInfo objectInfo = 2 [(gogoproto.nullable) = false];
 }
 

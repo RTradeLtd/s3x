@@ -80,6 +80,10 @@ func (x *xObjects) DeleteBucket(ctx context.Context, name string) error {
 	if !x.ledgerStore.BucketExists(name) {
 		return x.toMinioErr(ErrLedgerBucketDoesNotExist, name, "", "")
 	}
+	// prevent deleting non-empty bucktes
+	if err := x.ledgerStore.IsEmptyBucket(name); err != nil {
+		return x.toMinioErr(err, name, "", "")
+	}
 	// TODO(bonedaddy): implement removal call from TemporalX
 	return x.toMinioErr(x.ledgerStore.DeleteBucket(name), name, "", "")
 }
