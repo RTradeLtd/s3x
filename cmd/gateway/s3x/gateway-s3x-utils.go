@@ -3,7 +3,7 @@ package s3x
 import (
 	"context"
 
-	pb "github.com/RTradeLtd/TxPB/go"
+	pb "github.com/RTradeLtd/TxPB/v3/go"
 	minio "github.com/RTradeLtd/s3x/cmd"
 )
 
@@ -99,7 +99,10 @@ func (x *xObjects) getMinioObjectInfo(ctx context.Context, bucketName, objectNam
 
 // dagPut is a helper function to store arbitrary byte slices on IPFS as IPLD objects
 func (x *xObjects) dagPut(ctx context.Context, data []byte) (string, error) {
-	resp, err := x.dagClient.DagPut(ctx, &pb.DagPutRequest{Data: data})
+	resp, err := x.dagClient.Dag(ctx, &pb.DagRequest{
+		RequestType: pb.DAGREQTYPE_DAG_PUT,
+		Data:        data,
+	})
 	if err != nil {
 		return "", err
 	}
@@ -108,8 +111,9 @@ func (x *xObjects) dagPut(ctx context.Context, data []byte) (string, error) {
 
 // dagGet is a helper function to return byte slices from IPLD objects on IPFS
 func (x *xObjects) dagGet(ctx context.Context, hash string) ([]byte, error) {
-	resp, err := x.dagClient.DagGet(ctx, &pb.DagGetRequest{
-		Hash: hash,
+	resp, err := x.dagClient.Dag(ctx, &pb.DagRequest{
+		RequestType: pb.DAGREQTYPE_DAG_GET,
+		Hash:        hash,
 	})
 	if err != nil {
 		return nil, err

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"sync"
 
-	pb "github.com/RTradeLtd/TxPB/go"
+	pb "github.com/RTradeLtd/TxPB/v3/go"
 	badger "github.com/RTradeLtd/go-ds-badger/v2"
 	minio "github.com/RTradeLtd/s3x/cmd"
 	"github.com/RTradeLtd/s3x/pkg/auth"
@@ -45,7 +45,7 @@ type infoAPIServer struct {
 type xObjects struct {
 	minio.GatewayUnsupported
 	mu         sync.Mutex
-	dagClient  pb.DagAPIClient
+	dagClient  pb.NodeAPIClient
 	fileClient pb.FileAPIClient
 	ctx        context.Context
 
@@ -135,7 +135,7 @@ func (g *TEMX) getXObjects(creds auth.Credentials) (*xObjects, error) {
 	// instantiate initial xObjects type
 	// responsible for bridging S3 -> TemporalX (IPFS)
 	xobj := &xObjects{
-		dagClient:   pb.NewDagAPIClient(conn),
+		dagClient:   pb.NewNodeAPIClient(conn),
 		fileClient:  pb.NewFileAPIClient(conn),
 		ctx:         context.Background(),
 		ledgerStore: ledger,

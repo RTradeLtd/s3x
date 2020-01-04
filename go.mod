@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go v0.39.0
 	github.com/Azure/azure-pipeline-go v0.2.1
 	github.com/Azure/azure-storage-blob-go v0.8.0
-	github.com/RTradeLtd/TxPB v1.1.1
+	github.com/RTradeLtd/TxPB/v3 v3.0.0
 	github.com/RTradeLtd/go-ds-badger/v2 v2.1.0
 	github.com/Shopify/sarama v1.24.1
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
@@ -80,11 +80,10 @@ require (
 	golang.org/x/sys v0.0.0-20190922100055-0a153f010e69
 	google.golang.org/api v0.5.0
 	google.golang.org/genproto v0.0.0-20191220175831-5c49e3ecc1c1
-	google.golang.org/grpc v1.24.0
+	google.golang.org/grpc v1.26.0
 	gopkg.in/ldap.v3 v3.0.3
 	gopkg.in/olivere/elastic.v5 v5.0.80
 	gopkg.in/yaml.v2 v2.2.7
-	grpc.go4.org v0.0.0-20170609214715-11d0a25b4919
 )
 
 // Added for go1.13 migration https://github.com/golang/go/issues/32805
