@@ -33,6 +33,7 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/event"
 	"github.com/RTradeLtd/s3x/pkg/hash"
+	"github.com/RTradeLtd/s3x/pkg/policy"
 	minio "github.com/minio/minio-go/v6"
 )
 
@@ -1772,6 +1773,12 @@ func toAPIError(ctx context.Context, err error) APIError {
 		// their internal error types. This code is only
 		// useful with gateway implementations.
 		switch e := err.(type) {
+		case policy.Error:
+			apiErr = APIError{
+				Code:           "MalformedPolicy",
+				Description:    e.Error(),
+				HTTPStatusCode: http.StatusBadRequest,
+			}
 		case crypto.Error:
 			apiErr = APIError{
 				Code:           "XKMSInternalError",
