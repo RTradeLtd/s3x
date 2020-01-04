@@ -243,9 +243,9 @@ func (x *xObjects) GetHash(ctx context.Context, req *InfoRequest) (*InfoResponse
 		// if this is set, then lets return the hash of the object data
 		// instead of the hash of the protocol buffer object.
 		if req.ObjectDataOnly {
-			obj, err := x.objectFromBucket(ctx, req.GetBucket(), req.GetObject())
-			if err != nil {
-				err = status.Error(codes.Internal, err.Error())
+			obj, e := x.objectFromBucket(ctx, req.GetBucket(), req.GetObject())
+			if e != nil {
+				err = status.Error(codes.Internal, e.Error())
 				break
 			}
 			resp = &InfoResponse{
