@@ -391,30 +391,30 @@ func (le *ledgerStore) getLedger() (*Ledger, error) {
 
 // multipartExists is a helper function to check if a multipart id exists in our ledger
 // todo: document id
-func (l *Ledger) multipartExists(id string) error {
-	if l.MultipartUploads == nil {
+func (m *Ledger) multipartExists(id string) error {
+	if m.MultipartUploads == nil {
 		return ErrInvalidUploadID
 	}
-	if l.MultipartUploads[id].Id == "" {
+	if m.MultipartUploads[id].Id == "" {
 		return ErrInvalidUploadID
 	}
 	return nil
 }
 
 // objectExists is a helper function to check if an object exists in our ledger.
-func (l *Ledger) objectExists(bucket, object string) error {
-	if l.GetBuckets()[bucket].Name == "" {
+func (m *Ledger) objectExists(bucket, object string) error {
+	if m.GetBuckets()[bucket].Name == "" {
 		return ErrLedgerBucketDoesNotExist
 	}
-	if l.GetBuckets()[bucket].Objects[object].Name == "" {
+	if m.GetBuckets()[bucket].Objects[object].Name == "" {
 		return ErrLedgerObjectDoesNotExist
 	}
 	return nil
 }
 
 // bucketExists is a helper function to check if a bucket exists in our ledger
-func (l *Ledger) bucketExists(name string) bool {
-	return l.GetBuckets()[name].Name != ""
+func (m *Ledger) bucketExists(name string) bool {
+	return m.GetBuckets()[name].Name != ""
 }
 
 // putLedger is a helper function used to update the ledger store on disk
@@ -428,8 +428,8 @@ func (le *LedgerStore) putLedger(ledger *Ledger) error {
 }
 */
 
-func (l *Ledger) deleteObject(bucketName, objectName string) error {
-	bucket, ok := l.Buckets[bucketName]
+func (m *Ledger) deleteObject(bucketName, objectName string) error {
+	bucket, ok := m.Buckets[bucketName]
 	if !ok {
 		return ErrLedgerBucketDoesNotExist
 	}
@@ -438,21 +438,21 @@ func (l *Ledger) deleteObject(bucketName, objectName string) error {
 	return nil
 }
 
-func (l *Ledger) deleteBucket(bucketName string) error {
-	bucket, ok := l.Buckets[bucketName]
+func (m *Ledger) deleteBucket(bucketName string) error {
+	bucket, ok := m.Buckets[bucketName]
 	if !ok {
 		return nil //already deleted or never existed
 	}
 	if len(bucket.Objects) != 0 {
 		return ErrLedgerNonEmptyBucket
 	}
-	delete(l.Buckets, bucketName)
+	delete(m.Buckets, bucketName)
 	//todo: save to ipfs
 	return nil
 }
 
-func (l *Ledger) deleteMultipartID(bucketName, multipartID string) error {
-	delete(l.MultipartUploads, multipartID)
+func (m *Ledger) deleteMultipartID(bucketName, multipartID string) error {
+	delete(m.MultipartUploads, multipartID)
 	//todo: save to ipfs
 	return nil
 }
