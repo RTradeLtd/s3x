@@ -194,6 +194,8 @@ func (x *xObjects) PutObject(
 	if err != nil {
 		return objInfo, x.toMinioErr(err, bucket, object, "")
 	}
+	x.ledgerStore.putObject(ctx, bucket, object, objectHash)
+
 	// update the bucket on ipfs with the new object
 	bucketHash, err := x.addObjectToBucketAndIPFS(ctx, object, objectHash, bucket)
 	if err != nil {
@@ -207,6 +209,7 @@ func (x *xObjects) PutObject(
 	if err := x.ledgerStore.AddObjectToBucket(bucket, object, objectHash); err != nil {
 		return objInfo, x.toMinioErr(err, bucket, object, "")
 	}
+
 	log.Printf(
 		"bucket-name: %s, bucket-hash: %s, object-name: %s, object-hash: %s",
 		bucket, bucketHash, object, objectHash,

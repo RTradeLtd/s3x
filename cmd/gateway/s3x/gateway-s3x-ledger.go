@@ -89,8 +89,6 @@ func (le *ledgerStore) NewBucket(name, hash string) error {
 		ledger.Buckets = make(map[string]LedgerBucketEntry)
 	}
 	ledger.Buckets[name] = LedgerBucketEntry{
-		Objects:  make(map[string]LedgerObjectEntry),
-		Name:     name,
 		IpfsHash: hash,
 	}
 	return nil //todo: save to ipfs

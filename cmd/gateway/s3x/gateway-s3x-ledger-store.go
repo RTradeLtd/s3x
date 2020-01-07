@@ -33,7 +33,9 @@ type ledgerStore struct {
 	sync.RWMutex //to be changed to per bucket name, once datastore saves each bucket separatory
 	ds           datastore.Batching
 	dag          pb.NodeAPIClient //to be used as direct access to ipfs to optimise algorithm
-	l            *Ledger          //a cache of the values in datastore and ipfs
+	l            *Ledger          //a cache of the values in datastore and ipfs (todo: remove?)
+
+	bucketObjectHashes map[string]map[string]string //a cache of ipfs object hashes by bucket and object name
 }
 
 func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient) (*ledgerStore, error) {
@@ -47,6 +49,10 @@ func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient) (*ledgerStore, 
 		return nil, err
 	}
 	return ls, err
+}
+
+func (ls *ledgerStore) getBucket(ctx context.Context, bucket string) {
+
 }
 
 func (ls *ledgerStore) object(ctx context.Context, bucket, object string) (*Object, error) {
@@ -63,6 +69,17 @@ func (ls *ledgerStore) objectData(ctx context.Context, bucket, object string) ([
 		return nil, err
 	}
 	return ls.ipfsBytes(ctx, obj.GetDataHash())
+}
+
+// putObject saves an object into the given bucket
+func (ls *ledgerStore) putObject(ctx context.Context, bucket, object, objHash string) error {
+	return nil
+	/*b := ls.l.GetBuckets()[bucket]
+	if b.Objects == nil {
+		b.Objects = make(map[string]string)
+	}
+	b.Objects[object] = objHash
+	return x.bucketToIPFS(ctx, bucket)*/
 }
 
 // ipfsBytes returns data from IPFS using its hash
