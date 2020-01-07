@@ -3,6 +3,7 @@ package s3x
 import (
 	"sync"
 
+	pb "github.com/RTradeLtd/TxPB/v3/go"
 	"github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/namespace"
 )
@@ -16,23 +17,31 @@ The reason for this is so that we can enable easy reuse of internal code.
 */
 
 var (
-	ledgerKey    = datastore.NewKey("ledgerstatekey")
-	ledgerPrefix = datastore.NewKey("ledgerRoot")
+	dsKey       = datastore.NewKey("ledgerstatekey")
+	dsPrefix    = datastore.NewKey("ledgerRoot")
+	dsBucketKey = datastore.NewKey("b")
 )
 
-// LedgerStore is an internal bookkeeper that
-// maps ipfs cids to bucket and object names
-type LedgerStore struct {
-	sync.RWMutex
-	ds datastore.Batching
+// ledgerStore is an internal bookkeeper that
+// maps buckets to ipfs cids and keeps a local cache of object names to hashes
+type ledgerStore struct {
+	sync.RWMutex //to be changed to per bucket name, once datastore saves each bucket separatory
+	ds           datastore.Batching
+	dag          pb.NodeAPIClient //to be used as direct access to ipfs to optimise algorithm
+	l            *Ledger          //a cache of the values in datastore and ipfs
 }
 
-func newLedgerStore(ds datastore.Batching) *LedgerStore {
-	ledger := &LedgerStore{
-		ds: namespace.Wrap(ds, ledgerPrefix),
+func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient) (*ledgerStore, error) {
+	ls := &ledgerStore{
+		ds:  namespace.Wrap(ds, dsPrefix),
+		dag: dag,
 	}
-	ledger.createLedgerIfNotExist()
-	return ledger
+	var err error
+	ls.l, err = ls.getLedger()
+	if err != nil {
+		return nil, err
+	}
+	return ls, err
 }
 
 /////////////////////
@@ -40,32 +49,31 @@ func newLedgerStore(ds datastore.Batching) *LedgerStore {
 /////////////////////
 
 // AbortMultipartUpload is used to abort a multipart upload
-func (le *LedgerStore) AbortMultipartUpload(bucketName, multipartID string) error {
+func (le *ledgerStore) AbortMultipartUpload(bucketName, multipartID string) error {
 	le.Lock()
 	defer le.Unlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
 	}
-	if !le.bucketExists(ledger, bucketName) {
+	if !ledger.bucketExists(bucketName) {
 		return ErrLedgerBucketDoesNotExist
 	}
-	if err := le.multipartExists(ledger, multipartID); err != nil {
+	if err := ledger.multipartExists(multipartID); err != nil {
 		return err
 	}
-	delete(ledger.MultipartUploads, multipartID)
-	return le.putLedger(ledger)
+	return ledger.deleteMultipartID(bucketName, multipartID)
 }
 
 // NewMultipartUpload is used to store the initial start of a multipart upload request
-func (le *LedgerStore) NewMultipartUpload(bucketName, objectName, multipartID string) error {
+func (le *ledgerStore) NewMultipartUpload(bucketName, objectName, multipartID string) error {
 	le.Lock()
 	defer le.Unlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
 	}
-	if !le.bucketExists(ledger, bucketName) {
+	if !ledger.bucketExists(bucketName) {
 		return ErrLedgerBucketDoesNotExist
 	}
 	if ledger.MultipartUploads == nil {
@@ -76,21 +84,21 @@ func (le *LedgerStore) NewMultipartUpload(bucketName, objectName, multipartID st
 		Object: objectName,
 		Id:     multipartID,
 	}
-	return le.putLedger(ledger)
+	return nil //todo: save to ipfs
 }
 
 // PutObjectPart is used to record an individual object part within a multipart upload
-func (le *LedgerStore) PutObjectPart(bucketName, objectName, partHash, multipartID string, partNumber int64) error {
+func (le *ledgerStore) PutObjectPart(bucketName, objectName, partHash, multipartID string, partNumber int64) error {
 	le.Lock()
 	defer le.Unlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
 	}
-	if !le.bucketExists(ledger, bucketName) {
+	if !ledger.bucketExists(bucketName) {
 		return ErrLedgerBucketDoesNotExist
 	}
-	if err := le.multipartExists(ledger, multipartID); err != nil {
+	if err := ledger.multipartExists(multipartID); err != nil {
 		return err
 	}
 	mpart := ledger.MultipartUploads[multipartID]
@@ -99,18 +107,18 @@ func (le *LedgerStore) PutObjectPart(bucketName, objectName, partHash, multipart
 		DataHash: partHash,
 	})
 	ledger.MultipartUploads[multipartID] = mpart
-	return le.putLedger(ledger)
+	return nil //todo: save to ipfs
 }
 
 // NewBucket creates a new ledger bucket entry
-func (le *LedgerStore) NewBucket(name, hash string) error {
+func (le *ledgerStore) NewBucket(name, hash string) error {
 	le.Lock()
 	defer le.Unlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
 	}
-	if le.bucketExists(ledger, name) {
+	if ledger.bucketExists(name) {
 		return ErrLedgerBucketExists
 	}
 	if ledger.GetBuckets() == nil {
@@ -121,51 +129,43 @@ func (le *LedgerStore) NewBucket(name, hash string) error {
 		Name:     name,
 		IpfsHash: hash,
 	}
-	return le.putLedger(ledger)
+	return nil //todo: save to ipfs
 }
 
 // UpdateBucketHash is used to update the ledger bucket entry
 // with a new IPFS hash
-func (le *LedgerStore) UpdateBucketHash(name, hash string) error {
+func (le *ledgerStore) UpdateBucketHash(name, hash string) error {
 	le.Lock()
 	defer le.Unlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
 	}
-	if !le.bucketExists(ledger, name) {
+	if !ledger.bucketExists(name) {
 		return ErrLedgerBucketDoesNotExist
 	}
 	entry := ledger.Buckets[name]
 	entry.IpfsHash = hash
 	ledger.Buckets[name] = entry
-	return le.putLedger(ledger)
+	return nil //todo: save to ipfs
 }
 
 // RemoveObject is used to remove a ledger object entry from a ledger bucket entry
-func (le *LedgerStore) RemoveObject(bucketName, objectName string) error {
+func (le *ledgerStore) RemoveObject(bucketName, objectName string) error {
 	le.Lock()
 	defer le.Unlock()
-	ledger, err := le.getLedger()
-	if err != nil {
-		return err
-	}
-	if err := le.objectExists(ledger, bucketName, objectName); err != nil {
-		return err
-	}
-	delete(ledger.Buckets[bucketName].Objects, objectName)
-	return nil
+	return le.l.deleteObject(bucketName, objectName)
 }
 
 // AddObjectToBucket is used to update a ledger bucket entry with a new ledger object entry
-func (le *LedgerStore) AddObjectToBucket(bucketName, objectName, objectHash string) error {
+func (le *ledgerStore) AddObjectToBucket(bucketName, objectName, objectHash string) error {
 	le.Lock()
 	defer le.Unlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
 	}
-	if !le.bucketExists(ledger, bucketName) {
+	if !ledger.bucketExists(bucketName) {
 		return ErrLedgerBucketDoesNotExist
 	}
 	// prevent nil map panic
@@ -178,11 +178,11 @@ func (le *LedgerStore) AddObjectToBucket(bucketName, objectName, objectHash stri
 		Name:     objectName,
 		IpfsHash: objectHash,
 	}
-	return le.putLedger(ledger)
+	return nil //todo: save to ipfs
 }
 
 // DeleteBucket is used to remove a ledger bucket entry
-func (le *LedgerStore) DeleteBucket(name string) error {
+func (le *ledgerStore) DeleteBucket(name string) error {
 	le.Lock()
 	defer le.Unlock()
 	ledger, err := le.getLedger()
@@ -193,11 +193,11 @@ func (le *LedgerStore) DeleteBucket(name string) error {
 		return ErrLedgerBucketDoesNotExist
 	}
 	delete(ledger.Buckets, name)
-	return le.putLedger(ledger)
+	return nil //todo: save to ipfs
 }
 
 // Close shuts down the ledger datastore
-func (le *LedgerStore) Close() error {
+func (le *ledgerStore) Close() error {
 	le.Lock()
 	defer le.Unlock()
 	return le.ds.Close()
@@ -208,32 +208,32 @@ func (le *LedgerStore) Close() error {
 /////////////////////
 
 // GetObjectParts is used to return multipart upload parts
-func (le *LedgerStore) GetObjectParts(id string) ([]ObjectPartInfo, error) {
+func (le *ledgerStore) GetObjectParts(id string) ([]ObjectPartInfo, error) {
 	le.RLock()
 	defer le.RUnlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return nil, err
 	}
-	if err := le.multipartExists(ledger, id); err != nil {
+	if err := ledger.multipartExists(id); err != nil {
 		return nil, err
 	}
 	return ledger.GetMultipartUploads()[id].ObjectParts, nil
 }
 
 // MultipartIDExists is used to lookup if the given multipart id exists
-func (le *LedgerStore) MultipartIDExists(id string) error {
+func (le *ledgerStore) MultipartIDExists(id string) error {
 	le.RLock()
 	defer le.RUnlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
 	}
-	return le.multipartExists(ledger, id)
+	return ledger.multipartExists(id)
 }
 
 // IsEmptyBucket checks if a bucket is empty or not
-func (le *LedgerStore) IsEmptyBucket(name string) error {
+func (le *ledgerStore) IsEmptyBucket(name string) error {
 	le.RLock()
 	defer le.RUnlock()
 	ledger, err := le.getLedger()
@@ -247,30 +247,30 @@ func (le *LedgerStore) IsEmptyBucket(name string) error {
 }
 
 // BucketExists is a public function to check if a bucket exists
-func (le *LedgerStore) BucketExists(name string) bool {
+func (le *ledgerStore) BucketExists(name string) bool {
 	le.RLock()
 	defer le.RUnlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return false
 	}
-	return le.bucketExists(ledger, name)
+	return ledger.bucketExists(name)
 }
 
 // ObjectExists is a public function to check if an object exists, and returns the reason
 // the object can't be found if any
-func (le *LedgerStore) ObjectExists(bucketName, objectName string) error {
+func (le *ledgerStore) ObjectExists(bucketName, objectName string) error {
 	le.RLock()
 	defer le.RUnlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return err
 	}
-	return le.objectExists(ledger, bucketName, objectName)
+	return ledger.objectExists(bucketName, objectName)
 }
 
 // GetBucketHash is used to get the corresponding IPFS CID for a bucket
-func (le *LedgerStore) GetBucketHash(name string) (string, error) {
+func (le *ledgerStore) GetBucketHash(name string) (string, error) {
 	le.RLock()
 	defer le.RUnlock()
 	ledger, err := le.getLedger()
@@ -283,8 +283,8 @@ func (le *LedgerStore) GetBucketHash(name string) (string, error) {
 	return ledger.Buckets[name].IpfsHash, nil
 }
 
-// GetObjectHash is used to retrive the correspodning IPFS CID for an object
-func (le *LedgerStore) GetObjectHash(bucketName, objectName string) (string, error) {
+// GetObjectHash is used to retrieve the corresponding IPFS CID for an object
+func (le *ledgerStore) GetObjectHash(bucketName, objectName string) (string, error) {
 	le.RLock()
 	defer le.RUnlock()
 	ledger, err := le.getLedger()
@@ -302,14 +302,14 @@ func (le *LedgerStore) GetObjectHash(bucketName, objectName string) (string, err
 }
 
 // GetObjectHashes gets a map of object names to object hashes for all objects in a bucket
-func (le *LedgerStore) GetObjectHashes(bucket string) (map[string]string, error) {
+func (le *ledgerStore) GetObjectHashes(bucket string) (map[string]string, error) {
 	le.RLock()
 	defer le.RUnlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return nil, err
 	}
-	if !le.bucketExists(ledger, bucket) {
+	if !ledger.bucketExists(bucket) {
 		return nil, ErrLedgerBucketDoesNotExist
 	}
 	// maps object names to hashes
@@ -321,17 +321,17 @@ func (le *LedgerStore) GetObjectHashes(bucket string) (map[string]string, error)
 }
 
 // GetMultipartHashes returns the hashes of all multipart upload object parts
-func (le *LedgerStore) GetMultipartHashes(bucket, multipartID string) ([]string, error) {
+func (le *ledgerStore) GetMultipartHashes(bucket, multipartID string) ([]string, error) {
 	le.RLock()
 	defer le.RUnlock()
 	ledger, err := le.getLedger()
 	if err != nil {
 		return nil, err
 	}
-	if !le.bucketExists(ledger, bucket) {
+	if !ledger.bucketExists(bucket) {
 		return nil, ErrLedgerBucketDoesNotExist
 	}
-	if err := le.multipartExists(ledger, multipartID); err != nil {
+	if err := ledger.multipartExists(multipartID); err != nil {
 		return nil, err
 	}
 	mpart := ledger.MultipartUploads[bucket]
@@ -343,7 +343,7 @@ func (le *LedgerStore) GetMultipartHashes(bucket, multipartID string) ([]string,
 }
 
 // GetBucketNames is used to a slice of all bucket names our ledger currently tracks
-func (le *LedgerStore) GetBucketNames() ([]string, error) {
+func (le *ledgerStore) GetBucketNames() ([]string, error) {
 	le.RLock()
 	defer le.RUnlock()
 	ledger, err := le.getLedger()
@@ -366,67 +366,93 @@ func (le *LedgerStore) GetBucketNames() ([]string, error) {
 // INTERNAL FUNCTINS //
 ///////////////////////
 
-// getLedger is used to return our Ledger object from storage
-func (le *LedgerStore) getLedger() (*Ledger, error) {
-	ledgerBytes, err := le.ds.Get(ledgerKey)
-	if err != nil {
-		return nil, err
+// getLedger is used to return our Ledger object from storage, or return a cached version
+func (le *ledgerStore) getLedger() (*Ledger, error) {
+	if le.l == nil {
+		ledger := &Ledger{}
+		ledgerBytes, err := le.ds.Get(dsKey) //todo: change to per buck hash
+		if err != nil {
+			//todo: detect only key does not exist
+			ledgerBytes, err := ledger.Marshal()
+			if err != nil {
+				panic(err)
+			}
+			if err := le.ds.Put(dsKey, ledgerBytes); err != nil {
+				panic(err)
+			}
+		}
+		if err := ledger.Unmarshal(ledgerBytes); err != nil {
+			return nil, err
+		}
+		le.l = ledger
 	}
-	ledger := &Ledger{}
-	if err := ledger.Unmarshal(ledgerBytes); err != nil {
-		return nil, err
-	}
-	return ledger, nil
+	return le.l, nil
 }
 
-// createLEdgerIfNotExist is a helper function to create our
-// internal ledger store if it does not exist.
-func (le *LedgerStore) createLedgerIfNotExist() {
-	if _, err := le.getLedger(); err == nil {
-		return
-	}
-	ledger := new(Ledger)
-	ledgerBytes, err := ledger.Marshal()
-	if err != nil {
-		panic(err)
-	}
-	if err := le.ds.Put(ledgerKey, ledgerBytes); err != nil {
-		panic(err)
-	}
-}
-
-// multipartExists is a helper function to check if a multispart id exists in our ledger
-func (le *LedgerStore) multipartExists(ledger *Ledger, id string) error {
-	if ledger.MultipartUploads == nil {
+// multipartExists is a helper function to check if a multipart id exists in our ledger
+// todo: document id
+func (l *Ledger) multipartExists(id string) error {
+	if l.MultipartUploads == nil {
 		return ErrInvalidUploadID
 	}
-	if ledger.MultipartUploads[id].Id == "" {
+	if l.MultipartUploads[id].Id == "" {
 		return ErrInvalidUploadID
 	}
 	return nil
 }
 
 // objectExists is a helper function to check if an object exists in our ledger.
-func (le *LedgerStore) objectExists(ledger *Ledger, bucket, object string) error {
-	if ledger.GetBuckets()[bucket].Name == "" {
+func (l *Ledger) objectExists(bucket, object string) error {
+	if l.GetBuckets()[bucket].Name == "" {
 		return ErrLedgerBucketDoesNotExist
 	}
-	if ledger.GetBuckets()[bucket].Objects[object].Name == "" {
+	if l.GetBuckets()[bucket].Objects[object].Name == "" {
 		return ErrLedgerObjectDoesNotExist
 	}
 	return nil
 }
 
 // bucketExists is a helper function to check if a bucket exists in our ledger
-func (le *LedgerStore) bucketExists(ledger *Ledger, name string) bool {
-	return ledger.GetBuckets()[name].Name != ""
+func (l *Ledger) bucketExists(name string) bool {
+	return l.GetBuckets()[name].Name != ""
 }
 
 // putLedger is a helper function used to update the ledger store on disk
+/*
 func (le *LedgerStore) putLedger(ledger *Ledger) error {
 	ledgerBytes, err := ledger.Marshal()
 	if err != nil {
 		return err
 	}
-	return le.ds.Put(ledgerKey, ledgerBytes)
+	return le.ds.Put(dsKey, ledgerBytes)
+}
+*/
+
+func (l *Ledger) deleteObject(bucketName, objectName string) error {
+	bucket, ok := l.Buckets[bucketName]
+	if !ok {
+		return ErrLedgerBucketDoesNotExist
+	}
+	delete(bucket.Objects, objectName)
+	//todo: save to ipfs
+	return nil
+}
+
+func (l *Ledger) deleteBucket(bucketName string) error {
+	bucket, ok := l.Buckets[bucketName]
+	if !ok {
+		return nil //already deleted or never existed
+	}
+	if len(bucket.Objects) != 0 {
+		return ErrLedgerNonEmptyBucket
+	}
+	delete(l.Buckets, bucketName)
+	//todo: save to ipfs
+	return nil
+}
+
+func (l *Ledger) deleteMultipartID(bucketName, multipartID string) error {
+	delete(l.MultipartUploads, multipartID)
+	//todo: save to ipfs
+	return nil
 }

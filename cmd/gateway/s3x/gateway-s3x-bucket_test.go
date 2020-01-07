@@ -23,8 +23,8 @@ func TestGateway_Bucket(t *testing.T) {
 	}()
 	os.Setenv("S3X_DS_PATH", testPath)
 	temx := &TEMX{
-		HTTPAddr: "0.0.0.0:8889",
-		GRPCAddr: "0.0.0.0:8888",
+		HTTPAddr: "localhost:8889",
+		GRPCAddr: "localhost:8888",
 		DSPath:   testPath,
 		XAddr:    "xapi-dev.temporal.cloud:9090",
 	}

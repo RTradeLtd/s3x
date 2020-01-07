@@ -50,7 +50,7 @@ type xObjects struct {
 	ctx        context.Context
 
 	// ledgerStore is responsible for updating our internal ledger state
-	ledgerStore *LedgerStore
+	ledgerStore *ledgerStore
 
 	infoAPI *infoAPIServer
 
@@ -98,13 +98,13 @@ func temxGatewayMain(ctx *cli.Context) {
 }
 
 // newLedgerStore returns an instance of ledgerStore that uses badgerv2
-func (g *TEMX) newLedgerStore(dsPath string) (*LedgerStore, error) {
+func (g *TEMX) newLedgerStore(dsPath string, dag pb.NodeAPIClient) (*ledgerStore, error) {
 	opts := badger.DefaultOptions
 	ds, err := badger.NewDatastore(dsPath, &opts)
 	if err != nil {
 		return nil, err
 	}
-	return newLedgerStore(ds), nil
+	return newLedgerStore(ds, dag)
 }
 
 // returns an instance of xObjects
@@ -122,8 +122,9 @@ func (g *TEMX) getXObjects(creds auth.Credentials) (*xObjects, error) {
 	if err != nil {
 		return nil, err
 	}
+	dag := pb.NewNodeAPIClient(conn)
 	// instantiate our internal ledger
-	ledger, err := g.newLedgerStore(g.DSPath)
+	ledger, err := g.newLedgerStore(g.DSPath, dag)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +136,7 @@ func (g *TEMX) getXObjects(creds auth.Credentials) (*xObjects, error) {
 	// instantiate initial xObjects type
 	// responsible for bridging S3 -> TemporalX (IPFS)
 	xobj := &xObjects{
-		dagClient:   pb.NewNodeAPIClient(conn),
+		dagClient:   dag,
 		fileClient:  pb.NewFileAPIClient(conn),
 		ctx:         context.Background(),
 		ledgerStore: ledger,

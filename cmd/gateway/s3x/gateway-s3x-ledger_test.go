@@ -9,7 +9,10 @@ import (
 )
 
 func TestLedger(t *testing.T) {
-	ledger := newLedgerStore(dssync.MutexWrap(datastore.NewMapDatastore()))
+	ledger, err := newLedgerStore(dssync.MutexWrap(datastore.NewMapDatastore()), nil) //todo: change test
+	if err != nil {
+		t.Fatal(err)
+	}
 	type args struct {
 		name, hash string
 	}
