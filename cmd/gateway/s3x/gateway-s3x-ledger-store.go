@@ -25,6 +25,10 @@ var (
 
 // ledgerStore is an internal bookkeeper that
 // maps buckets to ipfs cids and keeps a local cache of object names to hashes
+//
+// Bucket root hashes are saved in the provided data store.
+// Object hashes are saved in ipfs and cached in memory,
+// Object data is saved in ipfs.
 type ledgerStore struct {
 	sync.RWMutex //to be changed to per bucket name, once datastore saves each bucket separatory
 	ds           datastore.Batching
@@ -45,20 +49,6 @@ func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient) (*ledgerStore, 
 	return ls, err
 }
 
-// ipfsObject returns an object from IPFS using its hash
-func (ls *ledgerStore) ipfsObject(ctx context.Context, h string) (*Object, error) {
-	data, err := ls.dagGet(ctx, h)
-	if err != nil {
-		return nil, err
-	}
-	obj := &Object{}
-	err = obj.Unmarshal(data)
-	if err != nil {
-		return nil, err
-	}
-	return obj, nil
-}
-
 func (ls *ledgerStore) object(ctx context.Context, bucket, object string) (*Object, error) {
 	objectHash, err := ls.GetObjectHash(bucket, object)
 	if err != nil {
@@ -72,14 +62,36 @@ func (ls *ledgerStore) objectData(ctx context.Context, bucket, object string) ([
 	if err != nil {
 		return nil, err
 	}
-	return ls.dagGet(ctx, obj.GetDataHash())
+	return ls.ipfsBytes(ctx, obj.GetDataHash())
 }
 
-// dagGet is a helper function to return byte slices from IPLD objects on IPFS
-func (ls *ledgerStore) dagGet(ctx context.Context, hash string) ([]byte, error) {
+// ipfsBytes returns data from IPFS using its hash
+func (ls *ledgerStore) ipfsBytes(ctx context.Context, h string) ([]byte, error) {
 	resp, err := ls.dag.Dag(ctx, &pb.DagRequest{
 		RequestType: pb.DAGREQTYPE_DAG_GET,
-		Hash:        hash,
+		Hash:        h,
 	})
 	return resp.GetRawData(), err
+}
+
+type unmarshaller interface {
+	Unmarshal(data []byte) error
+}
+
+// ipfsUnmarshal unmarshalls any data structure from IPFS using its hash
+func (ls *ledgerStore) ipfsUnmarshal(ctx context.Context, h string, u unmarshaller) error {
+	data, err := ls.ipfsBytes(ctx, h)
+	if err != nil {
+		return err
+	}
+	return u.Unmarshal(data)
+}
+
+// ipfsObject returns an object from IPFS using its hash
+func (ls *ledgerStore) ipfsObject(ctx context.Context, h string) (*Object, error) {
+	obj := &Object{}
+	if err := ls.ipfsUnmarshal(ctx, h, obj); err != nil {
+		return nil, err
+	}
+	return obj, nil
 }
