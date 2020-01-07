@@ -1,13 +1,5 @@
 package s3x
 
-import (
-	"sync"
-
-	pb "github.com/RTradeLtd/TxPB/v3/go"
-	"github.com/ipfs/go-datastore"
-	"github.com/ipfs/go-datastore/namespace"
-)
-
 /* Design Notes
 ---------------
 
@@ -15,34 +7,6 @@ Internal functions should never claim or release locks.
 Any claiming or releasing of locks should be done in the public setter+getter functions.
 The reason for this is so that we can enable easy reuse of internal code.
 */
-
-var (
-	dsKey       = datastore.NewKey("ledgerstatekey")
-	dsPrefix    = datastore.NewKey("ledgerRoot")
-	dsBucketKey = datastore.NewKey("b")
-)
-
-// ledgerStore is an internal bookkeeper that
-// maps buckets to ipfs cids and keeps a local cache of object names to hashes
-type ledgerStore struct {
-	sync.RWMutex //to be changed to per bucket name, once datastore saves each bucket separatory
-	ds           datastore.Batching
-	dag          pb.NodeAPIClient //to be used as direct access to ipfs to optimise algorithm
-	l            *Ledger          //a cache of the values in datastore and ipfs
-}
-
-func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient) (*ledgerStore, error) {
-	ls := &ledgerStore{
-		ds:  namespace.Wrap(ds, dsPrefix),
-		dag: dag,
-	}
-	var err error
-	ls.l, err = ls.getLedger()
-	if err != nil {
-		return nil, err
-	}
-	return ls, err
-}
 
 /////////////////////
 // SETTER FUNCTINS //

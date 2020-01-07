@@ -118,19 +118,20 @@ func (x *xObjects) GetObject(
 	etag string,
 	opts minio.ObjectOptions,
 ) error {
-	// this will return whether or not the bucket or object does not exist
-	if err := x.ledgerStore.ObjectExists(bucket, object); err != nil {
-		return x.toMinioErr(err, bucket, object, "")
-	}
-	obj, err := x.objectFromBucket(ctx, bucket, object)
+	objData, err := x.ledgerStore.objectData(ctx, bucket, object)
 	if err != nil {
 		return x.toMinioErr(err, bucket, object, "")
 	}
-	objData, err := x.dagGet(ctx, obj.GetDataHash())
-	if err != nil {
-		return x.toMinioErr(err, bucket, object, "")
+	end := startOffset + length
+	objSize := int64(len(objData))
+	if objSize < end {
+		return minio.InvalidRange{
+			OffsetBegin:  startOffset,
+			OffsetEnd:    end,
+			ResourceSize: objSize,
+		}
 	}
-	reader := bytes.NewReader(objData)
+	reader := bytes.NewReader(objData[startOffset:end])
 	_, err = reader.WriteTo(writer)
 	return err
 }
