@@ -28,9 +28,9 @@ message InfoResponse {
 // for keeping track of buckets, objects, and their corresponding IPFS hashes
 message Ledger {
     // key = bucket name
-    map<string, LedgerBucketEntry> buckets = 1 [(gogoproto.nullable) = false];
+    map<string, LedgerBucketEntry> buckets = 1;
     // key = partID
-    map<string, MultipartUpload> multipartUploads = 2 [(gogoproto.nullable) = false];
+    map<string, MultipartUpload> multipartUploads = 2;
 }
 
 // LedgerBucketEntry is an individual entry within the ledger containing information about a bucket

@@ -14,13 +14,12 @@ func (x *xObjects) MakeBucketWithLocation(
 	name, location string,
 ) error {
 	// check to see whether or not the bucket already exists
-	if x.ledgerStore.BucketExists(name) {
+	if x.ledgerStore.getBucket(name) == nil {
 		return x.toMinioErr(ErrLedgerBucketExists, name, "", "")
 	}
 	// create the bucket
 	hash, err := x.bucketToIPFS(ctx, &Bucket{
 		BucketInfo: BucketInfo{
-			Name:     name,
 			Location: location,
 			Created:  time.Now().UTC(),
 		},
@@ -47,7 +46,7 @@ func (x *xObjects) GetBucketInfo(
 		return bi, x.toMinioErr(err, name, "", "")
 	}
 	return minio.BucketInfo{
-		Name: bucket.GetBucketInfo().Name,
+		Name: name,
 		// TODO(bonedaddy): decide what to do here,
 		// in the examples of other gateway its a nil time
 		// bucket the bucket actually has a created timestamp
@@ -76,14 +75,6 @@ func (x *xObjects) ListBuckets(ctx context.Context) ([]minio.BucketInfo, error) 
 
 // DeleteBucket deletes a bucket on S3
 func (x *xObjects) DeleteBucket(ctx context.Context, name string) error {
-	// check to see whether or not the bucket exists
-	if !x.ledgerStore.BucketExists(name) {
-		return x.toMinioErr(ErrLedgerBucketDoesNotExist, name, "", "")
-	}
-	// prevent deleting non-empty bucktes
-	if err := x.ledgerStore.IsEmptyBucket(name); err != nil {
-		return x.toMinioErr(err, name, "", "")
-	}
 	// TODO(bonedaddy): implement removal call from TemporalX
 	return x.toMinioErr(x.ledgerStore.DeleteBucket(name), name, "", "")
 }
