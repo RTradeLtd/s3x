@@ -1,6 +1,12 @@
 package s3x
 
-import "context"
+import (
+	"context"
+
+	pb "github.com/RTradeLtd/TxPB/v3/go"
+	"github.com/ipfs/go-datastore"
+	"github.com/ipfs/go-datastore/query"
+)
 
 /* Design Notes
 ---------------
@@ -15,19 +21,27 @@ The reason for this is so that we can enable easy reuse of internal code.
 /////////////////////
 
 // AbortMultipartUpload is used to abort a multipart upload
-func (ls *ledgerStore) AbortMultipartUpload(bucketName, multipartID string) error {
-	if !ls.BucketExists(bucketName) {
+func (ls *ledgerStore) AbortMultipartUpload(bucket, multipartID string) error {
+	ex, err := ls.BucketExists(bucket)
+	if err != nil {
+		return err
+	}
+	if !ex {
 		return ErrLedgerBucketDoesNotExist
 	}
 	if err := ls.l.multipartExists(multipartID); err != nil {
 		return err
 	}
-	return ls.l.deleteMultipartID(bucketName, multipartID)
+	return ls.l.deleteMultipartID(bucket, multipartID)
 }
 
 // NewMultipartUpload is used to store the initial start of a multipart upload request
 func (ls *ledgerStore) NewMultipartUpload(bucketName, objectName, multipartID string) error {
-	if !ls.BucketExists(bucketName) {
+	ex, err := ls.BucketExists(bucketName)
+	if err != nil {
+		return err
+	}
+	if !ex {
 		return ErrLedgerBucketDoesNotExist
 	}
 	if ls.l.MultipartUploads == nil {
@@ -43,7 +57,11 @@ func (ls *ledgerStore) NewMultipartUpload(bucketName, objectName, multipartID st
 
 // PutObjectPart is used to record an individual object part within a multipart upload
 func (ls *ledgerStore) PutObjectPart(bucketName, objectName, partHash, multipartID string, partNumber int64) error {
-	if !ls.BucketExists(bucketName) {
+	ex, err := ls.BucketExists(bucketName)
+	if err != nil {
+		return err
+	}
+	if !ex {
 		return ErrLedgerBucketDoesNotExist
 	}
 	if err := ls.l.multipartExists(multipartID); err != nil {
@@ -60,7 +78,11 @@ func (ls *ledgerStore) PutObjectPart(bucketName, objectName, partHash, multipart
 
 // NewBucket creates a new ledger bucket entry
 func (ls *ledgerStore) NewBucket(name, hash string) error {
-	if ls.BucketExists(name) {
+	ex, err := ls.BucketExists(name)
+	if err != nil {
+		return err
+	}
+	if !ex {
 		return ErrLedgerBucketExists
 	}
 	ls.l.Buckets[name] = &LedgerBucketEntry{
@@ -72,7 +94,11 @@ func (ls *ledgerStore) NewBucket(name, hash string) error {
 // UpdateBucketHash is used to update the ledger bucket entry
 // with a new IPFS hash
 func (ls *ledgerStore) UpdateBucketHash(name, hash string) error {
-	if !ls.BucketExists(name) {
+	ex, err := ls.BucketExists(name)
+	if err != nil {
+		return err
+	}
+	if !ex {
 		return ErrLedgerBucketDoesNotExist
 	}
 	ls.l.Buckets[name].IpfsHash = hash
@@ -119,27 +145,15 @@ func (le *ledgerStore) Close() error {
 
 // GetObjectParts is used to return multipart upload parts
 func (le *ledgerStore) GetObjectParts(id string) ([]ObjectPartInfo, error) {
-	le.RLock()
-	defer le.RUnlock()
-	ledger, err := le.getLedger()
-	if err != nil {
+	if err := le.l.multipartExists(id); err != nil {
 		return nil, err
 	}
-	if err := ledger.multipartExists(id); err != nil {
-		return nil, err
-	}
-	return ledger.GetMultipartUploads()[id].ObjectParts, nil
+	return le.l.GetMultipartUploads()[id].ObjectParts, nil
 }
 
 // MultipartIDExists is used to lookup if the given multipart id exists
 func (le *ledgerStore) MultipartIDExists(id string) error {
-	le.RLock()
-	defer le.RUnlock()
-	ledger, err := le.getLedger()
-	if err != nil {
-		return err
-	}
-	return ledger.multipartExists(id)
+	return le.l.multipartExists(id)
 }
 
 /*
@@ -171,7 +185,10 @@ func (le *ledgerStore) GetBucketHash(name string) (string, error) {
 */
 // GetObjectHash is used to retrieve the corresponding IPFS CID for an object
 func (ls *ledgerStore) GetObjectHash(ctx context.Context, bucket, object string) (string, error) {
-	b := ls.getBucket(bucket)
+	b, err := ls.getBucket(bucket)
+	if err != nil {
+		return "", err
+	}
 	if b == nil {
 		return "", ErrLedgerBucketDoesNotExist
 	}
@@ -186,22 +203,27 @@ func (ls *ledgerStore) GetObjectHash(ctx context.Context, bucket, object string)
 }
 
 // GetObjectHashes gets a map of object names to object hashes for all objects in a bucket
-func (ls *ledgerStore) GetObjectHashes(bucket string) (map[string]string, error) {
-	ls
-	if !ledger.bucketExists(bucket) {
+func (ls *ledgerStore) GetObjectHashes(ctx context.Context, dag pb.NodeAPIClient, bucket string) (map[string]string, error) {
+	b, err := ls.getBucket(bucket)
+	if err != nil {
+		return nil, err
+	}
+	if b == nil {
 		return nil, ErrLedgerBucketDoesNotExist
 	}
-	// maps object names to hashes
-	var hashes = make(map[string]string, len(ledger.Buckets[bucket].Objects))
-	for _, obj := range ledger.GetBuckets()[bucket].Objects {
-		hashes[obj.GetName()] = obj.GetIpfsHash()
+	if err := b.ensureCache(ctx, dag); err != nil {
+		return nil, err
 	}
-	return hashes, err
+	return b.Bucket.Objects, nil
 }
 
 // GetMultipartHashes returns the hashes of all multipart upload object parts
 func (ls *ledgerStore) GetMultipartHashes(bucket, multipartID string) ([]string, error) {
-	if !ls.BucketExists(bucket) {
+	ex, err := ls.BucketExists(bucket)
+	if err != nil {
+		return nil, err
+	}
+	if !ex {
 		return nil, ErrLedgerBucketDoesNotExist
 	}
 	if err := ls.l.multipartExists(multipartID); err != nil {
@@ -215,22 +237,18 @@ func (ls *ledgerStore) GetMultipartHashes(bucket, multipartID string) ([]string,
 	return hashes, nil
 }
 
-// GetBucketNames is used to a slice of all bucket names our ledger currently tracks
-func (le *ledgerStore) GetBucketNames() ([]string, error) {
-	le.RLock()
-	defer le.RUnlock()
-	ledger, err := le.getLedger()
+// GetBucketNames is used to get a slice of all bucket names our ledger currently tracks
+func (ls *ledgerStore) GetBucketNames() ([]string, error) {
+	rs, err := ls.ds.Query(query.Query{
+		Prefix:   dsBucketKey.String(),
+		KeysOnly: true,
+	})
 	if err != nil {
 		return nil, err
 	}
-	var (
-		// maps bucket names to hashes
-		names = make([]string, len(ledger.Buckets))
-		count int
-	)
-	for n := range ledger.Buckets {
-		names[count] = n
-		count++
+	names := []string{}
+	for r := range rs.Next() {
+		names = append(names, datastore.NewKey(r.Key).BaseNamespace())
 	}
 	return names, nil
 }
@@ -240,6 +258,7 @@ func (le *ledgerStore) GetBucketNames() ([]string, error) {
 ///////////////////////
 
 // getLedger is used to return our Ledger object from storage, or return a cached version
+/*
 func (le *ledgerStore) getLedger() (*Ledger, error) {
 	if le.l == nil {
 		ledger := &Ledger{}
@@ -260,7 +279,7 @@ func (le *ledgerStore) getLedger() (*Ledger, error) {
 		le.l = ledger
 	}
 	return le.l, nil
-}
+}*/
 
 // multipartExists is a helper function to check if a multipart id exists in our ledger
 // todo: document id

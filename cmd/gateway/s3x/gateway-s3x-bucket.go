@@ -13,23 +13,16 @@ func (x *xObjects) MakeBucketWithLocation(
 	ctx context.Context,
 	name, location string,
 ) error {
-	// check to see whether or not the bucket already exists
-	if x.ledgerStore.getBucket(name) == nil {
-		return x.toMinioErr(ErrLedgerBucketExists, name, "", "")
-	}
-	// create the bucket
-	hash, err := x.bucketToIPFS(ctx, &Bucket{
-		BucketInfo: BucketInfo{
-			Location: location,
-			Created:  time.Now().UTC(),
-		},
-	})
+	b := &Bucket{BucketInfo: BucketInfo{
+		Location: location,
+		Created:  time.Now().UTC(),
+	}}
+	err := x.ledgerStore.creatBucket(ctx, name, b)
 	if err != nil {
 		return x.toMinioErr(err, name, "", "")
 	}
-	log.Printf("bucket-name: %s\tbucket-hash: %s", name, hash)
-	//  update internal ledger state and return
-	return x.toMinioErr(x.ledgerStore.NewBucket(name, hash), name, "", "")
+	log.Printf("bucket-name: %s\tbucket-hash: %s", name, x.ledgerStore.l.Buckets[name].IpfsHash)
+	return nil
 }
 
 // GetBucketInfo gets bucket metadata..
@@ -37,13 +30,20 @@ func (x *xObjects) GetBucketInfo(
 	ctx context.Context,
 	name string,
 ) (bi minio.BucketInfo, err error) {
-	// check to see whether or not the bucket exists
-	if !x.ledgerStore.BucketExists(name) {
-		return bi, x.toMinioErr(ErrLedgerBucketDoesNotExist, name, "", "")
-	}
-	bucket, err := x.bucketFromIPFS(ctx, name)
+	defer func() {
+		err = x.toMinioErr(err, name, "", "")
+	}()
+	b, err := x.ledgerStore.getBucket(name)
 	if err != nil {
-		return bi, x.toMinioErr(err, name, "", "")
+		return
+	}
+	if b == nil {
+		err = ErrLedgerBucketDoesNotExist
+		return
+	}
+	err = b.ensureCache(ctx, x.dagClient)
+	if err != nil {
+		return
 	}
 	return minio.BucketInfo{
 		Name: name,
@@ -51,7 +51,7 @@ func (x *xObjects) GetBucketInfo(
 		// in the examples of other gateway its a nil time
 		// bucket the bucket actually has a created timestamp
 		// Created: time.Unix(0, 0),
-		Created: bucket.GetBucketInfo().Created,
+		Created: b.Bucket.GetBucketInfo().Created,
 	}, nil
 }
 

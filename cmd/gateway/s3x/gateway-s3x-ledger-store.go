@@ -33,39 +33,16 @@ type ledgerStore struct {
 	sync.RWMutex //to be changed to per bucket name, once datastore saves each bucket separatory
 	ds           datastore.Batching
 	dag          pb.NodeAPIClient //to be used as direct access to ipfs to optimise algorithm
-	l            *Ledger          //a cache of the values in datastore and ipfs (todo: remove?)
-
-	bucketObjectHashes map[string]map[string]string //a cache of ipfs object hashes by bucket and object name
+	l            *Ledger          //a cache of the values in datastore and ipfs
 }
 
 func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient) (*ledgerStore, error) {
 	ls := &ledgerStore{
 		ds:  namespace.Wrap(ds, dsPrefix),
 		dag: dag,
+		l:   &Ledger{},
 	}
-	var err error
-	ls.l, err = ls.getLedger()
-	if err != nil {
-		return nil, err
-	}
-	return ls, err
-}
-
-func (ls *ledgerStore) BucketExists(bucket string) bool {
-	return ls.getBucket(bucket) != nil
-}
-
-// DeleteBucket is used to remove a ledger bucket entry
-func (ls *ledgerStore) DeleteBucket(name string) error {
-	if !ls.BucketExists(name) {
-		return ErrLedgerBucketDoesNotExist
-	}
-	delete(ls.l.Buckets, name)
-	return nil //todo: save to ipfs
-}
-
-func (ls *ledgerStore) getBucket(bucket string) *LedgerBucketEntry {
-	return ls.l.Buckets[bucket]
+	return ls, nil
 }
 
 func (ls *ledgerStore) object(ctx context.Context, bucket, object string) (*Object, error) {
@@ -85,66 +62,38 @@ func (ls *ledgerStore) objectData(ctx context.Context, bucket, object string) ([
 }
 
 // RemoveObject is used to remove a ledger object entry from a ledger bucket entry
-func (ls *ledgerStore) RemoveObject(ctx context.Context, dag pb.NodeAPIClient, bucket, object string) error {
-	b := ls.getBucket(bucket)
-	if b == nil {
-		return ErrLedgerBucketDoesNotExist
-	}
-	err := b.ensureCache(ctx, dag)
+func (ls *ledgerStore) RemoveObject(ctx context.Context, bucket, object string) error {
+	b, err := ls.getBucket(bucket)
 	if err != nil {
 		return err
 	}
+	if b == nil {
+		return ErrLedgerBucketDoesNotExist
+	}
+	err = b.ensureCache(ctx, ls.dag)
+	if err != nil {
+		return err
+	}
+
 	delete(b.Bucket.Objects, object)
-	return nil //todo: save on ipfs
+	return nil //todo: gc on ipfs
 }
 
 // putObject saves an object into the given bucket
 func (ls *ledgerStore) putObject(ctx context.Context, bucket, object, objHash string) error {
-	return nil
-	/*b := ls.l.GetBuckets()[bucket]
-	if b.Objects == nil {
-		b.Objects = make(map[string]string)
-	}
-	b.Objects[object] = objHash
-	return x.bucketToIPFS(ctx, bucket)*/
-}
-
-// ipfsBytes returns data from IPFS using its hash
-func ipfsBytes(ctx context.Context, dag pb.NodeAPIClient, h string) ([]byte, error) {
-	resp, err := dag.Dag(ctx, &pb.DagRequest{
-		RequestType: pb.DAGREQTYPE_DAG_GET,
-		Hash:        h,
-	})
-	return resp.GetRawData(), err
-}
-
-type unmarshaller interface {
-	Unmarshal(data []byte) error
-}
-
-// ipfsUnmarshal unmarshalls any data structure from IPFS using its hash
-func ipfsUnmarshal(ctx context.Context, dag pb.NodeAPIClient, h string, u unmarshaller) error {
-	data, err := ipfsBytes(ctx, dag, h)
+	b, err := ls.getBucket(bucket)
 	if err != nil {
 		return err
 	}
-	return u.Unmarshal(data)
-}
-
-// ipfsObject returns an object from IPFS using its hash
-func ipfsObject(ctx context.Context, dag pb.NodeAPIClient, h string) (*Object, error) {
-	obj := &Object{}
-	if err := ipfsUnmarshal(ctx, dag, h, obj); err != nil {
-		return nil, err
+	if b == nil {
+		return ErrLedgerBucketDoesNotExist
 	}
-	return obj, nil
-}
-
-// ipfsBucket returns a bucket from IPFS using its hash
-func ipfsBucket(ctx context.Context, dag pb.NodeAPIClient, h string) (*Bucket, error) {
-	b := &Bucket{}
-	if err := ipfsUnmarshal(ctx, dag, h, b); err != nil {
-		return nil, err
+	if err := b.ensureCache(ctx, ls.dag); err != nil {
+		return err
 	}
-	return b, nil
+	if b.Bucket.Objects == nil {
+		b.Bucket.Objects = make(map[string]string)
+	}
+	b.Bucket.Objects[object] = objHash
+	return ls.saveBucket(ctx, bucket, b.Bucket)
 }

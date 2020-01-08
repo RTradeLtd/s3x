@@ -23,7 +23,7 @@ func (x *xObjects) ListObjects(
 	if !x.ledgerStore.BucketExists(bucket) {
 		return loi, x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, "", "")
 	}
-	objHashes, err := x.ledgerStore.GetObjectHashes(bucket)
+	objHashes, err := x.ledgerStore.GetObjectHashes(ctx, x.dagClient, bucket)
 	if err != nil {
 		return loi, x.toMinioErr(err, bucket, "", "")
 	}
@@ -53,7 +53,7 @@ func (x *xObjects) ListObjectsV2(
 	if !x.ledgerStore.BucketExists(bucket) {
 		return loi, x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, "", "")
 	}
-	objHashes, err := x.ledgerStore.GetObjectHashes(bucket)
+	objHashes, err := x.ledgerStore.GetObjectHashes(ctx, x.dagClient, bucket)
 	if err != nil {
 		return loi, x.toMinioErr(err, bucket, "", "")
 	}
@@ -156,7 +156,11 @@ func (x *xObjects) PutObject(
 	r *minio.PutObjReader,
 	opts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
-	if !x.ledgerStore.BucketExists(bucket) {
+	ex, err := x.ledgerStore.BucketExists(bucket)
+	if err != nil {
+		return objInfo, x.toMinioErr(err, bucket, "", "")
+	}
+	if !ex {
 		return objInfo, x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, "", "")
 	}
 	// TODO(bonedaddy): ensure consistency with the way s3 and b2 handle this
@@ -187,32 +191,18 @@ func (x *xObjects) PutObject(
 		return objInfo, x.toMinioErr(err, bucket, object, "")
 	}
 	// add the object to ipfs
-	objectHash, err := x.objectToIPFS(ctx, &Object{
+	objectHash, err := ipfsSave(ctx, x.dagClient, &Object{
 		DataHash:   dataHash,
 		ObjectInfo: obinfo,
 	})
 	if err != nil {
 		return objInfo, x.toMinioErr(err, bucket, object, "")
 	}
+	// add the object to bucket
 	x.ledgerStore.putObject(ctx, bucket, object, objectHash)
-
-	// update the bucket on ipfs with the new object
-	bucketHash, err := x.addObjectToBucketAndIPFS(ctx, object, objectHash, bucket)
-	if err != nil {
-		return objInfo, x.toMinioErr(err, bucket, object, "")
-	}
-	// update internal ledger state with bucket hash
-	if err := x.ledgerStore.UpdateBucketHash(bucket, bucketHash); err != nil {
-		return objInfo, x.toMinioErr(err, bucket, object, "")
-	}
-	// update internal ledger state with the new object
-	if err := x.ledgerStore.AddObjectToBucket(bucket, object, objectHash); err != nil {
-		return objInfo, x.toMinioErr(err, bucket, object, "")
-	}
-
 	log.Printf(
 		"bucket-name: %s, bucket-hash: %s, object-name: %s, object-hash: %s",
-		bucket, bucketHash, object, objectHash,
+		bucket, x.ledgerStore.l.Buckets[bucket].IpfsHash, object, objectHash,
 	)
 	// convert the proto object into a minio.ObjectInfo type
 	return x.getMinioObjectInfo(ctx, bucket, object)
@@ -279,13 +269,7 @@ func (x *xObjects) DeleteObject(
 	ctx context.Context,
 	bucket, object string,
 ) error {
-	// this handles returning an error indicating whether
-	// or not the bucket/object is not present
-	if err := x.ledgerStore.ObjectExists(bucket, object); err != nil {
-		return x.toMinioErr(err, bucket, object, "")
-	}
-	//TODO(bonedaddy): implement removal from IPFS
-	err := x.ledgerStore.RemoveObject(bucket, object)
+	err := x.ledgerStore.RemoveObject(ctx, bucket, object)
 	return x.toMinioErr(err, bucket, object, "")
 }
 

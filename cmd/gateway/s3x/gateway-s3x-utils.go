@@ -14,24 +14,6 @@ These functions should never call `toMinioErr`, and instead bubble up the erorrs
 Any error parsing to return minio errors should be done in the calling S3 functions.
 */
 
-// bucketToIPFS takes a bucket and stores it on IPFS
-func (x *xObjects) bucketToIPFS(ctx context.Context, bucket *Bucket) (string, error) {
-	bucketData, err := bucket.Marshal()
-	if err != nil {
-		return "", err
-	}
-	return x.dagPut(ctx, bucketData)
-}
-
-// objectToIPFS takes an object and stores it on IPFs
-func (x *xObjects) objectToIPFS(ctx context.Context, obj *Object) (string, error) {
-	objData, err := obj.Marshal()
-	if err != nil {
-		return "", err
-	}
-	return x.dagPut(ctx, objData)
-}
-
 // addObjectToBucketandIPFS is used to update a bucket with the ipfs hash, and name of an object that belongs to it.
 func (x *xObjects) addObjectToBucketAndIPFS(ctx context.Context, objectName, objectHash, bucketName string) (string, error) {
 	bucket, err := x.bucketFromIPFS(ctx, bucketName)

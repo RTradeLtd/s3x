@@ -24,7 +24,11 @@ func (x *xObjects) NewMultipartUpload(
 	bucket, object string,
 	o minio.ObjectOptions,
 ) (uploadID string, err error) {
-	if !x.ledgerStore.BucketExists(bucket) {
+	ex, err := x.ledgerStore.BucketExists(bucket)
+	if err != nil {
+		return "", x.toMinioErr(err, bucket, "", "")
+	}
+	if !ex {
 		return "", x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, "", "")
 	}
 	uploadID = ksuid.New().String()
@@ -42,7 +46,11 @@ func (x *xObjects) PutObjectPart(
 	r *minio.PutObjReader,
 	opts minio.ObjectOptions,
 ) (pi minio.PartInfo, e error) {
-	if !x.ledgerStore.BucketExists(bucket) {
+	ex, err := x.ledgerStore.BucketExists(bucket)
+	if err != nil {
+		return oi, x.toMinioErr(err, bucket, "", "")
+	}
+	if !ex {
 		return pi, x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, "", "")
 	}
 	// add the given data to ipfs
@@ -143,7 +151,11 @@ func (x *xObjects) CompleteMultipartUpload(
 	uploadedParts []minio.CompletePart,
 	opts minio.ObjectOptions,
 ) (oi minio.ObjectInfo, e error) {
-	if !x.ledgerStore.BucketExists(bucket) {
+	ex, err := x.ledgerStore.BucketExists(bucket)
+	if err != nil {
+		return oi, x.toMinioErr(err, bucket, "", "")
+	}
+	if !ex {
 		return oi, x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, object, uploadID)
 	}
 	return oi, errors.New("not finished yet")
