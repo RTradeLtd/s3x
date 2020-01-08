@@ -48,7 +48,7 @@ func (x *xObjects) PutObjectPart(
 ) (pi minio.PartInfo, e error) {
 	ex, err := x.ledgerStore.BucketExists(bucket)
 	if err != nil {
-		return oi, x.toMinioErr(err, bucket, "", "")
+		return pi, x.toMinioErr(err, bucket, "", "")
 	}
 	if !ex {
 		return pi, x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, "", "")

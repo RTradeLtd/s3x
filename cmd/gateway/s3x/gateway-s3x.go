@@ -223,13 +223,15 @@ func (x *xObjects) GetHash(ctx context.Context, req *InfoRequest) (*InfoResponse
 			err = status.Error(codes.InvalidArgument, emptyBucketErr)
 			break
 		}
-		hash, err = x.ledgerStore.GetBucketHash(req.GetBucket())
+		b, err := x.ledgerStore.getBucket(req.GetBucket())
 		if err != nil {
 			err = status.Error(codes.Internal, err.Error())
+		} else if b == nil {
+			err = status.Error(codes.NotFound, "bucket not found")
 		} else {
 			resp = &InfoResponse{
 				Bucket: req.GetBucket(),
-				Hash:   hash,
+				Hash:   b.GetIpfsHash(),
 			}
 		}
 	default: // indicates we want to process object data

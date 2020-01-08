@@ -62,25 +62,58 @@ func (ls *ledgerStore) objectData(ctx context.Context, bucket, object string) ([
 }
 
 // RemoveObject is used to remove a ledger object entry from a ledger bucket entry
-func (ls *ledgerStore) RemoveObject(ctx context.Context, bucket, object string) error {
-	b, err := ls.getBucket(bucket)
+func (ls *ledgerStore) removeObject(ctx context.Context, bucket, object string) error {
+	missing, err := ls.removeObjects(ctx, bucket, object)
 	if err != nil {
 		return err
 	}
-	if b == nil {
-		return ErrLedgerBucketDoesNotExist
+	if len(missing) != 0 {
+		return ErrLedgerObjectDoesNotExist
 	}
-	err = b.ensureCache(ctx, ls.dag)
-	if err != nil {
-		return err
-	}
-
-	delete(b.Bucket.Objects, object)
-	return nil //todo: gc on ipfs
+	return nil
+	//todo: gc on ipfs
 }
 
-// putObject saves an object into the given bucket
-func (ls *ledgerStore) putObject(ctx context.Context, bucket, object, objHash string) error {
+// removeObjects efficiently remove many objects, returns a list of objects that did not exist.
+func (ls *ledgerStore) removeObjects(ctx context.Context, bucket string, objects ...string) ([]string, error) {
+	b, err := ls.getBucket(bucket)
+	if err != nil {
+		return nil, err
+	}
+	if b == nil {
+		return nil, ErrLedgerBucketDoesNotExist
+	}
+	if err := b.ensureCache(ctx, ls.dag); err != nil {
+		return nil, err
+	}
+	if b.Bucket.Objects == nil {
+		return objects, nil
+	}
+
+	missing := []string{}
+	for _, o := range objects {
+		_, ok := b.Bucket.Objects[o]
+		if !ok {
+			missing = append(missing, o)
+			continue
+		}
+		delete(b.Bucket.Objects, o)
+	}
+	return missing, ls.saveBucket(ctx, bucket, b.Bucket)
+	//todo: gc on ipfs
+}
+
+//putObject2 saves an object by hash into the given bucket
+func (ls *ledgerStore) putObject(ctx context.Context, bucket, object string, obj *Object) error {
+	oHash, err := ipfsSave(ctx, ls.dag, obj)
+	if err != nil {
+		return nil
+	}
+	return ls.putObjectHash(ctx, bucket, object, oHash)
+}
+
+// putObject saves an object by hash into the given bucket
+func (ls *ledgerStore) putObjectHash(ctx context.Context, bucket, object, objHash string) error {
 	b, err := ls.getBucket(bucket)
 	if err != nil {
 		return err
