@@ -47,11 +47,11 @@ func TestLedger(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				hash, err := ledger.GetBucketHash(tt.args.name)
+				b, err := ledger.getBucket(tt.args.name)
 				if (err != nil) != tt.wantErr {
 					t.Fatalf("GetBucketHash() err %v, wantErr %v", err, tt.wantErr)
 				}
-				if err == nil && hash != tt.wantHash {
+				if err == nil && b.GetIpfsHash() != tt.wantHash {
 					t.Fatal("bad bucket hash returned")
 				}
 			})

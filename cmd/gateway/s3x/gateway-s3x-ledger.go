@@ -183,6 +183,7 @@ func (le *ledgerStore) GetBucketHash(name string) (string, error) {
 	return ledger.Buckets[name].IpfsHash, nil
 }
 */
+
 // GetObjectHash is used to retrieve the corresponding IPFS CID for an object
 func (ls *ledgerStore) GetObjectHash(ctx context.Context, bucket, object string) (string, error) {
 	b, err := ls.getBucket(bucket)
