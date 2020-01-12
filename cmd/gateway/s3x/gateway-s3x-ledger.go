@@ -82,7 +82,7 @@ func (ls *ledgerStore) NewBucket(name, hash string) error {
 	if err != nil {
 		return err
 	}
-	if !ex {
+	if ex {
 		return ErrLedgerBucketExists
 	}
 	ls.l.Buckets[name] = &LedgerBucketEntry{

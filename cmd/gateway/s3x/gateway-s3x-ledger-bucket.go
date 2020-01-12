@@ -57,7 +57,7 @@ func (ls *ledgerStore) creatBucket(ctx context.Context, bucket string, b *Bucket
 	if err != nil {
 		return err
 	}
-	if !ex {
+	if ex {
 		return ErrLedgerBucketExists
 	}
 	if b == nil {
