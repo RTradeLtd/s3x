@@ -14,8 +14,7 @@ const (
 	testBucket1, testBucket2 = "bucket1", "testbucket2"
 )
 
-func TestGateway_Bucket(t *testing.T) {
-	//	testDial(t)
+func getTestGateway(t *testing.T) minio.ObjectLayer {
 	testPath := "tmp-bucket-test"
 	defer func() {
 		os.Unsetenv("S3X_DS_PATH")
@@ -32,6 +31,12 @@ func TestGateway_Bucket(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	return gateway
+}
+
+func TestGateway_Bucket(t *testing.T) {
+	//	testDial(t)
+	gateway := getTestGateway(t)
 	defer gateway.Shutdown(context.Background())
 	sinfo := gateway.StorageInfo(context.Background())
 	if sinfo.Backend.Type != minio.BackendGateway {

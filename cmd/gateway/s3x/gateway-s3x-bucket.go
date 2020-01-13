@@ -17,7 +17,7 @@ func (x *xObjects) MakeBucketWithLocation(
 		Location: location,
 		Created:  time.Now().UTC(),
 	}}
-	err := x.ledgerStore.creatBucket(ctx, name, b)
+	err := x.ledgerStore.createBucket(ctx, name, b)
 	if err != nil {
 		return x.toMinioErr(err, name, "", "")
 	}

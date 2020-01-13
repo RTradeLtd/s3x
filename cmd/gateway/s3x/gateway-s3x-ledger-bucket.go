@@ -52,7 +52,7 @@ func (ls *ledgerStore) getBucket(bucket string) (*LedgerBucketEntry, error) {
 	return b, nil
 }
 
-func (ls *ledgerStore) creatBucket(ctx context.Context, bucket string, b *Bucket) error {
+func (ls *ledgerStore) createBucket(ctx context.Context, bucket string, b *Bucket) error {
 	ex, err := ls.BucketExists(bucket)
 	if err != nil {
 		return err

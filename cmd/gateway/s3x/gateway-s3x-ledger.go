@@ -3,7 +3,6 @@ package s3x
 import (
 	"context"
 
-	pb "github.com/RTradeLtd/TxPB/v3/go"
 	"github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/query"
 )
@@ -76,61 +75,6 @@ func (ls *ledgerStore) PutObjectPart(bucketName, objectName, partHash, multipart
 	return nil //todo: save to ipfs
 }
 
-// NewBucket creates a new ledger bucket entry
-func (ls *ledgerStore) NewBucket(name, hash string) error {
-	ex, err := ls.BucketExists(name)
-	if err != nil {
-		return err
-	}
-	if ex {
-		return ErrLedgerBucketExists
-	}
-	ls.l.Buckets[name] = &LedgerBucketEntry{
-		IpfsHash: hash,
-	}
-	return nil //todo: save bucket
-}
-
-// UpdateBucketHash is used to update the ledger bucket entry
-// with a new IPFS hash
-func (ls *ledgerStore) UpdateBucketHash(name, hash string) error {
-	ex, err := ls.BucketExists(name)
-	if err != nil {
-		return err
-	}
-	if !ex {
-		return ErrLedgerBucketDoesNotExist
-	}
-	ls.l.Buckets[name].IpfsHash = hash
-	return nil //todo: save to ipfs
-}
-
-// AddObjectToBucket is used to update a ledger bucket entry with a new ledger object entry
-/*
-func (le *ledgerStore) AddObjectToBucket(bucketName, objectName, objectHash string) error {
-	le.Lock()
-	defer le.Unlock()
-	ledger, err := le.getLedger()
-	if err != nil {
-		return err
-	}
-	if !ledger.bucketExists(bucketName) {
-		return ErrLedgerBucketDoesNotExist
-	}
-	// prevent nil map panic
-	if ledger.GetBuckets()[bucketName].Objects == nil {
-		bucket := ledger.Buckets[bucketName]
-		bucket.Objects = make(map[string]LedgerObjectEntry)
-		ledger.Buckets[bucketName] = bucket
-	}
-	ledger.Buckets[bucketName].Objects[objectName] = LedgerObjectEntry{
-		Name:     objectName,
-		IpfsHash: objectHash,
-	}
-	return nil //todo: save to ipfs
-}
-*/
-
 // Close shuts down the ledger datastore
 func (le *ledgerStore) Close() error {
 	le.Lock()
@@ -156,47 +100,13 @@ func (le *ledgerStore) MultipartIDExists(id string) error {
 	return le.l.multipartExists(id)
 }
 
-/*
-// ObjectExists is a public function to check if an object exists, and returns the reason
-// the object can't be found if any
-func (le *ledgerStore) ObjectExists(bucketName, objectName string) error {
-	le.RLock()
-	defer le.RUnlock()
-	ledger, err := le.getLedger()
-	if err != nil {
-		return err
-	}
-	return ledger.objectExists(bucketName, objectName)
-}
-
-// GetBucketHash is used to get the corresponding IPFS CID for a bucket
-func (le *ledgerStore) GetBucketHash(name string) (string, error) {
-	le.RLock()
-	defer le.RUnlock()
-	ledger, err := le.getLedger()
-	if err != nil {
-		return "", err
-	}
-	if ledger.GetBuckets()[name].Name == "" {
-		return "", ErrLedgerBucketDoesNotExist
-	}
-	return ledger.Buckets[name].IpfsHash, nil
-}
-*/
-
 // GetObjectHash is used to retrieve the corresponding IPFS CID for an object
 func (ls *ledgerStore) GetObjectHash(ctx context.Context, bucket, object string) (string, error) {
-	b, err := ls.getBucket(bucket)
+	objs, err := ls.GetObjectHashes(ctx, bucket)
 	if err != nil {
 		return "", err
 	}
-	if b == nil {
-		return "", ErrLedgerBucketDoesNotExist
-	}
-	if err := b.ensureCache(ctx, ls.dag); err != nil {
-		return "", err
-	}
-	h, ok := b.Bucket.Objects[object]
+	h, ok := objs[object]
 	if !ok {
 		return "", ErrLedgerObjectDoesNotExist
 	}
@@ -204,7 +114,7 @@ func (ls *ledgerStore) GetObjectHash(ctx context.Context, bucket, object string)
 }
 
 // GetObjectHashes gets a map of object names to object hashes for all objects in a bucket
-func (ls *ledgerStore) GetObjectHashes(ctx context.Context, dag pb.NodeAPIClient, bucket string) (map[string]string, error) {
+func (ls *ledgerStore) GetObjectHashes(ctx context.Context, bucket string) (map[string]string, error) {
 	b, err := ls.getBucket(bucket)
 	if err != nil {
 		return nil, err
@@ -212,7 +122,7 @@ func (ls *ledgerStore) GetObjectHashes(ctx context.Context, dag pb.NodeAPIClient
 	if b == nil {
 		return nil, ErrLedgerBucketDoesNotExist
 	}
-	if err := b.ensureCache(ctx, dag); err != nil {
+	if err := b.ensureCache(ctx, ls.dag); err != nil {
 		return nil, err
 	}
 	return b.Bucket.Objects, nil

@@ -20,7 +20,7 @@ func (x *xObjects) ListObjects(
 	maxKeys int,
 ) (loi minio.ListObjectsInfo, e error) {
 	// TODO(bonedaddy): implement complex search
-	objHashes, err := x.ledgerStore.GetObjectHashes(ctx, x.dagClient, bucket)
+	objHashes, err := x.ledgerStore.GetObjectHashes(ctx, bucket)
 	if err != nil {
 		return loi, x.toMinioErr(err, bucket, "", "")
 	}
@@ -47,7 +47,7 @@ func (x *xObjects) ListObjectsV2(
 	fetchOwner bool,
 	startAfter string,
 ) (loi minio.ListObjectsV2Info, err error) {
-	objHashes, err := x.ledgerStore.GetObjectHashes(ctx, x.dagClient, bucket)
+	objHashes, err := x.ledgerStore.GetObjectHashes(ctx, bucket)
 	if err != nil {
 		return loi, x.toMinioErr(err, bucket, "", "")
 	}
