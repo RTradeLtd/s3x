@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
-	"sync"
 
 	pb "github.com/RTradeLtd/TxPB/v3/go"
 	badger "github.com/RTradeLtd/go-ds-badger/v2"
@@ -44,7 +43,6 @@ type infoAPIServer struct {
 // xObjects bridges S3 -> TemporalX (IPFS)
 type xObjects struct {
 	minio.GatewayUnsupported
-	mu         sync.Mutex
 	dagClient  pb.NodeAPIClient
 	fileClient pb.FileAPIClient
 	ctx        context.Context
@@ -58,7 +56,7 @@ type xObjects struct {
 }
 
 func init() {
-	minio.RegisterGatewayCommand(cli.Command{
+	err := minio.RegisterGatewayCommand(cli.Command{
 		Name:        temxBackend,
 		Usage:       "TemporalX IPFS Gateway",
 		Description: "s3x provides a minio gateway that uses IPFS as the datastore through TemporalX's gRPC API",
@@ -86,6 +84,9 @@ func init() {
 			},
 		},
 	})
+	if err != nil {
+		panic(err)
+	}
 }
 
 func temxGatewayMain(ctx *cli.Context) {
@@ -212,6 +213,7 @@ func (x *xObjects) IsEncryptionSupported() bool {
 func (x *xObjects) GetHash(ctx context.Context, req *InfoRequest) (*InfoResponse, error) {
 	var (
 		err            error
+		b              *LedgerBucketEntry
 		resp           *InfoResponse
 		hash           string
 		emptyBucketErr = "bucket name is empty"
@@ -223,7 +225,7 @@ func (x *xObjects) GetHash(ctx context.Context, req *InfoRequest) (*InfoResponse
 			err = status.Error(codes.InvalidArgument, emptyBucketErr)
 			break
 		}
-		b, err := x.ledgerStore.getBucket(req.GetBucket())
+		b, err = x.ledgerStore.getBucket(req.GetBucket())
 		if err != nil {
 			err = status.Error(codes.Internal, err.Error())
 		} else if b == nil {

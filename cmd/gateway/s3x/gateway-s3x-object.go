@@ -89,7 +89,7 @@ func (x *xObjects) GetObjectNInfo(
 	pr, pw := io.Pipe()
 	go func() {
 		err := x.GetObject(ctx, bucket, object, startOffset, length, pw, objinfo.ETag, opts)
-		pw.CloseWithError(err)
+		_ = pw.CloseWithError(err)
 	}()
 	// Setup cleanup function to cause the above go-routine to
 	// exit in case of partial read
@@ -181,10 +181,13 @@ func (x *xObjects) PutObject(
 		return objInfo, x.toMinioErr(err, bucket, object, "")
 	}
 	// add the object to bucket
-	x.ledgerStore.putObject(ctx, bucket, object, &Object{
+	err = x.ledgerStore.putObject(ctx, bucket, object, &Object{
 		DataHash:   dataHash,
 		ObjectInfo: obinfo,
 	})
+	if err != nil {
+		return objInfo, x.toMinioErr(err, bucket, object, "")
+	}
 	log.Printf(
 		"bucket-name: %s, bucket-hash: %s, object-name: %s, object-hash: %s",
 		bucket, x.ledgerStore.l.Buckets[bucket].IpfsHash, object, x.ledgerStore.l.Buckets[bucket].Bucket.Objects[object],
@@ -238,8 +241,10 @@ func (x *xObjects) CopyObject(
 	obj.ObjectInfo.Bucket = dstBucket
 	obj.ObjectInfo.ModTime = time.Now().UTC()
 
-	x.ledgerStore.putObject(ctx, dstBucket, dstObject, obj)
-
+	err = x.ledgerStore.putObject(ctx, dstBucket, dstObject, obj)
+	if err != nil {
+		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
+	}
 	log.Printf(
 		"dst-bucket: %s, dst-bucket-hash: %s, dst-object: %s, dst-object-hash: %s\n",
 		dstBucket, x.ledgerStore.l.Buckets[dstBucket].IpfsHash, dstObject, x.ledgerStore.l.Buckets[dstBucket].Bucket.Objects[dstObject],

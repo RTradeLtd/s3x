@@ -35,7 +35,11 @@ func TestGateway_Object(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer gateway.Shutdown(context.Background())
+	defer func() {
+		if err := gateway.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+	}()
 	type args struct {
 		bucketName, objectName string
 	}

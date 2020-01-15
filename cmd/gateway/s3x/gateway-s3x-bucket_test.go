@@ -37,7 +37,11 @@ func getTestGateway(t *testing.T) minio.ObjectLayer {
 func TestGateway_Bucket(t *testing.T) {
 	//	testDial(t)
 	gateway := getTestGateway(t)
-	defer gateway.Shutdown(context.Background())
+	defer func() {
+		if err := gateway.Shutdown(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+	}()
 	sinfo := gateway.StorageInfo(context.Background())
 	if sinfo.Backend.Type != minio.BackendGateway {
 		t.Fatal("bad type")

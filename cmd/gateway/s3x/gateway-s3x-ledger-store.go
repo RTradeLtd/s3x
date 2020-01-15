@@ -18,7 +18,6 @@ The reason for this is so that we can enable easy reuse of internal code.
 */
 
 var (
-	dsKey       = datastore.NewKey("ledgerstatekey")
 	dsPrefix    = datastore.NewKey("ledgerRoot")
 	dsBucketKey = datastore.NewKey("b")
 )
