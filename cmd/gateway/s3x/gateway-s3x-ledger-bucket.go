@@ -2,6 +2,7 @@ package s3x
 
 import (
 	"context"
+	"fmt"
 
 	pb "github.com/RTradeLtd/TxPB/v3/go"
 	"github.com/ipfs/go-datastore"
@@ -55,10 +56,20 @@ func (ls *ledgerStore) createBucket(ctx context.Context, bucket string, b *Bucke
 	if b == nil {
 		panic("can not create nil bucket")
 	}
+	b.BucketInfo.Name = bucket
 	return ls.saveBucket(ctx, bucket, b)
 }
 
 func (ls *ledgerStore) saveBucket(ctx context.Context, bucket string, b *Bucket) error {
+	//set or check if bucket is valid
+	if b.BucketInfo.Name == "" {
+		b.BucketInfo.Name = bucket
+	}
+	if b.BucketInfo.Name != bucket {
+		return fmt.Errorf("bucket name miss match %v != %v", bucket, b.BucketInfo.Name)
+	}
+
+	//save to ipfs and get hash
 	bHash, err := ipfsSave(ctx, ls.dag, b)
 	if err != nil {
 		return err
@@ -66,6 +77,8 @@ func (ls *ledgerStore) saveBucket(ctx context.Context, bucket string, b *Bucket)
 	if err := ls.ds.Put(dsBucketKey.ChildString(bucket), []byte(bHash)); err != nil {
 		return err
 	}
+
+	//save hash to ledger
 	ls.l.Buckets[bucket] = &LedgerBucketEntry{
 		Bucket:   b,
 		IpfsHash: bHash,

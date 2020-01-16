@@ -42,6 +42,8 @@ message LedgerBucketEntry {
 
 // BucketInfo is used to store s3 bucket metadata
 message BucketInfo {
+    // name is the name of the bucket
+    string name = 1;
     google.protobuf.Timestamp created = 2 [(gogoproto.stdtime) = true, (gogoproto.nullable) = false];
     // the location of the bucket
     string location = 3;
