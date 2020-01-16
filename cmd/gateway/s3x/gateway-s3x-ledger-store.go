@@ -31,7 +31,7 @@ var (
 type ledgerStore struct {
 	sync.RWMutex //to be changed to per bucket name, once datastore saves each bucket separatory
 	ds           datastore.Batching
-	dag          pb.NodeAPIClient //to be used as direct access to ipfs to optimise algorithm
+	dag          pb.NodeAPIClient //to be used as direct access to ipfs to optimize algorithm
 	l            *Ledger          //a cache of the values in datastore and ipfs
 }
 
