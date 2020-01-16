@@ -438,7 +438,7 @@ func (m *Object) GetObjectInfo() ObjectInfo {
 	return ObjectInfo{}
 }
 
-// ObjectInfo contains ifnormation about the object
+// ObjectInfo contains information about the object
 type ObjectInfo struct {
 	Bucket             string            `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
 	Name               string            `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`

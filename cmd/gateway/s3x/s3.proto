@@ -68,7 +68,7 @@ message Object {
     ObjectInfo objectInfo = 2 [(gogoproto.nullable) = false];
 }
 
-// ObjectInfo contains ifnormation about the object
+// ObjectInfo contains information about the object
 message ObjectInfo {
     string bucket = 1;
     string name = 2;
