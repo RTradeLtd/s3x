@@ -76,11 +76,11 @@ func (ls *ledgerStore) PutObjectPart(bucketName, objectName, partHash, multipart
 }
 
 // Close shuts down the ledger datastore
-func (le *ledgerStore) Close() error {
-	le.Lock()
-	defer le.Unlock()
+func (ls *ledgerStore) Close() error {
+	ls.Lock()
+	defer ls.Unlock()
 	//todo: clean up caches
-	return le.ds.Close()
+	return ls.ds.Close()
 }
 
 /////////////////////
@@ -88,16 +88,16 @@ func (le *ledgerStore) Close() error {
 /////////////////////
 
 // GetObjectParts is used to return multipart upload parts
-func (le *ledgerStore) GetObjectParts(id string) ([]ObjectPartInfo, error) {
-	if err := le.l.multipartExists(id); err != nil {
+func (ls *ledgerStore) GetObjectParts(id string) ([]ObjectPartInfo, error) {
+	if err := ls.l.multipartExists(id); err != nil {
 		return nil, err
 	}
-	return le.l.GetMultipartUploads()[id].ObjectParts, nil
+	return ls.l.GetMultipartUploads()[id].ObjectParts, nil
 }
 
 // MultipartIDExists is used to lookup if the given multipart id exists
-func (le *ledgerStore) MultipartIDExists(id string) error {
-	return le.l.multipartExists(id)
+func (ls *ledgerStore) MultipartIDExists(id string) error {
+	return ls.l.multipartExists(id)
 }
 
 // GetObjectHash is used to retrieve the corresponding IPFS CID for an object
