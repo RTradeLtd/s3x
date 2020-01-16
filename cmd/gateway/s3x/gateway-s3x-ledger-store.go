@@ -41,7 +41,7 @@ func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient) (*ledgerStore, 
 		dag: dag,
 		l: &Ledger{
 			Buckets:          make(map[string]*LedgerBucketEntry),
-			MultipartUploads: make(map[string]*MultipartUpload),
+			MultipartUploads: make(map[string]MultipartUpload),
 		},
 	}
 	return ls, nil

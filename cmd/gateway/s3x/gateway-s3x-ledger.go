@@ -44,9 +44,9 @@ func (ls *ledgerStore) NewMultipartUpload(bucketName, objectName, multipartID st
 		return ErrLedgerBucketDoesNotExist
 	}
 	if ls.l.MultipartUploads == nil {
-		ls.l.MultipartUploads = make(map[string]*MultipartUpload)
+		ls.l.MultipartUploads = make(map[string]MultipartUpload)
 	}
-	ls.l.MultipartUploads[multipartID] = &MultipartUpload{
+	ls.l.MultipartUploads[multipartID] = MultipartUpload{
 		Bucket: bucketName,
 		Object: objectName,
 		Id:     multipartID,

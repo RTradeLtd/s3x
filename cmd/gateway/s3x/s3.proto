@@ -30,7 +30,7 @@ message Ledger {
     // key = bucket name
     map<string, LedgerBucketEntry> buckets = 1;
     // key = partID
-    map<string, MultipartUpload> multipartUploads = 2;
+    map<string, MultipartUpload> multipartUploads = 2 [(gogoproto.nullable) = false];
 }
 
 // LedgerBucketEntry is an individual entry within the ledger containing information about a bucket
