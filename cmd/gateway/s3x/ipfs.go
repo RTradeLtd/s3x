@@ -49,7 +49,7 @@ func ipfsBucket(ctx context.Context, dag pb.NodeAPIClient, h string) (*Bucket, e
 	return b, nil
 }
 
-// bucketToIPFS takes a bucket and stores it on IPFS
+// ipfsSave saves any marshaller object and returns it's IPFS hash
 func ipfsSave(ctx context.Context, dag pb.NodeAPIClient, m marshaller) (string, error) {
 	data, err := m.Marshal()
 	if err != nil {
@@ -58,7 +58,7 @@ func ipfsSave(ctx context.Context, dag pb.NodeAPIClient, m marshaller) (string, 
 	return ipfsSaveBytes(ctx, dag, data)
 }
 
-// ipfsBytes returns data from IPFS using its hash
+// ipfsSaveBytes saves data and returns it's IPFS hash
 func ipfsSaveBytes(ctx context.Context, dag pb.NodeAPIClient, data []byte) (string, error) {
 	resp, err := dag.Dag(ctx, &pb.DagRequest{
 		RequestType: pb.DAGREQTYPE_DAG_PUT,
