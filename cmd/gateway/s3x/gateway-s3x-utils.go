@@ -3,14 +3,13 @@ package s3x
 import (
 	"context"
 
-	pb "github.com/RTradeLtd/TxPB/v3/go"
 	minio "github.com/RTradeLtd/s3x/cmd"
 )
 
 /* Design Notes
 ---------------
 
-These functions should never call `toMinioErr`, and instead bubble up the erorrs.
+These functions should never call `toMinioErr`, and instead bubble up the errors.
 Any error parsing to return minio errors should be done in the calling S3 functions.
 */
 
@@ -29,16 +28,4 @@ func (x *xObjects) getMinioObjectInfo(ctx context.Context, bucketName, objectNam
 		ContentType: obj.GetObjectInfo().ContentType,
 		UserDefined: obj.GetObjectInfo().UserDefined,
 	}, nil
-}
-
-// dagGet is a helper function to return byte slices from IPLD objects on IPFS
-func (x *xObjects) dagGet(ctx context.Context, hash string) ([]byte, error) {
-	resp, err := x.dagClient.Dag(ctx, &pb.DagRequest{
-		RequestType: pb.DAGREQTYPE_DAG_GET,
-		Hash:        hash,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return resp.GetRawData(), nil
 }

@@ -21,14 +21,6 @@ func (m *LedgerBucketEntry) ensureCache(ctx context.Context, dag pb.NodeAPIClien
 	return nil
 }
 
-func (m *LedgerBucketEntry) size(ctx context.Context, dag pb.NodeAPIClient) (int, error) {
-	err := m.ensureCache(ctx, dag)
-	if err != nil {
-		return 0, err
-	}
-	return len(m.Bucket.Objects), nil
-}
-
 // getBucket returns a lazy loading LedgerBucketEntry
 //
 // if err is returned, then the datastore can not be read

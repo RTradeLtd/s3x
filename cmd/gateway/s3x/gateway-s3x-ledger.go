@@ -168,30 +168,6 @@ func (ls *ledgerStore) GetBucketNames() ([]string, error) {
 // INTERNAL FUNCTINS //
 ///////////////////////
 
-// getLedger is used to return our Ledger object from storage, or return a cached version
-/*
-func (le *ledgerStore) getLedger() (*Ledger, error) {
-	if le.l == nil {
-		ledger := &Ledger{}
-		ledgerBytes, err := le.ds.Get(dsKey) //todo: change to per buck hash
-		if err != nil {
-			//todo: detect only key does not exist
-			ledgerBytes, err := ledger.Marshal()
-			if err != nil {
-				panic(err)
-			}
-			if err := le.ds.Put(dsKey, ledgerBytes); err != nil {
-				panic(err)
-			}
-		}
-		if err := ledger.Unmarshal(ledgerBytes); err != nil {
-			return nil, err
-		}
-		le.l = ledger
-	}
-	return le.l, nil
-}*/
-
 // multipartExists is a helper function to check if a multipart id exists in our ledger
 // todo: document id
 func (m *Ledger) multipartExists(id string) error {
