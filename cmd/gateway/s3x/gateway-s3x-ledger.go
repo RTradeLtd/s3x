@@ -104,6 +104,7 @@ func (ls *ledgerStore) GetObjectHash(ctx context.Context, bucket, object string)
 	if err != nil {
 		return "", err
 	}
+	defer ls.locker.read(bucket)()
 	h, ok := objs[object]
 	if !ok {
 		return "", ErrLedgerObjectDoesNotExist
@@ -113,6 +114,7 @@ func (ls *ledgerStore) GetObjectHash(ctx context.Context, bucket, object string)
 
 // GetObjectHashes gets a map of object names to object hashes for all objects in a bucket
 func (ls *ledgerStore) GetObjectHashes(ctx context.Context, bucket string) (map[string]string, error) {
+	defer ls.locker.read(bucket)()
 	b, err := ls.getBucket(bucket)
 	if err != nil {
 		return nil, err

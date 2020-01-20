@@ -8,14 +8,21 @@ import (
 	"github.com/ipfs/go-datastore"
 )
 
+// cacheLocker protects from simultaneous calls to ensureCache for the same bucket,
+// which might only hold a read lock otherwise for speed.
+var cacheLocker = bucketLocker{}
+
 func (m *LedgerBucketEntry) ensureCache(ctx context.Context, dag pb.NodeAPIClient) error {
+	// locking on IpfsHash is the same as locking on bucket name in this context,
+	// because it's cannot change without retrieving the old value.
+	defer cacheLocker.write(m.IpfsHash)()
 	if m.Bucket == nil {
 		b, err := ipfsBucket(ctx, dag, m.IpfsHash)
 		if err != nil {
 			return err
 		}
 		if m.Bucket != nil {
-			panic("ensureCache state changed unexpectedly")
+			panic("ensureCache state changed unexpectedly, this should never happen")
 		}
 		m.Bucket = b
 	}
