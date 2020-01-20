@@ -22,6 +22,25 @@ func (m *LedgerBucketEntry) ensureCache(ctx context.Context, dag pb.NodeAPIClien
 	return nil
 }
 
+//GetBucketInfo returns the BucketInfo in ledger,
+//possible errors include ErrLedgerBucketDoesNotExist and dag network errors.
+func (ls *ledgerStore) GetBucketInfo(ctx context.Context, bucket string) (*BucketInfo, error) {
+	defer ls.locker.read(bucket)()
+	b, err := ls.getBucket(bucket)
+	if err != nil {
+		return nil, err
+	}
+	if b == nil {
+		return nil, ErrLedgerBucketDoesNotExist
+	}
+	err = b.ensureCache(ctx, ls.dag)
+	if err != nil {
+		return nil, err
+	}
+	bi := b.Bucket.GetBucketInfo()
+	return &bi, nil
+}
+
 // getBucket returns a lazy loading LedgerBucketEntry
 //
 // if err is returned, then the datastore can not be read
@@ -45,8 +64,14 @@ func (ls *ledgerStore) getBucket(bucket string) (*LedgerBucketEntry, error) {
 	return b, nil
 }
 
+//CreateBucket saves a new bucket iff it did not exist
+func (ls *ledgerStore) CreateBucket(ctx context.Context, bucket string, b *Bucket) error {
+	defer ls.locker.write(bucket)()
+	return ls.createBucket(ctx, bucket, b)
+}
+
 func (ls *ledgerStore) createBucket(ctx context.Context, bucket string, b *Bucket) error {
-	ex, err := ls.BucketExists(bucket)
+	ex, err := ls.bucketExists(bucket)
 	if err != nil {
 		return err
 	}
@@ -86,14 +111,15 @@ func (ls *ledgerStore) saveBucket(ctx context.Context, bucket string, b *Bucket)
 	return nil
 }
 
-func (ls *ledgerStore) BucketExists(bucket string) (bool, error) {
+func (ls *ledgerStore) bucketExists(bucket string) (bool, error) {
 	b, err := ls.getBucket(bucket)
 	return b != nil, err
 }
 
 // DeleteBucket is used to remove a ledger bucket entry
 func (ls *ledgerStore) DeleteBucket(bucket string) error {
-	ex, err := ls.BucketExists(bucket)
+	defer ls.locker.write(bucket)()
+	ex, err := ls.bucketExists(bucket)
 	if err != nil {
 		return err
 	}

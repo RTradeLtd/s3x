@@ -24,7 +24,7 @@ func (x *xObjects) NewMultipartUpload(
 	bucket, object string,
 	o minio.ObjectOptions,
 ) (uploadID string, err error) {
-	ex, err := x.ledgerStore.BucketExists(bucket)
+	ex, err := x.ledgerStore.bucketExists(bucket)
 	if err != nil {
 		return "", x.toMinioErr(err, bucket, "", "")
 	}
@@ -46,7 +46,7 @@ func (x *xObjects) PutObjectPart(
 	r *minio.PutObjReader,
 	opts minio.ObjectOptions,
 ) (pi minio.PartInfo, e error) {
-	ex, err := x.ledgerStore.BucketExists(bucket)
+	ex, err := x.ledgerStore.bucketExists(bucket)
 	if err != nil {
 		return pi, x.toMinioErr(err, bucket, "", "")
 	}
@@ -151,7 +151,7 @@ func (x *xObjects) CompleteMultipartUpload(
 	uploadedParts []minio.CompletePart,
 	opts minio.ObjectOptions,
 ) (oi minio.ObjectInfo, e error) {
-	ex, err := x.ledgerStore.BucketExists(bucket)
+	ex, err := x.ledgerStore.bucketExists(bucket)
 	if err != nil {
 		return oi, x.toMinioErr(err, bucket, "", "")
 	}

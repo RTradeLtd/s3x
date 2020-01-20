@@ -21,7 +21,7 @@ The reason for this is so that we can enable easy reuse of internal code.
 
 // AbortMultipartUpload is used to abort a multipart upload
 func (ls *ledgerStore) AbortMultipartUpload(bucket, multipartID string) error {
-	ex, err := ls.BucketExists(bucket)
+	ex, err := ls.bucketExists(bucket)
 	if err != nil {
 		return err
 	}
@@ -36,7 +36,7 @@ func (ls *ledgerStore) AbortMultipartUpload(bucket, multipartID string) error {
 
 // NewMultipartUpload is used to store the initial start of a multipart upload request
 func (ls *ledgerStore) NewMultipartUpload(bucketName, objectName, multipartID string) error {
-	ex, err := ls.BucketExists(bucketName)
+	ex, err := ls.bucketExists(bucketName)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (ls *ledgerStore) NewMultipartUpload(bucketName, objectName, multipartID st
 
 // PutObjectPart is used to record an individual object part within a multipart upload
 func (ls *ledgerStore) PutObjectPart(bucketName, objectName, partHash, multipartID string, partNumber int64) error {
-	ex, err := ls.BucketExists(bucketName)
+	ex, err := ls.bucketExists(bucketName)
 	if err != nil {
 		return err
 	}
@@ -77,8 +77,6 @@ func (ls *ledgerStore) PutObjectPart(bucketName, objectName, partHash, multipart
 
 // Close shuts down the ledger datastore
 func (ls *ledgerStore) Close() error {
-	ls.Lock()
-	defer ls.Unlock()
 	//todo: clean up caches
 	return ls.ds.Close()
 }
@@ -130,7 +128,7 @@ func (ls *ledgerStore) GetObjectHashes(ctx context.Context, bucket string) (map[
 
 // GetMultipartHashes returns the hashes of all multipart upload object parts
 func (ls *ledgerStore) GetMultipartHashes(bucket, multipartID string) ([]string, error) {
-	ex, err := ls.BucketExists(bucket)
+	ex, err := ls.bucketExists(bucket)
 	if err != nil {
 		return nil, err
 	}
@@ -150,6 +148,7 @@ func (ls *ledgerStore) GetMultipartHashes(bucket, multipartID string) ([]string,
 
 // GetBucketNames is used to get a slice of all bucket names our ledger currently tracks
 func (ls *ledgerStore) GetBucketNames() ([]string, error) {
+	//this only reads from the datastore, which have it's own synchronization, so no locking is needed.
 	rs, err := ls.ds.Query(query.Query{
 		Prefix:   dsBucketKey.String(),
 		KeysOnly: true,

@@ -146,7 +146,7 @@ func (x *xObjects) PutObject(
 	r *minio.PutObjReader,
 	opts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
-	ex, err := x.ledgerStore.BucketExists(bucket)
+	ex, err := x.ledgerStore.bucketExists(bucket)
 	if err != nil {
 		return objInfo, x.toMinioErr(err, bucket, "", "")
 	}
@@ -210,7 +210,7 @@ func (x *xObjects) CopyObject(
 	// TODO(bonedaddy): ensure we properly update the ledger with the destination object
 	// TODO(bonedaddy): ensure the destination object is properly adjusted with metadata
 	// ensure destination bucket exists
-	ex, err := x.ledgerStore.BucketExists(dstBucket)
+	ex, err := x.ledgerStore.bucketExists(dstBucket)
 	if err != nil {
 		return objInfo, x.toMinioErr(err, dstBucket, "", "")
 	}

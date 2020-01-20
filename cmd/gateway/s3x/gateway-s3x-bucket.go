@@ -17,7 +17,7 @@ func (x *xObjects) MakeBucketWithLocation(
 		Location: location,
 		Created:  time.Now().UTC(),
 	}}
-	err := x.ledgerStore.createBucket(ctx, name, b)
+	err := x.ledgerStore.CreateBucket(ctx, name, b)
 	if err != nil {
 		return x.toMinioErr(err, name, "", "")
 	}
@@ -28,30 +28,19 @@ func (x *xObjects) MakeBucketWithLocation(
 // GetBucketInfo gets bucket metadata..
 func (x *xObjects) GetBucketInfo(
 	ctx context.Context,
-	name string,
+	bucket string,
 ) (bi minio.BucketInfo, err error) {
-	defer func() {
-		err = x.toMinioErr(err, name, "", "")
-	}()
-	b, err := x.ledgerStore.getBucket(name)
+	b, err := x.ledgerStore.GetBucketInfo(ctx, bucket)
 	if err != nil {
-		return
-	}
-	if b == nil {
-		err = ErrLedgerBucketDoesNotExist
-		return
-	}
-	err = b.ensureCache(ctx, x.dagClient)
-	if err != nil {
-		return
+		return bi, x.toMinioErr(err, bucket, "", "")
 	}
 	return minio.BucketInfo{
-		Name: name,
+		Name: bucket,
 		// TODO(bonedaddy): decide what to do here,
 		// in the examples of other gateway its a nil time
 		// bucket the bucket actually has a created timestamp
 		// Created: time.Unix(0, 0),
-		Created: b.Bucket.GetBucketInfo().Created,
+		Created: b.Created,
 	}, nil
 }
 
@@ -64,6 +53,7 @@ func (x *xObjects) ListBuckets(ctx context.Context) ([]minio.BucketInfo, error) 
 	}
 	var infos = make([]minio.BucketInfo, len(names))
 	for i, name := range names {
+		//TODO(George): detect context cancelation here (or in GetBucketInfo), as this could be a long running process
 		info, err := x.GetBucketInfo(ctx, name)
 		if err != nil {
 			return nil, err // no need to handle GetBucketInfo parses error accordingly
