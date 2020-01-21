@@ -48,11 +48,26 @@ func (ls *ledgerStore) GetBucketInfo(ctx context.Context, bucket string) (*Bucke
 	return &bi, nil
 }
 
+//GetBucketHash return the hash of the bucket if the named bucket exist
+func (ls *ledgerStore) GetBucketHash(bucket string) (string, error) {
+	defer ls.locker.read(bucket)()
+	b, err := ls.getBucket(bucket)
+	if err != nil {
+		return "", err
+	}
+	if b == nil {
+		return "", ErrLedgerBucketDoesNotExist
+	}
+	return b.IpfsHash, nil
+}
+
 // getBucket returns a lazy loading LedgerBucketEntry
 //
 // if err is returned, then the datastore can not be read
 // if nil, nil is return, then bucket does not exit
 func (ls *ledgerStore) getBucket(bucket string) (*LedgerBucketEntry, error) {
+	ls.mapLocker.Lock()
+	defer ls.mapLocker.Unlock()
 	b, ok := ls.l.Buckets[bucket]
 	if !ok {
 		bHash, err := ls.ds.Get(dsBucketKey.ChildString(bucket))

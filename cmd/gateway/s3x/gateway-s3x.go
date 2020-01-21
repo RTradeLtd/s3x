@@ -212,65 +212,35 @@ func (x *xObjects) IsEncryptionSupported() bool {
 
 func (x *xObjects) GetHash(ctx context.Context, req *InfoRequest) (*InfoResponse, error) {
 	var (
-		err            error
-		b              *LedgerBucketEntry
-		resp           *InfoResponse
-		hash           string
-		emptyBucketErr = "bucket name is empty"
-		emptyObjectErr = "object name is empty"
+		hash string
+		err  error
 	)
-	switch req.GetObject() {
-	case "": // indicates that we just want to process bucket data
-		if req.GetBucket() == "" {
-			err = status.Error(codes.InvalidArgument, emptyBucketErr)
-			break
-		}
-		b, err = x.ledgerStore.getBucket(req.GetBucket())
+	if req.GetBucket() == "" {
+		return nil, status.Error(codes.InvalidArgument, "bucket name is empty")
+	}
+	if req.GetObject() == "" {
+		// get bucket hash when object is not specified
+		hash, err = x.ledgerStore.GetBucketHash(req.GetBucket())
 		if err != nil {
-			err = status.Error(codes.Internal, err.Error())
-		} else if b == nil {
-			err = status.Error(codes.NotFound, "bucket not found")
-		} else {
-			resp = &InfoResponse{
-				Bucket: req.GetBucket(),
-				Hash:   b.GetIpfsHash(),
-			}
+			return nil, status.Error(codes.Internal, err.Error())
 		}
-	default: // indicates we want to process object data
-		if req.GetBucket() == "" {
-			err = status.Error(codes.InvalidArgument, emptyBucketErr)
-			break
+	} else if req.ObjectDataOnly {
+		// get object data hash
+		obj, err := x.ledgerStore.object(ctx, req.GetBucket(), req.GetObject())
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
 		}
-		if req.GetObject() == "" {
-			err = status.Error(codes.InvalidArgument, emptyObjectErr)
-			break
-		}
-		// if this is set, then lets return the hash of the object data
-		// instead of the hash of the protocol buffer object.
-		if req.ObjectDataOnly {
-			obj, e := x.ledgerStore.object(ctx, req.GetBucket(), req.GetObject())
-			if e != nil {
-				err = status.Error(codes.Internal, e.Error())
-				break
-			}
-
-			resp = &InfoResponse{
-				Bucket: req.GetBucket(),
-				Object: req.GetObject(),
-				Hash:   obj.GetDataHash(),
-			}
-			break
-		}
+		hash = obj.GetDataHash()
+	} else {
+		// get protocol buffer object hash
 		hash, err = x.ledgerStore.GetObjectHash(ctx, req.GetBucket(), req.GetObject())
 		if err != nil {
-			err = status.Error(codes.Internal, err.Error())
-		} else {
-			resp = &InfoResponse{
-				Bucket: req.GetBucket(),
-				Object: req.GetObject(),
-				Hash:   hash,
-			}
+			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
-	return resp, err
+	return &InfoResponse{
+		Bucket: req.GetBucket(),
+		Object: req.GetObject(),
+		Hash:   hash,
+	}, nil
 }

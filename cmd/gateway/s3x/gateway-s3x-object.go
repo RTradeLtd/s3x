@@ -20,10 +20,11 @@ func (x *xObjects) ListObjects(
 	maxKeys int,
 ) (loi minio.ListObjectsInfo, e error) {
 	// TODO(bonedaddy): implement complex search
-	objHashes, err := x.ledgerStore.GetObjectHashes(ctx, bucket)
+	objHashes, unlock, err := x.ledgerStore.GetObjectHashes(ctx, bucket)
 	if err != nil {
 		return loi, x.toMinioErr(err, bucket, "", "")
 	}
+	defer unlock()
 	loi.Objects = make([]minio.ObjectInfo, len(objHashes))
 	var count int
 	for name := range objHashes {
@@ -47,10 +48,12 @@ func (x *xObjects) ListObjectsV2(
 	fetchOwner bool,
 	startAfter string,
 ) (loi minio.ListObjectsV2Info, err error) {
-	objHashes, err := x.ledgerStore.GetObjectHashes(ctx, bucket)
+	//TODO: implement startAfter
+	objHashes, unlock, err := x.ledgerStore.GetObjectHashes(ctx, bucket)
 	if err != nil {
 		return loi, x.toMinioErr(err, bucket, "", "")
 	}
+	defer unlock()
 	if len(objHashes) >= 1000 {
 		loi.Objects = make([]minio.ObjectInfo, 1000)
 	} else {
@@ -58,12 +61,16 @@ func (x *xObjects) ListObjectsV2(
 	}
 	var count int
 	for name := range objHashes {
+		//TODO: this should be ordered by object name, but currently use random map ordering
 		info, err := x.getMinioObjectInfo(ctx, bucket, name)
 		if err != nil {
 			return loi, x.toMinioErr(err, bucket, name, "")
 		}
 		loi.Objects[count] = info
 		count++
+		if count == 1000 {
+			break
+		}
 	}
 	return loi, nil
 }

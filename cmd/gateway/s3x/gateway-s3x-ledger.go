@@ -100,11 +100,11 @@ func (ls *ledgerStore) MultipartIDExists(id string) error {
 
 // GetObjectHash is used to retrieve the corresponding IPFS CID for an object
 func (ls *ledgerStore) GetObjectHash(ctx context.Context, bucket, object string) (string, error) {
-	objs, err := ls.GetObjectHashes(ctx, bucket)
+	objs, unlock, err := ls.GetObjectHashes(ctx, bucket)
 	if err != nil {
 		return "", err
 	}
-	defer ls.locker.read(bucket)()
+	defer unlock()
 	h, ok := objs[object]
 	if !ok {
 		return "", ErrLedgerObjectDoesNotExist
@@ -112,20 +112,24 @@ func (ls *ledgerStore) GetObjectHash(ctx context.Context, bucket, object string)
 	return h, nil
 }
 
-// GetObjectHashes gets a map of object names to object hashes for all objects in a bucket
-func (ls *ledgerStore) GetObjectHashes(ctx context.Context, bucket string) (map[string]string, error) {
-	defer ls.locker.read(bucket)()
+// GetObjectHashes gets a map of object names to object hashes for all objects in a bucket.
+// The returned function must be called to release a read lock, iff an error is not returned.
+func (ls *ledgerStore) GetObjectHashes(ctx context.Context, bucket string) (map[string]string, func(), error) {
+	unlock := ls.locker.read(bucket)
 	b, err := ls.getBucket(bucket)
 	if err != nil {
-		return nil, err
+		unlock()
+		return nil, nil, err
 	}
 	if b == nil {
-		return nil, ErrLedgerBucketDoesNotExist
+		unlock()
+		return nil, nil, ErrLedgerBucketDoesNotExist
 	}
 	if err := b.ensureCache(ctx, ls.dag); err != nil {
-		return nil, err
+		unlock()
+		return nil, nil, err
 	}
-	return b.Bucket.Objects, nil
+	return b.Bucket.Objects, unlock, nil
 }
 
 // GetMultipartHashes returns the hashes of all multipart upload object parts
