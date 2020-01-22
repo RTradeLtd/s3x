@@ -1,7 +1,6 @@
 package s3x
 
 import (
-	"bytes"
 	"context"
 	"testing"
 
@@ -22,31 +21,37 @@ func TestLedgerStore(t *testing.T) {
 	}
 	t.Run("create Buckets", func(t *testing.T) {
 		tests := []struct {
-			name          string
-			bucket        string
-			data          []byte
-			wantCreateErr bool
-			dataExpected  []byte
+			name             string
+			bucket           string
+			location         string
+			wantCreateErr    bool
+			locationExpected string
 		}{
-			{"add new bucket", "bucket1", []byte{1}, false, []byte{1}},
-			{"add existing bucket", "bucket1", []byte{0}, true, []byte{1}},
-			{"add bucket with different name", "bucket2", []byte{2}, false, []byte{2}},
+			{"add new bucket", "bucket1", "1", false, "1"},
+			{"add existing bucket", "bucket1", "0", true, "1"},
+			{"add bucket with different name", "bucket2", "2", false, "2"},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				_, err := ledger.createBucket(ctx, tt.bucket, &Bucket{
-					Data: tt.data,
+				_, err := ledger.CreateBucket(ctx, tt.bucket, &Bucket{
+					BucketInfo: BucketInfo{
+						Location: tt.location,
+					},
 				})
 				if (err != nil) != tt.wantCreateErr {
 					t.Fatalf("NewBucket() err %v, wantErr %v", err, tt.wantCreateErr)
 				}
-				le, err := ledger.getBucketLoaded(ctx, tt.bucket)
+				bi, err := ledger.GetBucketInfo(ctx, tt.bucket)
 				if err != nil {
 					t.Fatal(err)
 				}
-				d := le.GetBucket().GetData()
-				if !bytes.Equal(d, tt.dataExpected) {
-					t.Fatalf("expected %v, but got %v", tt.dataExpected, d)
+				name := bi.GetName()
+				if name != tt.bucket {
+					t.Fatalf("expected bucket name %v, but got %v", tt.bucket, name)
+				}
+				l := bi.GetLocation()
+				if l != tt.locationExpected {
+					t.Fatalf("expected location %v, but got %v", tt.locationExpected, l)
 				}
 			})
 		}
