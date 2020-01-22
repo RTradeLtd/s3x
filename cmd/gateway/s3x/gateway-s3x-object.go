@@ -172,10 +172,7 @@ func (x *xObjects) PutObject(
 	if err != nil {
 		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, object, "")
 	}
-	log.Printf(
-		"bucket-name: %s, bucket-hash: %s, object-name: %s, object-hash: %s",
-		bucket, x.ledgerStore.l.Buckets[bucket].IpfsHash, object, x.ledgerStore.l.Buckets[bucket].Bucket.Objects[object],
-	)
+	log.Printf("bucket-name: %s, object-name: %s", bucket, object)
 	// convert the proto object into a minio.ObjectInfo type
 	return x.getMinioObjectInfo(&obinfo), nil
 }
@@ -240,8 +237,8 @@ func (x *xObjects) CopyObject(
 		return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 	}
 	log.Printf(
-		"dst-bucket: %s, dst-bucket-hash: %s, dst-object: %s, dst-object-hash: %s\n",
-		dstBucket, x.ledgerStore.l.Buckets[dstBucket].IpfsHash, dstObject, x.ledgerStore.l.Buckets[dstBucket].Bucket.Objects[dstObject],
+		"dst-bucket: %s,  dst-object: %s\n",
+		dstBucket, dstObject,
 	)
 	objInfo = x.getMinioObjectInfo(&obj.ObjectInfo)
 	return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")

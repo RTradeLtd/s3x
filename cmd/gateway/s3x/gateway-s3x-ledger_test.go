@@ -34,7 +34,7 @@ func TestLedgerStore(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				err := ledger.createBucket(ctx, tt.bucket, &Bucket{
+				_, err := ledger.createBucket(ctx, tt.bucket, &Bucket{
 					Data: tt.data,
 				})
 				if (err != nil) != tt.wantCreateErr {

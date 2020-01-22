@@ -113,7 +113,8 @@ func (ls *ledgerStore) removeObjects(ctx context.Context, bucket string, objects
 		}
 		delete(b.Bucket.Objects, o)
 	}
-	return missing, ls.saveBucket(ctx, bucket, b.Bucket)
+	_, err = ls.saveBucket(ctx, bucket, b.Bucket)
+	return missing, err
 	//todo: gc on ipfs
 }
 
@@ -142,5 +143,6 @@ func (ls *ledgerStore) putObjectHash(ctx context.Context, bucket, object, objHas
 		b.Bucket.Objects = make(map[string]string)
 	}
 	b.Bucket.Objects[object] = objHash
-	return ls.saveBucket(ctx, bucket, b.Bucket)
+	_, err = ls.saveBucket(ctx, bucket, b.Bucket)
+	return err
 }

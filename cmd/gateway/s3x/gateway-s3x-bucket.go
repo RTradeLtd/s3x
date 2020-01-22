@@ -17,11 +17,11 @@ func (x *xObjects) MakeBucketWithLocation(
 		Location: location,
 		Created:  time.Now().UTC(),
 	}}
-	err := x.ledgerStore.CreateBucket(ctx, name, b)
+	hash, err := x.ledgerStore.CreateBucket(ctx, name, b)
 	if err != nil {
 		return x.toMinioErr(err, name, "", "")
 	}
-	log.Printf("bucket-name: %s\tbucket-hash: %s", name, x.ledgerStore.l.Buckets[name].IpfsHash)
+	log.Printf("bucket-name: %s\tbucket-hash: %s", name, hash)
 	return nil
 }
 

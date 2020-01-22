@@ -107,50 +107,56 @@ func (ls *ledgerStore) getBucketLoaded(ctx context.Context, bucket string) (*Led
 }
 
 //CreateBucket saves a new bucket iff it did not exist
-func (ls *ledgerStore) CreateBucket(ctx context.Context, bucket string, b *Bucket) error {
+func (ls *ledgerStore) CreateBucket(ctx context.Context, bucket string, b *Bucket) (string, error) {
 	defer ls.locker.write(bucket)()
-	return ls.createBucket(ctx, bucket, b)
+	lb, err := ls.createBucket(ctx, bucket, b)
+	if err != nil {
+		return "", err
+	}
+	return lb.IpfsHash, nil
 }
 
-func (ls *ledgerStore) createBucket(ctx context.Context, bucket string, b *Bucket) error {
-	ex, err := ls.bucketExists(bucket)
-	if err != nil {
-		return err
-	}
-	if ex {
-		return ErrLedgerBucketExists
-	}
+func (ls *ledgerStore) createBucket(ctx context.Context, bucket string, b *Bucket) (*LedgerBucketEntry, error) {
 	if b == nil {
 		panic("can not create nil bucket")
 	}
-	b.BucketInfo.Name = bucket
-	return ls.saveBucket(ctx, bucket, b)
-}
-
-func (ls *ledgerStore) saveBucket(ctx context.Context, bucket string, b *Bucket) error {
-	//set or check if bucket is valid
+	ex, err := ls.bucketExists(bucket)
+	if err != nil {
+		return nil, err
+	}
+	if ex {
+		return nil, ErrLedgerBucketExists
+	}
 	if b.BucketInfo.Name == "" {
 		b.BucketInfo.Name = bucket
 	}
+	return ls.saveBucket(ctx, bucket, b)
+}
+
+func (ls *ledgerStore) saveBucket(ctx context.Context, bucket string, b *Bucket) (*LedgerBucketEntry, error) {
+	//check if bucket is valid
 	if b.BucketInfo.Name != bucket {
-		return fmt.Errorf("bucket name miss match %v != %v", bucket, b.BucketInfo.Name)
+		return nil, fmt.Errorf("bucket name miss match %v != %v", bucket, b.BucketInfo.Name)
 	}
 
 	//save to ipfs and get hash
 	bHash, err := ipfsSave(ctx, ls.dag, b)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if err := ls.ds.Put(dsBucketKey.ChildString(bucket), []byte(bHash)); err != nil {
-		return err
+		return nil, err
 	}
 
 	//save hash to ledger
-	ls.l.Buckets[bucket] = &LedgerBucketEntry{
+	lb := &LedgerBucketEntry{
 		Bucket:   b,
 		IpfsHash: bHash,
 	}
-	return nil
+	ls.mapLocker.Lock()
+	ls.l.Buckets[bucket] = lb
+	ls.mapLocker.Unlock()
+	return lb, nil
 }
 
 func (ls *ledgerStore) bucketExists(bucket string) (bool, error) {
@@ -168,7 +174,9 @@ func (ls *ledgerStore) DeleteBucket(bucket string) error {
 	if !ex {
 		return ErrLedgerBucketDoesNotExist
 	}
+	ls.mapLocker.Lock()
 	delete(ls.l.Buckets, bucket)
+	ls.mapLocker.Unlock()
 	return ls.ds.Delete(dsBucketKey.ChildString(bucket))
 	//todo: remove from ipfs
 }
