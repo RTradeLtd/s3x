@@ -49,14 +49,31 @@ func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient) (*ledgerStore, 
 }
 
 func (ls *ledgerStore) object(ctx context.Context, bucket, object string) (*Object, error) {
-	objectHash, err := ls.GetObjectHash(ctx, bucket, object)
+	b, err := ls.getBucketLoaded(ctx, bucket)
 	if err != nil {
 		return nil, err
 	}
-	return ipfsObject(ctx, ls.dag, objectHash)
+	objs := b.GetBucket().Objects
+	if objs == nil {
+		return nil, ErrLedgerObjectDoesNotExist
+	}
+	h, ok := b.GetBucket().Objects[object]
+	if !ok {
+		return nil, ErrLedgerObjectDoesNotExist
+	}
+	return ipfsObject(ctx, ls.dag, h)
 }
 
-func (ls *ledgerStore) objectData(ctx context.Context, bucket, object string) ([]byte, error) {
+//ObjectInfo returns the ObjectInfo of the object.
+func (ls *ledgerStore) ObjectInfo(ctx context.Context, bucket, object string) (*ObjectInfo, error) {
+	obj, err := ls.object(ctx, bucket, object)
+	if err != nil {
+		return nil, err
+	}
+	return &obj.ObjectInfo, nil
+}
+
+func (ls *ledgerStore) ObjectData(ctx context.Context, bucket, object string) ([]byte, error) {
 	obj, err := ls.object(ctx, bucket, object)
 	if err != nil {
 		return nil, err
@@ -79,14 +96,8 @@ func (ls *ledgerStore) removeObject(ctx context.Context, bucket, object string) 
 
 // removeObjects efficiently remove many objects, returns a list of objects that did not exist.
 func (ls *ledgerStore) removeObjects(ctx context.Context, bucket string, objects ...string) ([]string, error) {
-	b, err := ls.getBucket(bucket)
+	b, err := ls.getBucketLoaded(ctx, bucket)
 	if err != nil {
-		return nil, err
-	}
-	if b == nil {
-		return nil, ErrLedgerBucketDoesNotExist
-	}
-	if err := b.ensureCache(ctx, ls.dag); err != nil {
 		return nil, err
 	}
 	if b.Bucket.Objects == nil {
@@ -106,25 +117,25 @@ func (ls *ledgerStore) removeObjects(ctx context.Context, bucket string, objects
 	//todo: gc on ipfs
 }
 
-//putObject2 saves an object by hash into the given bucket
+//PutObject saves an object by hash into the given bucket
+func (ls *ledgerStore) PutObject(ctx context.Context, bucket, object string, obj *Object) error {
+	defer ls.locker.write(bucket)()
+	return ls.putObject(ctx, bucket, object, obj)
+}
+
+//putObject saves an object by hash into the given bucket
 func (ls *ledgerStore) putObject(ctx context.Context, bucket, object string, obj *Object) error {
 	oHash, err := ipfsSave(ctx, ls.dag, obj)
 	if err != nil {
-		return nil
+		return err
 	}
 	return ls.putObjectHash(ctx, bucket, object, oHash)
 }
 
-// putObject saves an object by hash into the given bucket
+// putObjectHash saves an object by hash into the given bucket
 func (ls *ledgerStore) putObjectHash(ctx context.Context, bucket, object, objHash string) error {
-	b, err := ls.getBucket(bucket)
+	b, err := ls.getBucketLoaded(ctx, bucket)
 	if err != nil {
-		return err
-	}
-	if b == nil {
-		return ErrLedgerBucketDoesNotExist
-	}
-	if err := b.ensureCache(ctx, ls.dag); err != nil {
 		return err
 	}
 	if b.Bucket.Objects == nil {

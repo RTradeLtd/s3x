@@ -40,7 +40,7 @@ func TestLedgerStore(t *testing.T) {
 				if (err != nil) != tt.wantCreateErr {
 					t.Fatalf("NewBucket() err %v, wantErr %v", err, tt.wantCreateErr)
 				}
-				le, err := ledger.getBucket(tt.bucket)
+				le, err := ledger.getBucketLoaded(ctx, tt.bucket)
 				if err != nil {
 					t.Fatal(err)
 				}

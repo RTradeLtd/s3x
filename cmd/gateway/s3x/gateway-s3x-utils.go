@@ -1,8 +1,6 @@
 package s3x
 
 import (
-	"context"
-
 	minio "github.com/RTradeLtd/s3x/cmd"
 )
 
@@ -14,18 +12,17 @@ Any error parsing to return minio errors should be done in the calling S3 functi
 */
 
 // getMinioObjectInfo is used to convert between object info in our protocol buffer format, to a minio object layer info type
-func (x *xObjects) getMinioObjectInfo(ctx context.Context, bucketName, objectName string) (minio.ObjectInfo, error) {
-	obj, err := x.ledgerStore.object(ctx, bucketName, objectName)
-	if err != nil {
-		return minio.ObjectInfo{}, err
+func (x *xObjects) getMinioObjectInfo(o *ObjectInfo) minio.ObjectInfo {
+	if o == nil {
+		return minio.ObjectInfo{}
 	}
 	return minio.ObjectInfo{
-		Bucket:      obj.GetObjectInfo().Bucket,
-		Name:        objectName,
-		ETag:        minio.ToS3ETag(obj.GetObjectInfo().Etag),
-		Size:        obj.GetObjectInfo().Size_,
-		ModTime:     obj.GetObjectInfo().ModTime,
-		ContentType: obj.GetObjectInfo().ContentType,
-		UserDefined: obj.GetObjectInfo().UserDefined,
-	}, nil
+		Bucket:      o.Bucket,
+		Name:        o.Name,
+		ETag:        minio.ToS3ETag(o.Etag),
+		Size:        o.Size_,
+		ModTime:     o.ModTime,
+		ContentType: o.ContentType,
+		UserDefined: o.UserDefined,
+	}
 }

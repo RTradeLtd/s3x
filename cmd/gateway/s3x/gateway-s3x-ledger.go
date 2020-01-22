@@ -2,6 +2,8 @@ package s3x
 
 import (
 	"context"
+	"sort"
+	"strings"
 
 	"github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/query"
@@ -98,6 +100,35 @@ func (ls *ledgerStore) MultipartIDExists(id string) error {
 	return ls.l.multipartExists(id)
 }
 
+// GetObjectInfos returns a list of ordered ObjectInfos with given prefix ordered by name
+func (ls *ledgerStore) GetObjectInfos(ctx context.Context, bucket, prefix, startsFrom string, max int) ([]ObjectInfo, error) {
+	defer ls.locker.read(bucket)()
+	b, err := ls.getBucketLoaded(ctx, bucket)
+	if err != nil {
+		return nil, err
+	}
+	var names []string
+	objs := b.GetBucket().GetObjects()
+	for name := range objs {
+		if strings.HasPrefix(name, prefix) && strings.Compare(startsFrom, name) >= 0 {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	if max > 0 && len(names) > max {
+		names = names[:max]
+	}
+	list := make([]ObjectInfo, 0, len(names))
+	for _, name := range names {
+		obj, err := ls.object(ctx, bucket, name)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, obj.GetObjectInfo())
+	}
+	return list, nil
+}
+
 // GetObjectHash is used to retrieve the corresponding IPFS CID for an object
 func (ls *ledgerStore) GetObjectHash(ctx context.Context, bucket, object string) (string, error) {
 	objs, unlock, err := ls.GetObjectHashes(ctx, bucket)
@@ -116,16 +147,8 @@ func (ls *ledgerStore) GetObjectHash(ctx context.Context, bucket, object string)
 // The returned function must be called to release a read lock, iff an error is not returned.
 func (ls *ledgerStore) GetObjectHashes(ctx context.Context, bucket string) (map[string]string, func(), error) {
 	unlock := ls.locker.read(bucket)
-	b, err := ls.getBucket(bucket)
+	b, err := ls.getBucketLoaded(ctx, bucket)
 	if err != nil {
-		unlock()
-		return nil, nil, err
-	}
-	if b == nil {
-		unlock()
-		return nil, nil, ErrLedgerBucketDoesNotExist
-	}
-	if err := b.ensureCache(ctx, ls.dag); err != nil {
 		unlock()
 		return nil, nil, err
 	}

@@ -33,14 +33,7 @@ func (m *LedgerBucketEntry) ensureCache(ctx context.Context, dag pb.NodeAPIClien
 //possible errors include ErrLedgerBucketDoesNotExist and dag network errors.
 func (ls *ledgerStore) GetBucketInfo(ctx context.Context, bucket string) (*BucketInfo, error) {
 	defer ls.locker.read(bucket)()
-	b, err := ls.getBucket(bucket)
-	if err != nil {
-		return nil, err
-	}
-	if b == nil {
-		return nil, ErrLedgerBucketDoesNotExist
-	}
-	err = b.ensureCache(ctx, ls.dag)
+	b, err := ls.getBucketLoaded(ctx, bucket)
 	if err != nil {
 		return nil, err
 	}
@@ -51,21 +44,18 @@ func (ls *ledgerStore) GetBucketInfo(ctx context.Context, bucket string) (*Bucke
 //GetBucketHash return the hash of the bucket if the named bucket exist
 func (ls *ledgerStore) GetBucketHash(bucket string) (string, error) {
 	defer ls.locker.read(bucket)()
-	b, err := ls.getBucket(bucket)
+	b, err := ls.getBucketRequired(bucket)
 	if err != nil {
 		return "", err
-	}
-	if b == nil {
-		return "", ErrLedgerBucketDoesNotExist
 	}
 	return b.IpfsHash, nil
 }
 
-// getBucket returns a lazy loading LedgerBucketEntry
+// getBucketNilable returns a lazy loading LedgerBucketEntry
 //
 // if err is returned, then the datastore can not be read
 // if nil, nil is return, then bucket does not exit
-func (ls *ledgerStore) getBucket(bucket string) (*LedgerBucketEntry, error) {
+func (ls *ledgerStore) getBucketNilable(bucket string) (*LedgerBucketEntry, error) {
 	ls.mapLocker.Lock()
 	defer ls.mapLocker.Unlock()
 	b, ok := ls.l.Buckets[bucket]
@@ -82,6 +72,36 @@ func (ls *ledgerStore) getBucket(bucket string) (*LedgerBucketEntry, error) {
 			IpfsHash: string(bHash),
 		}
 		ls.l.Buckets[bucket] = b
+	}
+	return b, nil
+}
+
+// getBucketRequired returns a lazy loading LedgerBucketEntry
+//
+// if err is returned, then the datastore can not be read,
+// or the bucket does not exit
+func (ls *ledgerStore) getBucketRequired(bucket string) (*LedgerBucketEntry, error) {
+	b, err := ls.getBucketNilable(bucket)
+	if err != nil {
+		return nil, err
+	}
+	if b == nil {
+		return nil, ErrLedgerBucketDoesNotExist
+	}
+	return b, nil
+}
+
+// getBucketLoaded returns a loaded LedgerBucketEntry
+//
+// if err is returned, then the datastore can not be read,
+// or the bucket does not exit
+func (ls *ledgerStore) getBucketLoaded(ctx context.Context, bucket string) (*LedgerBucketEntry, error) {
+	b, err := ls.getBucketRequired(bucket)
+	if err != nil {
+		return nil, err
+	}
+	if err := b.ensureCache(ctx, ls.dag); err != nil {
+		return nil, err
 	}
 	return b, nil
 }
@@ -134,7 +154,7 @@ func (ls *ledgerStore) saveBucket(ctx context.Context, bucket string, b *Bucket)
 }
 
 func (ls *ledgerStore) bucketExists(bucket string) (bool, error) {
-	b, err := ls.getBucket(bucket)
+	b, err := ls.getBucketNilable(bucket)
 	return b != nil, err
 }
 

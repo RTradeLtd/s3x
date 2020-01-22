@@ -19,21 +19,14 @@ func (x *xObjects) ListObjects(
 	bucket, prefix, marker, delimiter string,
 	maxKeys int,
 ) (loi minio.ListObjectsInfo, e error) {
-	// TODO(bonedaddy): implement complex search
-	objHashes, unlock, err := x.ledgerStore.GetObjectHashes(ctx, bucket)
+	// TODO(bonedaddy): implement complex search (George: prefix implemented)
+	objs, err := x.ledgerStore.GetObjectInfos(ctx, bucket, prefix, "", 0)
 	if err != nil {
 		return loi, x.toMinioErr(err, bucket, "", "")
 	}
-	defer unlock()
-	loi.Objects = make([]minio.ObjectInfo, len(objHashes))
-	var count int
-	for name := range objHashes {
-		info, err := x.getMinioObjectInfo(ctx, bucket, name)
-		if err != nil {
-			return loi, x.toMinioErr(err, bucket, name, "")
-		}
-		loi.Objects[count] = info
-		count++
+	loi.Objects = make([]minio.ObjectInfo, 0, len(objs))
+	for _, obj := range objs {
+		loi.Objects = append(loi.Objects, x.getMinioObjectInfo(&obj))
 	}
 	// TODO(bonedaddy): consider if we should use the following helper func
 	// return minio.FromMinioClientListBucketResult(bucket, result), nil
@@ -48,29 +41,13 @@ func (x *xObjects) ListObjectsV2(
 	fetchOwner bool,
 	startAfter string,
 ) (loi minio.ListObjectsV2Info, err error) {
-	//TODO: implement startAfter
-	objHashes, unlock, err := x.ledgerStore.GetObjectHashes(ctx, bucket)
+	objs, err := x.ledgerStore.GetObjectInfos(ctx, bucket, prefix, startAfter, 1000)
 	if err != nil {
 		return loi, x.toMinioErr(err, bucket, "", "")
 	}
-	defer unlock()
-	if len(objHashes) >= 1000 {
-		loi.Objects = make([]minio.ObjectInfo, 1000)
-	} else {
-		loi.Objects = make([]minio.ObjectInfo, len(objHashes))
-	}
-	var count int
-	for name := range objHashes {
-		//TODO: this should be ordered by object name, but currently use random map ordering
-		info, err := x.getMinioObjectInfo(ctx, bucket, name)
-		if err != nil {
-			return loi, x.toMinioErr(err, bucket, name, "")
-		}
-		loi.Objects[count] = info
-		count++
-		if count == 1000 {
-			break
-		}
+	loi.Objects = make([]minio.ObjectInfo, 0, len(objs))
+	for _, obj := range objs {
+		loi.Objects = append(loi.Objects, x.getMinioObjectInfo(&obj))
 	}
 	return loi, nil
 }
@@ -118,7 +95,7 @@ func (x *xObjects) GetObject(
 	etag string,
 	opts minio.ObjectOptions,
 ) error {
-	objData, err := x.ledgerStore.objectData(ctx, bucket, object)
+	objData, err := x.ledgerStore.ObjectData(ctx, bucket, object)
 	if err != nil {
 		return x.toMinioErr(err, bucket, object, "")
 	}
@@ -142,8 +119,8 @@ func (x *xObjects) GetObjectInfo(
 	bucket, object string,
 	opts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
-	info, err := x.getMinioObjectInfo(ctx, bucket, object)
-	return info, x.toMinioErr(err, bucket, object, "")
+	oi, err := x.ledgerStore.ObjectInfo(ctx, bucket, object)
+	return x.getMinioObjectInfo(oi), x.toMinioErr(err, bucket, object, "")
 }
 
 // PutObject creates a new object with the incoming data,
@@ -152,13 +129,13 @@ func (x *xObjects) PutObject(
 	bucket, object string,
 	r *minio.PutObjReader,
 	opts minio.ObjectOptions,
-) (objInfo minio.ObjectInfo, err error) {
+) (minio.ObjectInfo, error) {
 	ex, err := x.ledgerStore.bucketExists(bucket)
 	if err != nil {
-		return objInfo, x.toMinioErr(err, bucket, "", "")
+		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, "", "")
 	}
 	if !ex {
-		return objInfo, x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, "", "")
+		return minio.ObjectInfo{}, x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, "", "")
 	}
 	// TODO(bonedaddy): ensure consistency with the way s3 and b2 handle this
 	obinfo := ObjectInfo{
@@ -180,27 +157,27 @@ func (x *xObjects) PutObject(
 	}
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
-		return objInfo, x.toMinioErr(err, bucket, object, "")
+		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, object, "")
 	}
 	obinfo.Size_ = int64(len(data))
 	dataHash, err := ipfsSaveBytes(ctx, x.dagClient, data)
 	if err != nil {
-		return objInfo, x.toMinioErr(err, bucket, object, "")
+		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, object, "")
 	}
 	// add the object to bucket
-	err = x.ledgerStore.putObject(ctx, bucket, object, &Object{
+	err = x.ledgerStore.PutObject(ctx, bucket, object, &Object{
 		DataHash:   dataHash,
 		ObjectInfo: obinfo,
 	})
 	if err != nil {
-		return objInfo, x.toMinioErr(err, bucket, object, "")
+		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, object, "")
 	}
 	log.Printf(
 		"bucket-name: %s, bucket-hash: %s, object-name: %s, object-hash: %s",
 		bucket, x.ledgerStore.l.Buckets[bucket].IpfsHash, object, x.ledgerStore.l.Buckets[bucket].Bucket.Objects[object],
 	)
 	// convert the proto object into a minio.ObjectInfo type
-	return x.getMinioObjectInfo(ctx, bucket, object)
+	return x.getMinioObjectInfo(&obinfo), nil
 }
 
 // CopyObject copies an object from source bucket to a destination bucket.
@@ -217,6 +194,16 @@ func (x *xObjects) CopyObject(
 	// TODO(bonedaddy): ensure we properly update the ledger with the destination object
 	// TODO(bonedaddy): ensure the destination object is properly adjusted with metadata
 	// ensure destination bucket exists
+
+	//lock ordering by bucket name
+	if strings.Compare(srcBucket, dstBucket) > 0 {
+		defer x.ledgerStore.locker.read(srcBucket)()
+		defer x.ledgerStore.locker.write(dstBucket)()
+	} else {
+		defer x.ledgerStore.locker.write(dstBucket)()
+		defer x.ledgerStore.locker.read(srcBucket)()
+	}
+
 	ex, err := x.ledgerStore.bucketExists(dstBucket)
 	if err != nil {
 		return objInfo, x.toMinioErr(err, dstBucket, "", "")
@@ -256,7 +243,7 @@ func (x *xObjects) CopyObject(
 		"dst-bucket: %s, dst-bucket-hash: %s, dst-object: %s, dst-object-hash: %s\n",
 		dstBucket, x.ledgerStore.l.Buckets[dstBucket].IpfsHash, dstObject, x.ledgerStore.l.Buckets[dstBucket].Bucket.Objects[dstObject],
 	)
-	objInfo, err = x.getMinioObjectInfo(ctx, dstBucket, dstObject)
+	objInfo = x.getMinioObjectInfo(&obj.ObjectInfo)
 	return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 }
 
