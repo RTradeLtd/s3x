@@ -38,17 +38,14 @@ func (ls *ledgerStore) AbortMultipartUpload(bucket, multipartID string) error {
 
 // NewMultipartUpload is used to store the initial start of a multipart upload request
 func (ls *ledgerStore) NewMultipartUpload(bucketName, objectName, multipartID string) error {
-	ex, err := ls.bucketExists(bucketName)
+	err := ls.assertBucketExits(bucketName)
 	if err != nil {
 		return err
 	}
-	if !ex {
-		return ErrLedgerBucketDoesNotExist
-	}
 	if ls.l.MultipartUploads == nil {
-		ls.l.MultipartUploads = make(map[string]MultipartUpload)
+		ls.l.MultipartUploads = make(map[string]*MultipartUpload)
 	}
-	ls.l.MultipartUploads[multipartID] = MultipartUpload{
+	ls.l.MultipartUploads[multipartID] = &MultipartUpload{
 		Bucket: bucketName,
 		Object: objectName,
 		Id:     multipartID,
@@ -58,22 +55,18 @@ func (ls *ledgerStore) NewMultipartUpload(bucketName, objectName, multipartID st
 
 // PutObjectPart is used to record an individual object part within a multipart upload
 func (ls *ledgerStore) PutObjectPart(bucketName, objectName, partHash, multipartID string, partNumber int64) error {
-	ex, err := ls.bucketExists(bucketName)
+	err := ls.assertBucketExits(bucketName)
 	if err != nil {
 		return err
 	}
-	if !ex {
-		return ErrLedgerBucketDoesNotExist
+	mpart, ok := ls.l.MultipartUploads[multipartID]
+	if !ok {
+		return ErrInvalidUploadID
 	}
-	if err := ls.l.multipartExists(multipartID); err != nil {
-		return err
-	}
-	mpart := ls.l.MultipartUploads[multipartID]
-	mpart.ObjectParts = append(mpart.ObjectParts, ObjectPartInfo{
+	mpart.ObjectParts[partHash] = ObjectPartInfo{
 		Number:   partNumber,
 		DataHash: partHash,
-	})
-	ls.l.MultipartUploads[multipartID] = mpart
+	}
 	return nil //todo: save to ipfs
 }
 
@@ -88,7 +81,7 @@ func (ls *ledgerStore) Close() error {
 /////////////////////
 
 // GetObjectParts is used to return multipart upload parts
-func (ls *ledgerStore) GetObjectParts(id string) ([]ObjectPartInfo, error) {
+func (ls *ledgerStore) GetObjectParts(id string) (map[string]ObjectPartInfo, error) {
 	if err := ls.l.multipartExists(id); err != nil {
 		return nil, err
 	}
@@ -156,6 +149,7 @@ func (ls *ledgerStore) GetObjectHashes(ctx context.Context, bucket string) (map[
 }
 
 // GetMultipartHashes returns the hashes of all multipart upload object parts
+/* not used for now
 func (ls *ledgerStore) GetMultipartHashes(bucket, multipartID string) ([]string, error) {
 	ex, err := ls.bucketExists(bucket)
 	if err != nil {
@@ -173,7 +167,7 @@ func (ls *ledgerStore) GetMultipartHashes(bucket, multipartID string) ([]string,
 		hashes[i] = objpart.GetDataHash()
 	}
 	return hashes, nil
-}
+}*/
 
 // GetBucketNames is used to get a slice of all bucket names our ledger currently tracks
 func (ls *ledgerStore) GetBucketNames() ([]string, error) {

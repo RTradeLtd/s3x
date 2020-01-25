@@ -123,24 +123,13 @@ func (x *xObjects) GetObjectInfo(
 	return x.getMinioObjectInfo(oi), x.toMinioErr(err, bucket, object, "")
 }
 
-// PutObject creates a new object with the incoming data,
-func (x *xObjects) PutObject(
-	ctx context.Context,
-	bucket, object string,
-	r *minio.PutObjReader,
-	opts minio.ObjectOptions,
-) (minio.ObjectInfo, error) {
-	ex, err := x.ledgerStore.bucketExists(bucket)
-	if err != nil {
-		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, "", "")
-	}
-	if !ex {
-		return minio.ObjectInfo{}, x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, "", "")
-	}
+//newObjectInfo create an ObjectInfo
+func newObjectInfo(bucket, object string, size int, opts minio.ObjectOptions) ObjectInfo {
 	// TODO(bonedaddy): ensure consistency with the way s3 and b2 handle this
 	obinfo := ObjectInfo{
 		Bucket:  bucket,
 		Name:    object,
+		Size_:   int64(size),
 		ModTime: time.Now().UTC(),
 	}
 	for k, v := range opts.UserDefined {
@@ -155,11 +144,26 @@ func (x *xObjects) PutObject(
 			obinfo.ContentType = v
 		}
 	}
+	return obinfo
+}
+
+// PutObject creates a new object with the incoming data,
+func (x *xObjects) PutObject(
+	ctx context.Context,
+	bucket, object string,
+	r *minio.PutObjReader,
+	opts minio.ObjectOptions,
+) (minio.ObjectInfo, error) {
+	err := x.ledgerStore.AssertBucketExits(bucket)
+	if err != nil {
+		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, "", "")
+	}
+
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, object, "")
 	}
-	obinfo.Size_ = int64(len(data))
+	obinfo := newObjectInfo(bucket, object, len(data), opts)
 	dataHash, err := ipfsSaveBytes(ctx, x.dagClient, data)
 	if err != nil {
 		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, object, "")
@@ -190,7 +194,6 @@ func (x *xObjects) CopyObject(
 	// TODO(bonedaddy): implement usage of options
 	// TODO(bonedaddy): ensure we properly update the ledger with the destination object
 	// TODO(bonedaddy): ensure the destination object is properly adjusted with metadata
-	// ensure destination bucket exists
 
 	//lock ordering by bucket name
 	if strings.Compare(srcBucket, dstBucket) > 0 {
@@ -201,12 +204,10 @@ func (x *xObjects) CopyObject(
 		defer x.ledgerStore.locker.read(srcBucket)()
 	}
 
-	ex, err := x.ledgerStore.bucketExists(dstBucket)
+	// ensure destination bucket exists
+	err = x.ledgerStore.assertBucketExits(dstBucket)
 	if err != nil {
 		return objInfo, x.toMinioErr(err, dstBucket, "", "")
-	}
-	if !ex {
-		return objInfo, x.toMinioErr(ErrLedgerBucketDoesNotExist, dstBucket, "", "")
 	}
 
 	obj1, err := x.ledgerStore.object(ctx, srcBucket, srcObject)

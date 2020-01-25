@@ -30,7 +30,7 @@ message Ledger {
     // key = bucket name
     map<string, LedgerBucketEntry> buckets = 1;
     // key = partID
-    map<string, MultipartUpload> multipartUploads = 2 [(gogoproto.nullable) = false];
+    map<string, MultipartUpload> multipartUploads = 2;   
 }
 
 // LedgerBucketEntry is an individual entry within the ledger containing information about a bucket
@@ -94,10 +94,10 @@ message ObjectInfo {
 
 // ObjectPartInfo contains information an individual object client
 message ObjectPartInfo {
-    // this should be an "int" type in Golang
+    // convertable to "int" type in minio.PartInfo
     int64 number = 1;
     string name = 2;
-    string etag = 3;
+    //string etag = 3; also use dataHash
     int64 size = 4;
     int64 actualSize = 5;
     // the hash of the data on ipfs
@@ -107,8 +107,8 @@ message ObjectPartInfo {
 }
 
 message MultipartUpload {
-    string bucket = 1;
-    string object = 2;
+    ObjectInfo objectInfo = 1;
     string id = 3;
-    repeated ObjectPartInfo objectParts = 4 [(gogoproto.nullable) = false];
+    //map of etag to parts
+    map<string, ObjectPartInfo>  objectParts = 4 [(gogoproto.nullable) = false];
 }

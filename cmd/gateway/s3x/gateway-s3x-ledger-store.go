@@ -19,7 +19,8 @@ The reason for this is so that we can enable easy reuse of internal code.
 
 var (
 	dsPrefix    = datastore.NewKey("ledgerRoot")
-	dsBucketKey = datastore.NewKey("b")
+	dsBucketKey = datastore.NewKey("b") //bucket name to ipfsHash of LedgerBucketEntry
+	dsPartKey   = datastore.NewKey("p") //part ID to MultipartUpload
 )
 
 // ledgerStore is an internal bookkeeper that
@@ -42,7 +43,7 @@ func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient) (*ledgerStore, 
 		dag: dag,
 		l: &Ledger{
 			Buckets:          make(map[string]*LedgerBucketEntry),
-			MultipartUploads: make(map[string]MultipartUpload),
+			MultipartUploads: make(map[string]*MultipartUpload),
 		},
 	}
 	return ls, nil

@@ -22,15 +22,8 @@ func (x *xObjects) ListMultipartUploads(ctx context.Context, bucket string, pref
 func (x *xObjects) NewMultipartUpload(
 	ctx context.Context,
 	bucket, object string,
-	o minio.ObjectOptions,
+	opts minio.ObjectOptions,
 ) (uploadID string, err error) {
-	ex, err := x.ledgerStore.bucketExists(bucket)
-	if err != nil {
-		return "", x.toMinioErr(err, bucket, "", "")
-	}
-	if !ex {
-		return "", x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, "", "")
-	}
 	uploadID = ksuid.New().String()
 	return uploadID, x.toMinioErr(
 		x.ledgerStore.NewMultipartUpload(bucket, object, uploadID),
@@ -122,7 +115,7 @@ func (x *xObjects) ListObjectParts(
 	for _, part := range parts {
 		lpi.Parts = append(lpi.Parts, minio.PartInfo{
 			PartNumber: int(part.GetNumber()),
-			ETag:       minio.ToS3ETag(part.GetEtag()),
+			ETag:       minio.ToS3ETag(part.GetDataHash()),
 			Size:       part.GetSize_(),
 		})
 	}

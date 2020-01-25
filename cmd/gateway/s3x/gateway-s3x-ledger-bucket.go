@@ -159,6 +159,24 @@ func (ls *ledgerStore) saveBucket(ctx context.Context, bucket string, b *Bucket)
 	return lb, nil
 }
 
+func (ls *ledgerStore) AssertBucketExits(bucket string) error {
+	unlock := ls.locker.read("bucket")
+	err := ls.assertBucketExits(bucket)
+	unlock()
+	return err
+}
+
+func (ls *ledgerStore) assertBucketExits(bucket string) error {
+	ex, err := ls.bucketExists(bucket)
+	if err != nil {
+		return err
+	}
+	if !ex {
+		return ErrLedgerBucketDoesNotExist
+	}
+	return nil
+}
+
 func (ls *ledgerStore) bucketExists(bucket string) (bool, error) {
 	b, err := ls.getBucketNilable(bucket)
 	return b != nil, err
@@ -167,12 +185,9 @@ func (ls *ledgerStore) bucketExists(bucket string) (bool, error) {
 // DeleteBucket is used to remove a ledger bucket entry
 func (ls *ledgerStore) DeleteBucket(bucket string) error {
 	defer ls.locker.write(bucket)()
-	ex, err := ls.bucketExists(bucket)
+	err := ls.assertBucketExits(bucket)
 	if err != nil {
 		return err
-	}
-	if !ex {
-		return ErrLedgerBucketDoesNotExist
 	}
 	ls.mapLocker.Lock()
 	delete(ls.l.Buckets, bucket)
