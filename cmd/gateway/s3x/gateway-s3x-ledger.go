@@ -37,8 +37,10 @@ func (ls *ledgerStore) AbortMultipartUpload(bucket, multipartID string) error {
 }
 
 // NewMultipartUpload is used to store the initial start of a multipart upload request
-func (ls *ledgerStore) NewMultipartUpload(bucketName, objectName, multipartID string) error {
-	err := ls.assertBucketExits(bucketName)
+func (ls *ledgerStore) NewMultipartUpload(multipartID string, info *ObjectInfo) error {
+	bucket := info.GetBucket()
+	defer ls.locker.write(bucket)
+	err := ls.assertBucketExits(bucket)
 	if err != nil {
 		return err
 	}
@@ -46,9 +48,8 @@ func (ls *ledgerStore) NewMultipartUpload(bucketName, objectName, multipartID st
 		ls.l.MultipartUploads = make(map[string]*MultipartUpload)
 	}
 	ls.l.MultipartUploads[multipartID] = &MultipartUpload{
-		Bucket: bucketName,
-		Object: objectName,
-		Id:     multipartID,
+		ObjectInfo: info,
+		Id:         multipartID,
 	}
 	return nil //todo: save to ipfs
 }

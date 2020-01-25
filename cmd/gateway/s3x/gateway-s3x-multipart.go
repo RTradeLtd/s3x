@@ -25,8 +25,9 @@ func (x *xObjects) NewMultipartUpload(
 	opts minio.ObjectOptions,
 ) (uploadID string, err error) {
 	uploadID = ksuid.New().String()
+	info := newObjectInfo(bucket, object, 0, opts)
 	return uploadID, x.toMinioErr(
-		x.ledgerStore.NewMultipartUpload(bucket, object, uploadID),
+		x.ledgerStore.NewMultipartUpload(uploadID, &info),
 		bucket, object, uploadID,
 	)
 }

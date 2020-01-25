@@ -160,7 +160,7 @@ func (ls *ledgerStore) saveBucket(ctx context.Context, bucket string, b *Bucket)
 }
 
 func (ls *ledgerStore) AssertBucketExits(bucket string) error {
-	unlock := ls.locker.read("bucket")
+	unlock := ls.locker.read(bucket)
 	err := ls.assertBucketExits(bucket)
 	unlock()
 	return err
