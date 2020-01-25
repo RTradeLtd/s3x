@@ -22,7 +22,7 @@ const (
 	temxBackend = "s3x"
 )
 
-// TEMX implements a MinIO gateway ontop of TemporalX
+// TEMX implements a MinIO gateway on top of TemporalX
 type TEMX struct {
 	HTTPAddr string
 	GRPCAddr string
