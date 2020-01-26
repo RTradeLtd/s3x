@@ -40,12 +40,9 @@ func (x *xObjects) PutObjectPart(
 	r *minio.PutObjReader,
 	opts minio.ObjectOptions,
 ) (pi minio.PartInfo, e error) {
-	ex, err := x.ledgerStore.bucketExists(bucket)
+	err := x.ledgerStore.AssertBucketExits(bucket)
 	if err != nil {
 		return pi, x.toMinioErr(err, bucket, "", "")
-	}
-	if !ex {
-		return pi, x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, "", "")
 	}
 	// add the given data to ipfs
 	stream, err := x.fileClient.UploadFile(ctx)
@@ -53,16 +50,16 @@ func (x *xObjects) PutObjectPart(
 		return pi, err
 	}
 	var (
-		buf  = make([]byte, 4194294)
+		buf  = make([]byte, 4194294) //10 less than 4MB
 		size int
 	)
 	for {
 		n, err := r.Read(buf)
-		if err != nil && err == io.EOF {
+		if err == io.EOF {
 			if n == 0 {
 				break
 			}
-		} else if err != nil && err != io.EOF {
+		} else if err != nil {
 			return pi, err
 		}
 		size = size + n
@@ -153,12 +150,9 @@ func (x *xObjects) CompleteMultipartUpload(
 	uploadedParts []minio.CompletePart,
 	opts minio.ObjectOptions,
 ) (oi minio.ObjectInfo, e error) {
-	ex, err := x.ledgerStore.bucketExists(bucket)
+	err := x.ledgerStore.AssertBucketExits(bucket)
 	if err != nil {
 		return oi, x.toMinioErr(err, bucket, "", "")
-	}
-	if !ex {
-		return oi, x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, object, uploadID)
 	}
 	return oi, errors.New("not finished yet")
 
