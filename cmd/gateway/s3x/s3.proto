@@ -109,6 +109,6 @@ message ObjectPartInfo {
 message MultipartUpload {
     ObjectInfo objectInfo = 1;
     string id = 3;
-    //map of etag to parts
-    map<string, ObjectPartInfo>  objectParts = 4 [(gogoproto.nullable) = false];
+    //map of index to parts
+    map<int64, ObjectPartInfo>  objectParts = 4 [(gogoproto.nullable) = false];
 }

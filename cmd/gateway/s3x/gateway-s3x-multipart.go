@@ -96,6 +96,7 @@ func (x *xObjects) CopyObjectPart(ctx context.Context, srcBucket, srcObject, des
 }
 
 // ListObjectParts returns all object parts for specified object in specified bucket
+// TODO: paginate using partNumberMarker and maxParts
 func (x *xObjects) ListObjectParts(
 	ctx context.Context,
 	bucket, object, uploadID string,
@@ -109,17 +110,24 @@ func (x *xObjects) ListObjectParts(
 		MaxParts:         maxParts,
 		PartNumberMarker: partNumberMarker,
 	}
-	parts, err := x.ledgerStore.GetObjectParts(uploadID)
+	m, unlock, err := x.ledgerStore.GetObjectDetails(uploadID)
+	defer unlock()
 	if err != nil {
 		return lpi, x.toMinioErr(err, bucket, object, uploadID)
 	}
-	for _, part := range parts {
+	if m.GetObjectInfo().GetBucket() != bucket ||
+		m.GetObjectInfo().GetName() != object {
+		return lpi, x.toMinioErr(ErrInvalidUploadID, bucket, object, uploadID)
+	}
+
+	for _, part := range m.ObjectParts {
 		lpi.Parts = append(lpi.Parts, minio.PartInfo{
 			PartNumber: int(part.GetNumber()),
 			ETag:       minio.ToS3ETag(part.GetDataHash()),
 			Size:       part.GetSize_(),
 		})
 	}
+
 	return lpi, nil
 }
 
