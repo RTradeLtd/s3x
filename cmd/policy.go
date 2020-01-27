@@ -30,6 +30,7 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/event"
 	"github.com/RTradeLtd/s3x/pkg/handlers"
 	"github.com/RTradeLtd/s3x/pkg/policy"
+	jsoniter "github.com/json-iterator/go"
 	miniogopolicy "github.com/minio/minio-go/v6/pkg/policy"
 )
 
@@ -275,6 +276,7 @@ func PolicyToBucketAccessPolicy(bucketPolicy *policy.Policy) (*miniogopolicy.Buc
 	}
 
 	var policyInfo miniogopolicy.BucketAccessPolicy
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	if err = json.Unmarshal(data, &policyInfo); err != nil {
 		// This should not happen because data is valid to JSON data.
 		return nil, err
@@ -292,6 +294,7 @@ func BucketAccessPolicyToPolicy(policyInfo *miniogopolicy.BucketAccessPolicy) (*
 	}
 
 	var bucketPolicy policy.Policy
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	if err = json.Unmarshal(data, &bucketPolicy); err != nil {
 		// This should not happen because data is valid to JSON data.
 		return nil, err

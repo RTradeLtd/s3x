@@ -39,6 +39,7 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/handlers"
 	"github.com/RTradeLtd/s3x/pkg/hash"
 	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
+	"github.com/RTradeLtd/s3x/pkg/objectlock"
 	"github.com/RTradeLtd/s3x/pkg/policy"
 	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 	"github.com/minio/minio-go/v6/pkg/set"
@@ -533,7 +534,8 @@ func (api objectAPIHandlers) PutBucketHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	if globalDNSConfig != nil {
-		if _, err := globalDNSConfig.Get(bucket); err != nil {
+		sr, err := globalDNSConfig.Get(bucket)
+		if err != nil {
 			if err == dns.ErrNoEntriesFound {
 				// Proceed to creating a bucket.
 				if err = objectAPI.MakeBucketWithLocation(ctx, bucket, location); err != nil {
@@ -566,7 +568,15 @@ func (api objectAPIHandlers) PutBucketHandler(w http.ResponseWriter, r *http.Req
 			return
 
 		}
-		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrBucketAlreadyOwnedByYou), r.URL, guessIsBrowserReq(r))
+		apiErr := ErrBucketAlreadyExists
+		if !globalDomainIPs.Intersection(set.CreateStringSet(getHostsSlice(sr)...)).IsEmpty() {
+			apiErr = ErrBucketAlreadyOwnedByYou
+		}
+		// No IPs seem to intersect, this means that bucket exists but has
+		// different IP addresses perhaps from a different deployment.
+		// bucket names are globally unique in federation at a given
+		// path prefix, name collision is not allowed. Return appropriate error.
+		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(apiErr), r.URL, guessIsBrowserReq(r))
 		return
 	}
 
@@ -577,14 +587,14 @@ func (api objectAPIHandlers) PutBucketHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if objectLockEnabled {
+	if objectLockEnabled && !globalIsGateway {
 		configFile := path.Join(bucketConfigPrefix, bucket, bucketObjectLockEnabledConfigFile)
 		if err = saveConfig(ctx, objectAPI, configFile, []byte(bucketObjectLockEnabledConfig)); err != nil {
 			writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
 			return
 		}
-		globalBucketObjectLockConfig.Set(bucket, Retention{})
-		globalNotificationSys.PutBucketObjectLockConfig(ctx, bucket, Retention{})
+		globalBucketObjectLockConfig.Set(bucket, objectlock.Retention{})
+		globalNotificationSys.PutBucketObjectLockConfig(ctx, bucket, objectlock.Retention{})
 	}
 
 	// Make sure to add Location information here only for bucket
@@ -1005,7 +1015,7 @@ func (api objectAPIHandlers) PutBucketObjectLockConfigHandler(w http.ResponseWri
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(s3Error), r.URL, guessIsBrowserReq(r))
 		return
 	}
-	config, err := parseObjectLockConfig(r.Body)
+	config, err := objectlock.ParseObjectLockConfig(r.Body)
 	if err != nil {
 		apiErr := errorCodes.ToAPIErr(ErrMalformedXML)
 		apiErr.Description = err.Error()
@@ -1017,7 +1027,7 @@ func (api objectAPIHandlers) PutBucketObjectLockConfigHandler(w http.ResponseWri
 	if err != nil {
 		aerr := toAPIError(ctx, err)
 		if err == errConfigNotFound {
-			aerr = errorCodes.ToAPIErr(ErrMethodNotAllowed)
+			aerr = errorCodes.ToAPIErr(ErrObjectLockConfigurationNotAllowed)
 		}
 		writeErrorResponse(ctx, w, aerr, r.URL, guessIsBrowserReq(r))
 		return
@@ -1099,7 +1109,7 @@ func (api objectAPIHandlers) GetBucketObjectLockConfigHandler(w http.ResponseWri
 			return
 		}
 
-		if configData, err = xml.Marshal(newObjectLockConfig()); err != nil {
+		if configData, err = xml.Marshal(objectlock.NewObjectLockConfig()); err != nil {
 			writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
 			return
 		}

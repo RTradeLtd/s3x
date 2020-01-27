@@ -45,8 +45,7 @@ func init() {
 	globalConsoleSys = NewConsoleLogger(context.Background())
 	logger.AddTarget(globalConsoleSys)
 
-	gob.Register(VerifyFileError(""))
-	gob.Register(DeleteFileError(""))
+	gob.Register(StorageErr(""))
 }
 
 // ServerFlags - server command specific flags
@@ -127,10 +126,6 @@ func serverHandleCmdArgs(ctx *cli.Context) {
 	}
 	logger.FatalIf(err, "Invalid command line arguments")
 
-	if err = checkEndpointsSubOptimal(ctx, setupType, globalEndpoints); err != nil {
-		logger.Info("Optimal endpoint check failed %s", err)
-	}
-
 	// On macOS, if a process already listens on LOCALIPADDR:PORT, net.Listen() falls back
 	// to IPv6 address ie minio will start listening on IPv6 address whereas another
 	// (non-)minio process is listening on IPv4 of given port.
@@ -200,9 +195,6 @@ func initSafeMode(buckets []BucketInfo) (err error) {
 		}
 	}(objLock)
 
-	// Calls New() and initializes all sub-systems.
-	newAllSubsystems()
-
 	// Migrate all backend configs to encrypted backend configs, optionally
 	// handles rotating keys for encryption.
 	if err = handleEncryptedConfigBackend(newObject, true); err != nil {
@@ -263,6 +255,7 @@ func serverMain(ctx *cli.Context) {
 	if ctx.Args().First() == "help" || !endpointsPresent(ctx) {
 		cli.ShowCommandHelpAndExit(ctx, "server", 1)
 	}
+	setDefaultProfilerRates()
 
 	// Initialize globalConsoleSys system
 	globalConsoleSys = NewConsoleLogger(context.Background())
@@ -365,6 +358,16 @@ func serverMain(ctx *cli.Context) {
 	globalObjectAPI = newObject
 	globalObjLayerMutex.Unlock()
 
+	// Calls New() and initializes all sub-systems.
+	newAllSubsystems()
+
+	// Enable healing to heal drives if possible
+	if globalIsXL {
+		initBackgroundHealing()
+		initLocalDisksAutoHeal()
+		initGlobalHeal()
+	}
+
 	buckets, err := newObject.ListBuckets(context.Background())
 	if err != nil {
 		logger.Fatal(err, "Unable to list buckets")
@@ -390,12 +393,6 @@ func serverMain(ctx *cli.Context) {
 
 	initDataUsageStats()
 	initDailyLifecycle()
-
-	if globalIsXL {
-		initBackgroundHealing()
-		initLocalDisksAutoHeal()
-		initGlobalHeal()
-	}
 
 	// Disable safe mode operation, after all initialization is over.
 	globalObjLayerMutex.Lock()

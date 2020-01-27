@@ -24,6 +24,7 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/lifecycle"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
 	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/RTradeLtd/s3x/pkg/tagging"
 )
 
 // GatewayLocker implements custom NeNSLock implementation
@@ -44,6 +45,12 @@ func NewGatewayLayerWithLocker(gwLayer ObjectLayer) ObjectLayer {
 
 // GatewayUnsupported list of unsupported call stubs for gateway.
 type GatewayUnsupported struct{}
+
+// CrawlAndGetDataUsage - crawl is not implemented for gateway
+func (a GatewayUnsupported) CrawlAndGetDataUsage(ctx context.Context, endCh <-chan struct{}) DataUsageInfo {
+	logger.CriticalIf(ctx, errors.New("not implemented"))
+	return DataUsageInfo{}
+}
 
 // NewNSLock is a dummy stub for gateway.
 func (a GatewayUnsupported) NewNSLock(ctx context.Context, bucket string, object string) RWLocker {
@@ -171,6 +178,24 @@ func (a GatewayUnsupported) CopyObject(ctx context.Context, srcBucket string, sr
 func (a GatewayUnsupported) GetMetrics(ctx context.Context) (*Metrics, error) {
 	logger.LogIf(ctx, NotImplemented{})
 	return &Metrics{}, NotImplemented{}
+}
+
+// PutObjectTag - not implemented.
+func (a GatewayUnsupported) PutObjectTag(ctx context.Context, bucket, object string, tags string) error {
+	logger.LogIf(ctx, NotImplemented{})
+	return NotImplemented{}
+}
+
+// GetObjectTag - not implemented.
+func (a GatewayUnsupported) GetObjectTag(ctx context.Context, bucket, object string) (tagging.Tagging, error) {
+	logger.LogIf(ctx, NotImplemented{})
+	return tagging.Tagging{}, NotImplemented{}
+}
+
+// DeleteObjectTag - not implemented.
+func (a GatewayUnsupported) DeleteObjectTag(ctx context.Context, bucket, object string) error {
+	logger.LogIf(ctx, NotImplemented{})
+	return NotImplemented{}
 }
 
 // IsNotificationSupported returns whether bucket notification is applicable for this layer.

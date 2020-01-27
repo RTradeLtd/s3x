@@ -29,6 +29,7 @@ import (
 	"github.com/RTradeLtd/s3x/cmd/config"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
+	jsoniter "github.com/json-iterator/go"
 )
 
 const (
@@ -170,6 +171,7 @@ func readServerConfig(ctx context.Context, objAPI ObjectLayer) (config.Config, e
 	}
 
 	var config = config.New()
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	if err = json.Unmarshal(configData, &config); err != nil {
 		return nil, err
 	}

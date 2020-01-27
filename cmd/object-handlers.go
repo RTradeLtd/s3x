@@ -43,8 +43,10 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/hash"
 	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
 	"github.com/RTradeLtd/s3x/pkg/ioutil"
+	"github.com/RTradeLtd/s3x/pkg/objectlock"
 	"github.com/RTradeLtd/s3x/pkg/policy"
 	"github.com/RTradeLtd/s3x/pkg/s3select"
+	"github.com/RTradeLtd/s3x/pkg/tagging"
 	"github.com/gorilla/mux"
 	miniogo "github.com/minio/minio-go/v6"
 	"github.com/minio/minio-go/v6/pkg/encrypt"
@@ -209,8 +211,10 @@ func (api objectAPIHandlers) SelectObjectContentHandler(w http.ResponseWriter, r
 		return
 	}
 	getRetPerms := checkRequestAuthType(ctx, r, policy.GetObjectRetentionAction, bucket, object)
+	legalHoldPerms := checkRequestAuthType(ctx, r, policy.GetObjectLegalHoldAction, bucket, object)
+
 	// filter object lock metadata if permission does not permit
-	objInfo.UserDefined = filterObjectLockMetadata(ctx, r, bucket, object, objInfo.UserDefined, false, getRetPerms)
+	objInfo.UserDefined = objectlock.FilterObjectLockMetadata(objInfo.UserDefined, getRetPerms != ErrNone, legalHoldPerms != ErrNone)
 
 	if err = s3Select.Open(getObject); err != nil {
 		if serr, ok := err.(s3select.SelectError); ok {
@@ -353,7 +357,10 @@ func (api objectAPIHandlers) GetObjectHandler(w http.ResponseWriter, r *http.Req
 
 	// filter object lock metadata if permission does not permit
 	getRetPerms := checkRequestAuthType(ctx, r, policy.GetObjectRetentionAction, bucket, object)
-	objInfo.UserDefined = filterObjectLockMetadata(ctx, r, bucket, object, objInfo.UserDefined, false, getRetPerms)
+	legalHoldPerms := checkRequestAuthType(ctx, r, policy.GetObjectLegalHoldAction, bucket, object)
+
+	// filter object lock metadata if permission does not permit
+	objInfo.UserDefined = objectlock.FilterObjectLockMetadata(objInfo.UserDefined, getRetPerms != ErrNone, legalHoldPerms != ErrNone)
 
 	if objectAPI.IsEncryptionSupported() {
 		objInfo.UserDefined = CleanMinioInternalMetadataKeys(objInfo.UserDefined)
@@ -518,7 +525,10 @@ func (api objectAPIHandlers) HeadObjectHandler(w http.ResponseWriter, r *http.Re
 
 	// filter object lock metadata if permission does not permit
 	getRetPerms := checkRequestAuthType(ctx, r, policy.GetObjectRetentionAction, bucket, object)
-	objInfo.UserDefined = filterObjectLockMetadata(ctx, r, bucket, object, objInfo.UserDefined, false, getRetPerms)
+	legalHoldPerms := checkRequestAuthType(ctx, r, policy.GetObjectLegalHoldAction, bucket, object)
+
+	// filter object lock metadata if permission does not permit
+	objInfo.UserDefined = objectlock.FilterObjectLockMetadata(objInfo.UserDefined, getRetPerms != ErrNone, legalHoldPerms != ErrNone)
 
 	if objectAPI.IsEncryptionSupported() {
 		if _, err = DecryptObjectInfo(&objInfo, r.Header); err != nil {
@@ -594,18 +604,36 @@ func getCpObjMetadataFromHeader(ctx context.Context, r *http.Request, userMeta m
 
 	// if x-amz-metadata-directive says REPLACE then
 	// we extract metadata from the input headers.
-	if isMetadataReplace(r.Header) {
+	if isDirectiveReplace(r.Header.Get(xhttp.AmzMetadataDirective)) {
 		return extractMetadata(ctx, r)
 	}
 
 	// if x-amz-metadata-directive says COPY then we
 	// return the default metadata.
-	if isMetadataCopy(r.Header) {
+	if isDirectiveCopy(r.Header.Get(xhttp.AmzMetadataDirective)) {
 		return defaultMeta, nil
 	}
 
 	// Copy is default behavior if not x-amz-metadata-directive is set.
 	return defaultMeta, nil
+}
+
+// Extract tags relevant for an CopyObject operation based on conditional
+// header values specified in X-Amz-Tagging-Directive.
+func getCpObjTagsFromHeader(ctx context.Context, r *http.Request, tags string) (string, error) {
+	// if x-amz-tagging-directive says REPLACE then
+	// we extract tags from the input headers.
+	if isDirectiveReplace(r.Header.Get(xhttp.AmzTagDirective)) {
+		if tags := r.Header.Get(xhttp.AmzObjectTagging); tags != "" {
+			return extractTags(ctx, tags)
+		}
+		// Copy is default behavior if x-amz-tagging-directive is set, but x-amz-tagging is
+		// is not set
+		return tags, nil
+	}
+
+	// Copy is default behavior if x-amz-tagging-directive is not set.
+	return tags, nil
 }
 
 // Returns a minio-go Client configured to access remote host described by destDNSRecord
@@ -714,7 +742,7 @@ func (api objectAPIHandlers) CopyObjectHandler(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	srcBucket, srcObject := path2BucketAndObject(cpSrcPath)
+	srcBucket, srcObject := path2BucketObject(cpSrcPath)
 	// If source object is empty or bucket is empty, reply back invalid copy source.
 	if srcObject == "" || srcBucket == "" {
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrInvalidCopySource), r.URL, guessIsBrowserReq(r))
@@ -727,8 +755,14 @@ func (api objectAPIHandlers) CopyObjectHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	// Check if metadata directive is valid.
-	if !isMetadataDirectiveValid(r.Header) {
+	if !isDirectiveValid(r.Header.Get(xhttp.AmzMetadataDirective)) {
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrInvalidMetadataDirective), r.URL, guessIsBrowserReq(r))
+		return
+	}
+
+	// check if tag directive is valid
+	if !isDirectiveValid(r.Header.Get(xhttp.AmzTagDirective)) {
+		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrInvalidTagDirective), r.URL, guessIsBrowserReq(r))
 		return
 	}
 
@@ -785,7 +819,7 @@ func (api objectAPIHandlers) CopyObjectHandler(w http.ResponseWriter, r *http.Re
 	defer gr.Close()
 	srcInfo := gr.ObjInfo
 
-	/// maximum Upload size for object in a single CopyObject operation.
+	// maximum Upload size for object in a single CopyObject operation.
 	if isMaxObjectSize(srcInfo.Size) {
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrEntityTooLarge), r.URL, guessIsBrowserReq(r))
 		return
@@ -958,19 +992,33 @@ func (api objectAPIHandlers) CopyObjectHandler(w http.ResponseWriter, r *http.Re
 		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
 		return
 	}
+
+	tags, err := getCpObjTagsFromHeader(ctx, r, srcInfo.UserTags)
+	if err != nil {
+		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
+		return
+	}
+
+	if tags != "" {
+		srcInfo.UserDefined[xhttp.AmzObjectTagging] = tags
+	}
+
 	getObjectInfo := objectAPI.GetObjectInfo
 	if api.CacheAPI() != nil {
 		getObjectInfo = api.CacheAPI().GetObjectInfo
 	}
-	isCpy := true
-	getRetPerms := checkRequestAuthType(ctx, r, policy.GetObjectRetentionAction, srcBucket, srcObject)
-	srcInfo.UserDefined = filterObjectLockMetadata(ctx, r, srcBucket, srcObject, srcInfo.UserDefined, isCpy, getRetPerms)
+	srcInfo.UserDefined = objectlock.FilterObjectLockMetadata(srcInfo.UserDefined, true, true)
 	retPerms := isPutActionAllowed(getRequestAuthType(r), dstBucket, dstObject, r, iampolicy.PutObjectRetentionAction)
+	holdPerms := isPutActionAllowed(getRequestAuthType(r), dstBucket, dstObject, r, iampolicy.PutObjectLegalHoldAction)
+
 	// apply default bucket configuration/governance headers for dest side.
-	retentionMode, retentionDate, s3Err := checkPutObjectRetentionAllowed(ctx, r, dstBucket, dstObject, getObjectInfo, retPerms)
+	retentionMode, retentionDate, legalHold, s3Err := checkPutObjectLockAllowed(ctx, r, dstBucket, dstObject, getObjectInfo, retPerms, holdPerms)
 	if s3Err == ErrNone && retentionMode != "" {
 		srcInfo.UserDefined[xhttp.AmzObjectLockMode] = string(retentionMode)
 		srcInfo.UserDefined[xhttp.AmzObjectLockRetainUntilDate] = retentionDate.UTC().Format(time.RFC3339)
+	}
+	if s3Err == ErrNone && legalHold.Status != "" {
+		srcInfo.UserDefined[xhttp.AmzObjectLockLegalHold] = string(legalHold.Status)
 	}
 	if s3Err != ErrNone {
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(s3Err), r.URL, guessIsBrowserReq(r))
@@ -989,12 +1037,13 @@ func (api objectAPIHandlers) CopyObjectHandler(w http.ResponseWriter, r *http.Re
 
 	// Ensure that metadata does not contain sensitive information
 	crypto.RemoveSensitiveEntries(srcInfo.UserDefined)
-	// Check if x-amz-metadata-directive was not set to REPLACE and source,
-	// desination are same objects. Apply this restriction also when
+	// Check if x-amz-metadata-directive or x-amz-tagging-directive was not set to REPLACE and source,
+	// destination are same objects. Apply this restriction also when
 	// metadataOnly is true indicating that we are not overwriting the object.
 	// if encryption is enabled we do not need explicit "REPLACE" metadata to
 	// be enabled as well - this is to allow for key-rotation.
-	if !isMetadataReplace(r.Header) && srcInfo.metadataOnly && !crypto.IsEncrypted(srcInfo.UserDefined) {
+	if !isDirectiveReplace(r.Header.Get(xhttp.AmzMetadataDirective)) && !isDirectiveReplace(r.Header.Get(xhttp.AmzTagDirective)) &&
+		srcInfo.metadataOnly && !crypto.IsEncrypted(srcInfo.UserDefined) {
 		// If x-amz-metadata-directive is not set to REPLACE then we need
 		// to error out if source and destination are same.
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrInvalidCopyDest), r.URL, guessIsBrowserReq(r))
@@ -1142,6 +1191,14 @@ func (api objectAPIHandlers) PutObjectHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	if tags := r.Header.Get(http.CanonicalHeaderKey(xhttp.AmzObjectTagging)); tags != "" {
+		metadata[xhttp.AmzObjectTagging], err = extractTags(ctx, tags)
+		if err != nil {
+			writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
+			return
+		}
+	}
+
 	if rAuthType == authTypeStreamingSigned {
 		if contentEncoding, ok := metadata["content-encoding"]; ok {
 			contentEncoding = trimAwsChunkedContentEncoding(contentEncoding)
@@ -1251,10 +1308,15 @@ func (api objectAPIHandlers) PutObjectHandler(w http.ResponseWriter, r *http.Req
 		putObject = api.CacheAPI().PutObject
 	}
 	retPerms := isPutActionAllowed(rAuthType, bucket, object, r, iampolicy.PutObjectRetentionAction)
-	retentionMode, retentionDate, s3Err := checkPutObjectRetentionAllowed(ctx, r, bucket, object, getObjectInfo, retPerms)
+	holdPerms := isPutActionAllowed(getRequestAuthType(r), bucket, object, r, iampolicy.PutObjectLegalHoldAction)
+
+	retentionMode, retentionDate, legalHold, s3Err := checkPutObjectLockAllowed(ctx, r, bucket, object, getObjectInfo, retPerms, holdPerms)
 	if s3Err == ErrNone && retentionMode != "" {
 		metadata[strings.ToLower(xhttp.AmzObjectLockMode)] = string(retentionMode)
 		metadata[strings.ToLower(xhttp.AmzObjectLockRetainUntilDate)] = retentionDate.UTC().Format(time.RFC3339)
+	}
+	if s3Err == ErrNone && legalHold.Status != "" {
+		metadata[strings.ToLower(xhttp.AmzObjectLockLegalHold)] = string(legalHold.Status)
 	}
 	if s3Err != ErrNone {
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(s3Err), r.URL, guessIsBrowserReq(r))
@@ -1409,10 +1471,15 @@ func (api objectAPIHandlers) NewMultipartUploadHandler(w http.ResponseWriter, r 
 		return
 	}
 	retPerms := isPutActionAllowed(getRequestAuthType(r), bucket, object, r, iampolicy.PutObjectRetentionAction)
-	retentionMode, retentionDate, s3Err := checkPutObjectRetentionAllowed(ctx, r, bucket, object, objectAPI.GetObjectInfo, retPerms)
+	holdPerms := isPutActionAllowed(getRequestAuthType(r), bucket, object, r, iampolicy.PutObjectLegalHoldAction)
+
+	retentionMode, retentionDate, legalHold, s3Err := checkPutObjectLockAllowed(ctx, r, bucket, object, objectAPI.GetObjectInfo, retPerms, holdPerms)
 	if s3Err == ErrNone && retentionMode != "" {
 		metadata[strings.ToLower(xhttp.AmzObjectLockMode)] = string(retentionMode)
 		metadata[strings.ToLower(xhttp.AmzObjectLockRetainUntilDate)] = retentionDate.UTC().Format(time.RFC3339)
+	}
+	if s3Err == ErrNone && legalHold.Status != "" {
+		metadata[strings.ToLower(xhttp.AmzObjectLockLegalHold)] = string(legalHold.Status)
 	}
 	if s3Err != ErrNone {
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(s3Err), r.URL, guessIsBrowserReq(r))
@@ -1510,7 +1577,7 @@ func (api objectAPIHandlers) CopyObjectPartHandler(w http.ResponseWriter, r *htt
 		}
 	}
 
-	srcBucket, srcObject := path2BucketAndObject(cpSrcPath)
+	srcBucket, srcObject := path2BucketObject(cpSrcPath)
 	// If source object is empty or bucket is empty, reply back invalid copy source.
 	if srcObject == "" || srcBucket == "" {
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrInvalidCopySource), r.URL, guessIsBrowserReq(r))
@@ -2215,14 +2282,16 @@ func (api objectAPIHandlers) CompleteMultipartUploadHandler(w http.ResponseWrite
 	}
 
 	// Reject retention or governance headers if set, CompleteMultipartUpload spec
-	// does not use these headers, and should not be passed down to checkPutObjectRetentionAllowed
-	if isObjectLockRequested(r.Header) || isObjectLockGovernanceBypassSet(r.Header) {
+	// does not use these headers, and should not be passed down to checkPutObjectLockAllowed
+	if objectlock.IsObjectLockRequested(r.Header) || objectlock.IsObjectLockGovernanceBypassSet(r.Header) {
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrInvalidRequest), r.URL, guessIsBrowserReq(r))
 		return
 	}
 	// Enforce object lock governance in case a competing upload finalized first.
 	retPerms := isPutActionAllowed(getRequestAuthType(r), bucket, object, r, iampolicy.PutObjectRetentionAction)
-	if _, _, s3Err := checkPutObjectRetentionAllowed(ctx, r, bucket, object, objectAPI.GetObjectInfo, retPerms); s3Err != ErrNone {
+	holdPerms := isPutActionAllowed(getRequestAuthType(r), bucket, object, r, iampolicy.PutObjectLegalHoldAction)
+
+	if _, _, _, s3Err := checkPutObjectLockAllowed(ctx, r, bucket, object, objectAPI.GetObjectInfo, retPerms, holdPerms); s3Err != ErrNone {
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(s3Err), r.URL, guessIsBrowserReq(r))
 		return
 	}
@@ -2467,23 +2536,81 @@ func (api objectAPIHandlers) PutObjectLegalHoldHandler(w http.ResponseWriter, r 
 		return
 	}
 
+	// Check permissions to perform this legal hold operation
+	if s3Err := isPutActionAllowed(getRequestAuthType(r), bucket, object, r, policy.PutObjectLegalHoldAction); s3Err != ErrNone {
+		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(s3Err), r.URL, guessIsBrowserReq(r))
+		return
+	}
+
+	if _, err := objectAPI.GetBucketInfo(ctx, bucket); err != nil {
+		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
+		return
+	}
+
+	// Get Content-Md5 sent by client and verify if valid
+	md5Bytes, err := checkValidMD5(r.Header)
+	if err != nil {
+		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrInvalidDigest), r.URL, guessIsBrowserReq(r))
+		return
+	}
+	if _, ok := globalBucketObjectLockConfig.Get(bucket); !ok {
+		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrInvalidBucketObjectLockConfiguration), r.URL, guessIsBrowserReq(r))
+		return
+	}
+
+	legalHold, err := objectlock.ParseObjectLegalHold(r.Body)
+	if err != nil {
+		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
+		return
+	}
+
+	// verify Content-MD5 sum of request body if this header set
+	if len(md5Bytes) > 0 {
+		data, err := xml.Marshal(legalHold)
+		if err != nil {
+			writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
+			return
+		}
+		if hex.EncodeToString(md5Bytes) != getMD5Hash(data) {
+			writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrInvalidDigest), r.URL, guessIsBrowserReq(r))
+			return
+		}
+	}
 	getObjectInfo := objectAPI.GetObjectInfo
 	if api.CacheAPI() != nil {
 		getObjectInfo = api.CacheAPI().GetObjectInfo
 	}
-
 	opts, err := getOpts(ctx, r, bucket, object)
 	if err != nil {
 		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
 		return
 	}
 
-	if _, err = getObjectInfo(ctx, bucket, object, opts); err != nil {
+	objInfo, err := getObjectInfo(ctx, bucket, object, opts)
+	if err != nil {
+		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
+		return
+	}
+	objInfo.UserDefined[strings.ToLower(xhttp.AmzObjectLockLegalHold)] = strings.ToUpper(string(legalHold.Status))
+	objInfo.metadataOnly = true
+
+	if _, err = objectAPI.CopyObject(ctx, bucket, object, bucket, object, objInfo, ObjectOptions{}, ObjectOptions{}); err != nil {
 		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
 		return
 	}
 
-	writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrNotImplemented), r.URL, guessIsBrowserReq(r))
+	writeSuccessNoContent(w)
+	// Notify object  event.
+	sendEvent(eventArgs{
+		EventName:    event.ObjectCreatedPutLegalHold,
+		BucketName:   bucket,
+		Object:       objInfo,
+		ReqParams:    extractReqParams(r),
+		RespElements: extractRespElements(w),
+		UserAgent:    r.UserAgent(),
+		Host:         handlers.GetSourceIP(r),
+	})
+
 }
 
 // GetObjectLegalHoldHandler - get legal hold configuration to object,
@@ -2506,6 +2633,10 @@ func (api objectAPIHandlers) GetObjectLegalHoldHandler(w http.ResponseWriter, r 
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrServerNotInitialized), r.URL, guessIsBrowserReq(r))
 		return
 	}
+	if s3Error := checkRequestAuthType(ctx, r, policy.GetObjectLegalHoldAction, bucket, object); s3Error != ErrNone {
+		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(s3Error), r.URL, guessIsBrowserReq(r))
+		return
+	}
 
 	getObjectInfo := objectAPI.GetObjectInfo
 	if api.CacheAPI() != nil {
@@ -2518,12 +2649,25 @@ func (api objectAPIHandlers) GetObjectLegalHoldHandler(w http.ResponseWriter, r 
 		return
 	}
 
-	if _, err = getObjectInfo(ctx, bucket, object, opts); err != nil {
+	objInfo, err := getObjectInfo(ctx, bucket, object, opts)
+	if err != nil {
 		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
 		return
 	}
 
-	writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrNotImplemented), r.URL, guessIsBrowserReq(r))
+	legalHold := objectlock.GetObjectLegalHoldMeta(objInfo.UserDefined)
+
+	writeSuccessResponseXML(w, encodeResponse(legalHold))
+	// Notify object legal hold accessed via a GET request.
+	sendEvent(eventArgs{
+		EventName:    event.ObjectAccessedGetLegalHold,
+		BucketName:   bucket,
+		Object:       objInfo,
+		ReqParams:    extractReqParams(r),
+		RespElements: extractRespElements(w),
+		UserAgent:    r.UserAgent(),
+		Host:         handlers.GetSourceIP(r),
+	})
 }
 
 // PutObjectRetentionHandler - set object hold configuration to object,
@@ -2563,12 +2707,12 @@ func (api objectAPIHandlers) PutObjectRetentionHandler(w http.ResponseWriter, r 
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrInvalidDigest), r.URL, guessIsBrowserReq(r))
 		return
 	}
-	if _, isWORMBucket := isWORMEnabled(bucket); !isWORMBucket {
+	if _, ok := globalBucketObjectLockConfig.Get(bucket); !ok {
 		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrInvalidBucketObjectLockConfiguration), r.URL, guessIsBrowserReq(r))
 		return
 	}
 
-	objRetention, err := parseObjectRetention(r.Body)
+	objRetention, err := objectlock.ParseObjectRetention(r.Body)
 	if err != nil {
 		apiErr := errorCodes.ToAPIErr(ErrMalformedXML)
 		apiErr.Description = err.Error()
@@ -2660,7 +2804,7 @@ func (api objectAPIHandlers) GetObjectRetentionHandler(w http.ResponseWriter, r 
 		return
 	}
 
-	retention := getObjectRetentionMeta(objInfo.UserDefined)
+	retention := objectlock.GetObjectRetentionMeta(objInfo.UserDefined)
 
 	writeSuccessResponseXML(w, encodeResponse(retention))
 	// Notify object retention accessed via a GET request.
@@ -2673,4 +2817,104 @@ func (api objectAPIHandlers) GetObjectRetentionHandler(w http.ResponseWriter, r 
 		UserAgent:    r.UserAgent(),
 		Host:         handlers.GetSourceIP(r),
 	})
+}
+
+// GetObjectTaggingHandler - GET object tagging
+func (api objectAPIHandlers) GetObjectTaggingHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, w, "GetObjectTagging")
+	defer logger.AuditLog(w, r, "GetObjectTagging", mustGetClaimsFromToken(r))
+
+	vars := mux.Vars(r)
+	bucket := vars["bucket"]
+	object := vars["object"]
+
+	objAPI := api.ObjectAPI()
+	if objAPI == nil {
+		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrServerNotInitialized), r.URL, guessIsBrowserReq(r))
+		return
+	}
+
+	// Allow getObjectTagging if policy action is set.
+	if s3Error := checkRequestAuthType(ctx, r, policy.GetObjectTaggingAction, bucket, object); s3Error != ErrNone {
+		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(s3Error), r.URL, guessIsBrowserReq(r))
+		return
+	}
+
+	// Get object tags
+	tags, err := objAPI.GetObjectTag(ctx, bucket, object)
+	if err != nil {
+		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
+		return
+	}
+
+	writeSuccessResponseXML(w, encodeResponse(tags))
+}
+
+// PutObjectTaggingHandler - PUT object tagging
+func (api objectAPIHandlers) PutObjectTaggingHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, w, "PutObjectTagging")
+	defer logger.AuditLog(w, r, "PutObjectTagging", mustGetClaimsFromToken(r))
+
+	vars := mux.Vars(r)
+	bucket := vars["bucket"]
+	object := vars["object"]
+
+	objAPI := api.ObjectAPI()
+	if objAPI == nil {
+		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrServerNotInitialized), r.URL, guessIsBrowserReq(r))
+		return
+	}
+
+	// Allow putObjectTagging if policy action is set
+	if s3Error := checkRequestAuthType(ctx, r, policy.PutObjectTaggingAction, bucket, object); s3Error != ErrNone {
+		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(s3Error), r.URL, guessIsBrowserReq(r))
+		return
+	}
+
+	tagging, err := tagging.ParseTagging(io.LimitReader(r.Body, r.ContentLength))
+
+	if err != nil {
+		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
+		return
+	}
+
+	// Put object tags
+	err = objAPI.PutObjectTag(ctx, bucket, object, tagging.String())
+	if err != nil {
+		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
+		return
+	}
+
+	writeSuccessResponseHeadersOnly(w)
+}
+
+// DeleteObjectTaggingHandler - DELETE object tagging
+func (api objectAPIHandlers) DeleteObjectTaggingHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := newContext(r, w, "DeleteObjectTagging")
+	defer logger.AuditLog(w, r, "DeleteObjectTagging", mustGetClaimsFromToken(r))
+
+	vars := mux.Vars(r)
+	bucket := vars["bucket"]
+	object := vars["object"]
+
+	objAPI := api.ObjectAPI()
+	if objAPI == nil {
+		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrServerNotInitialized), r.URL, guessIsBrowserReq(r))
+		return
+	}
+
+	// Allow deleteObjectTagging if policy action is set
+	if s3Error := checkRequestAuthType(ctx, r, policy.DeleteObjectTaggingAction, bucket, object); s3Error != ErrNone {
+		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(s3Error), r.URL, guessIsBrowserReq(r))
+		return
+	}
+
+	// Delete object tags
+	err := objAPI.DeleteObjectTag(ctx, bucket, object)
+	if err != nil {
+		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
+		return
+	}
+
+	writeSuccessResponseHeadersOnly(w)
 }

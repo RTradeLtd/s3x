@@ -142,15 +142,14 @@ func (target *WebhookTarget) send(eventData event.Event) error {
 
 	resp, err := target.httpClient.Do(req)
 	if err != nil {
+		target.Close()
 		return err
 	}
-
 	defer resp.Body.Close()
 	io.Copy(ioutil.Discard, resp.Body)
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		// close any idle connections upon any error.
-		target.httpClient.CloseIdleConnections()
+		target.Close()
 		return fmt.Errorf("sending event failed with %v", resp.Status)
 	}
 
@@ -186,11 +185,13 @@ func (target *WebhookTarget) Send(eventKey string) error {
 
 // Close - does nothing and available for interface compatibility.
 func (target *WebhookTarget) Close() error {
+	// Close idle connection with "keep-alive" states
+	target.httpClient.CloseIdleConnections()
 	return nil
 }
 
 // NewWebhookTarget - creates new Webhook target.
-func NewWebhookTarget(id string, args WebhookArgs, doneCh <-chan struct{}, loggerOnce func(ctx context.Context, err error, id interface{}, kind ...interface{}), transport *http.Transport) (*WebhookTarget, error) {
+func NewWebhookTarget(id string, args WebhookArgs, doneCh <-chan struct{}, loggerOnce func(ctx context.Context, err error, id interface{}, kind ...interface{}), transport *http.Transport, test bool) (*WebhookTarget, error) {
 
 	var store Store
 
@@ -211,7 +212,7 @@ func NewWebhookTarget(id string, args WebhookArgs, doneCh <-chan struct{}, logge
 		store: store,
 	}
 
-	if target.store != nil {
+	if target.store != nil && !test {
 		// Replays the events from the store.
 		eventKeyCh := replayEvents(target.store, doneCh, loggerOnce, target.ID())
 		// Start replaying events from the store.

@@ -27,7 +27,6 @@ import (
 	"os"
 	"os/user"
 	"path"
-	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -35,6 +34,7 @@ import (
 	"time"
 
 	"github.com/RTradeLtd/s3x/cmd/config"
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/lifecycle"
 	"github.com/RTradeLtd/s3x/pkg/lock"
@@ -42,6 +42,7 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/mimedb"
 	"github.com/RTradeLtd/s3x/pkg/mountinfo"
 	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/RTradeLtd/s3x/pkg/tagging"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/minio/minio-go/v6/pkg/s3utils"
 )
@@ -109,8 +110,7 @@ func initMetaVolumeFS(fsPath, fsUUID string) error {
 		return err
 	}
 
-	metaStatsPath := pathJoin(fsPath, minioMetaBackgroundOpsBucket, fsUUID)
-	if err := os.MkdirAll(metaStatsPath, 0777); err != nil {
+	if err := os.MkdirAll(pathJoin(fsPath, minioMetaBackgroundOpsBucket), 0777); err != nil {
 		return err
 	}
 
@@ -227,90 +227,30 @@ func (fs *FSObjects) StorageInfo(ctx context.Context) StorageInfo {
 }
 
 func (fs *FSObjects) waitForLowActiveIO() error {
-	t := time.NewTicker(lowActiveIOWaitTick)
-	defer t.Stop()
-	for {
-		if atomic.LoadInt64(&fs.activeIOCount) >= fs.maxActiveIOCount {
-			select {
-			case <-GlobalServiceDoneCh:
-				return errors.New("forced exit")
-			case <-t.C:
-				continue
-			}
+	for atomic.LoadInt64(&fs.activeIOCount) >= fs.maxActiveIOCount {
+		select {
+		case <-GlobalServiceDoneCh:
+			return errors.New("forced exit")
+		case <-time.NewTimer(lowActiveIOWaitTick).C:
+			continue
 		}
-		break
 	}
 
 	return nil
 
 }
 
-// crawlAndGetDataUsageInfo returns data usage stats of the current FS deployment
-func (fs *FSObjects) crawlAndGetDataUsageInfo(ctx context.Context, endCh <-chan struct{}) DataUsageInfo {
-
-	var dataUsageInfoMu sync.Mutex
-	var dataUsageInfo = DataUsageInfo{
-		BucketsSizes:          make(map[string]uint64),
-		ObjectsSizesHistogram: make(map[string]uint64),
-	}
-
-	walkFn := func(origPath string, typ os.FileMode) error {
-
-		select {
-		case <-GlobalServiceDoneCh:
-			return filepath.SkipDir
-		default:
-		}
-
-		if err := fs.waitForLowActiveIO(); err != nil {
-			return filepath.SkipDir
-		}
-
-		path := strings.TrimPrefix(origPath, fs.fsPath)
-		path = strings.TrimPrefix(path, SlashSeparator)
-
-		splits := splitN(path, SlashSeparator, 2)
-		bucket := splits[0]
-		prefix := splits[1]
-
-		if bucket == "" {
-			return nil
-		}
-
-		if isReservedOrInvalidBucket(bucket, false) {
-			return filepath.SkipDir
-		}
-
-		if prefix == "" {
-			dataUsageInfoMu.Lock()
-			dataUsageInfo.BucketsCount++
-			dataUsageInfo.BucketsSizes[bucket] = 0
-			dataUsageInfoMu.Unlock()
-			return nil
-		}
-
-		if typ&os.ModeDir != 0 {
-			return nil
-		}
-
-		// Get file size
-		fi, err := os.Stat(origPath)
+// CrawlAndGetDataUsage returns data usage stats of the current FS deployment
+func (fs *FSObjects) CrawlAndGetDataUsage(ctx context.Context, endCh <-chan struct{}) DataUsageInfo {
+	dataUsageInfo := updateUsage(fs.fsPath, endCh, fs.waitForLowActiveIO, func(item Item) (int64, error) {
+		// Get file size, symlinks which cannot bex
+		// followed are automatically filtered by fastwalk.
+		fi, err := os.Stat(item.Path)
 		if err != nil {
-			return nil
+			return 0, errSkipFile
 		}
-		size := fi.Size()
-
-		dataUsageInfoMu.Lock()
-		dataUsageInfo.ObjectsCount++
-		dataUsageInfo.ObjectsTotalSize += uint64(size)
-		dataUsageInfo.BucketsSizes[bucket] += uint64(size)
-		dataUsageInfo.ObjectsSizesHistogram[objSizeToHistoInterval(uint64(size))]++
-		dataUsageInfoMu.Unlock()
-
-		return nil
-	}
-
-	fastWalk(fs.fsPath, walkFn)
+		return fi.Size(), nil
+	})
 
 	dataUsageInfo.LastUpdate = UTCNow()
 	atomic.StoreUint64(&fs.totalUsed, dataUsageInfo.ObjectsTotalSize)
@@ -1032,7 +972,7 @@ func (fs *FSObjects) putObject(ctx context.Context, bucket string, object string
 	// Entire object was written to the temp location, now it's safe to rename it to the actual location.
 	fsNSObjPath := pathJoin(fs.fsPath, bucket, object)
 	// Deny if WORM is enabled
-	if _, ok := isWORMEnabled(bucket); ok {
+	if isWORMEnabled(bucket) {
 		if _, err := fsStatFile(ctx, fsNSObjPath); err == nil {
 			return ObjectInfo{}, ObjectAlreadyExists{Bucket: bucket, Object: object}
 		}
@@ -1233,6 +1173,58 @@ func (fs *FSObjects) ListObjects(ctx context.Context, bucket, prefix, marker, de
 
 	return listObjects(ctx, fs, bucket, prefix, marker, delimiter, maxKeys, fs.listPool,
 		fs.listDirFactory(), fs.getObjectInfo, fs.getObjectInfo)
+}
+
+// GetObjectTag - get object tags from an existing object
+func (fs *FSObjects) GetObjectTag(ctx context.Context, bucket, object string) (tagging.Tagging, error) {
+	oi, err := fs.GetObjectInfo(ctx, bucket, object, ObjectOptions{})
+	if err != nil {
+		return tagging.Tagging{}, err
+	}
+
+	tags, err := tagging.FromString(oi.UserTags)
+	if err != nil {
+		return tagging.Tagging{}, err
+	}
+
+	return tags, nil
+}
+
+// PutObjectTag - replace or add tags to an existing object
+func (fs *FSObjects) PutObjectTag(ctx context.Context, bucket, object string, tags string) error {
+	fsMetaPath := pathJoin(fs.fsPath, minioMetaBucket, bucketMetaPrefix, bucket, object, fs.metaJSONFile)
+	fsMeta := fsMetaV1{}
+	wlk, err := fs.rwPool.Write(fsMetaPath)
+	if err != nil {
+		logger.LogIf(ctx, err)
+		return toObjectErr(err, bucket, object)
+	}
+	// This close will allow for locks to be synchronized on `fs.json`.
+	defer wlk.Close()
+
+	// Read objects' metadata in `fs.json`.
+	if _, err = fsMeta.ReadFrom(ctx, wlk); err != nil {
+		// For any error to read fsMeta, set default ETag and proceed.
+		fsMeta = fs.defaultFsJSON(object)
+	}
+
+	// clean fsMeta.Meta of tag key, before updating the new tags
+	delete(fsMeta.Meta, xhttp.AmzObjectTagging)
+
+	// Do not update for empty tags
+	if tags != "" {
+		fsMeta.Meta[xhttp.AmzObjectTagging] = tags
+	}
+
+	if _, err = fsMeta.WriteTo(wlk); err != nil {
+		return toObjectErr(err, bucket, object)
+	}
+	return nil
+}
+
+// DeleteObjectTag - delete object tags from an existing object
+func (fs *FSObjects) DeleteObjectTag(ctx context.Context, bucket, object string) error {
+	return fs.PutObjectTag(ctx, bucket, object, "")
 }
 
 // ReloadFormat - no-op for fs, Valid only for XL.

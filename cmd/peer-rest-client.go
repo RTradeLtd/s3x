@@ -35,6 +35,7 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/lifecycle"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
 	xnet "github.com/RTradeLtd/s3x/pkg/net"
+	"github.com/RTradeLtd/s3x/pkg/objectlock"
 	"github.com/RTradeLtd/s3x/pkg/policy"
 	trace "github.com/RTradeLtd/s3x/pkg/trace"
 )
@@ -225,7 +226,7 @@ func (client *peerRESTClient) StartProfiling(profiler string) error {
 }
 
 // DownloadProfileData - download profiled data from a remote node.
-func (client *peerRESTClient) DownloadProfileData() (data []byte, err error) {
+func (client *peerRESTClient) DownloadProfileData() (data map[string][]byte, err error) {
 	respBody, err := client.call(peerRESTMethodDownloadProfilingData, nil, nil, -1)
 	if err != nil {
 		return
@@ -430,7 +431,7 @@ func (client *peerRESTClient) PutBucketNotification(bucket string, rulesMap even
 }
 
 // PutBucketObjectLockConfig - PUT bucket object lock configuration.
-func (client *peerRESTClient) PutBucketObjectLockConfig(bucket string, retention Retention) error {
+func (client *peerRESTClient) PutBucketObjectLockConfig(bucket string, retention objectlock.Retention) error {
 	values := make(url.Values)
 	values.Set(peerRESTBucket, bucket)
 
