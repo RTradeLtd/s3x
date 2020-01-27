@@ -57,8 +57,8 @@ func (ls *ledgerStore) GetBucketHash(bucket string) (string, error) {
 // if nil, nil is return, then bucket does not exit
 func (ls *ledgerStore) getBucketNilable(bucket string) (*LedgerBucketEntry, error) {
 	ls.mapLocker.Lock()
-	defer ls.mapLocker.Unlock()
 	b, ok := ls.l.Buckets[bucket]
+	ls.mapLocker.Unlock()
 	if !ok {
 		bHash, err := ls.ds.Get(dsBucketKey.ChildString(bucket))
 		if err != nil {
@@ -68,10 +68,16 @@ func (ls *ledgerStore) getBucketNilable(bucket string) (*LedgerBucketEntry, erro
 			}
 			return nil, err
 		}
-		b = &LedgerBucketEntry{
-			IpfsHash: string(bHash),
+		//Update bucket only if it's not loaded
+		ls.mapLocker.Lock()
+		b, ok = ls.l.Buckets[bucket]
+		if !ok {
+			b = &LedgerBucketEntry{
+				IpfsHash: string(bHash),
+			}
+			ls.l.Buckets[bucket] = b
 		}
-		ls.l.Buckets[bucket] = b
+		ls.mapLocker.Unlock()
 	}
 	return b, nil
 }
