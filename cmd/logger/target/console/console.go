@@ -25,6 +25,7 @@ import (
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/cmd/logger/message/log"
 	"github.com/RTradeLtd/s3x/pkg/color"
+	"github.com/RTradeLtd/s3x/pkg/console"
 )
 
 // Target implements loggerTarget to send log
@@ -109,7 +110,7 @@ func (c *Target) Send(e interface{}, logKind string) error {
 		apiString, timeString, deploymentID, requestID, remoteHost, host, userAgent,
 		msg, tagString, strings.Join(trace, "\n"))
 
-	fmt.Println(output)
+	console.Println(output)
 	return nil
 }
 

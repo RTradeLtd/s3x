@@ -77,6 +77,7 @@ KEY:
 notify_amqp[:name]  publish bucket notifications to AMQP endpoints
 
 ARGS:
+MINIO_NOTIFY_AMQP_ENABLE*        (on|off)    enable notify_amqp target, default is 'off'
 MINIO_NOTIFY_AMQP_URL*           (url)       AMQP server endpoint e.g. `amqp://myuser:mypassword@localhost:5672`
 MINIO_NOTIFY_AMQP_EXCHANGE       (string)    name of the AMQP exchange
 MINIO_NOTIFY_AMQP_EXCHANGE_TYPE  (string)    AMQP exchange type
@@ -210,6 +211,7 @@ KEY:
 notify_mqtt[:name]  publish bucket notifications to MQTT endpoints
 
 ARGS:
+MINIO_NOTIFY_MQTT_ENABLE*              (on|off)    enable notify_mqtt target, default is 'off'
 MINIO_NOTIFY_MQTT_BROKER*              (uri)       MQTT server endpoint e.g. `tcp://localhost:1883`
 MINIO_NOTIFY_MQTT_TOPIC*               (string)    name of the MQTT topic to publish
 MINIO_NOTIFY_MQTT_USERNAME             (string)    MQTT username
@@ -342,6 +344,7 @@ KEY:
 notify_elasticsearch[:name]  publish bucket notifications to Elasticsearch endpoints
 
 ARGS:
+MINIO_NOTIFY_ELASTICSEARCH_ENABLE*      (on|off)             enable notify_elasticsearch target, default is 'off'
 MINIO_NOTIFY_ELASTICSEARCH_URL*         (url)                Elasticsearch server's address, with optional authentication info
 MINIO_NOTIFY_ELASTICSEARCH_INDEX*       (string)             Elasticsearch index to store/update events, index is auto-created
 MINIO_NOTIFY_ELASTICSEARCH_FORMAT*      (namespace*|access)  'namespace' reflects current bucket/object list and 'access' reflects a journal of object operations, defaults to 'namespace'
@@ -507,7 +510,7 @@ KEY:
 notify_redis[:name]  publish bucket notifications to Redis datastores
 
 ARGS:
-MINIO_NOTIFY_REDIS_ADDRESS*     (address)            Redis server's address. For example: `localhost:6379`
+MINIO_NOTIFY_REDIS_ENABLE*      (on|off)             enable notify_redis target, default is 'off'
 MINIO_NOTIFY_REDIS_KEY*         (string)             Redis key to store/update events, key is auto-created
 MINIO_NOTIFY_REDIS_FORMAT*      (namespace*|access)  'namespace' reflects current bucket/object list and 'access' reflects a journal of object operations, defaults to 'namespace'
 MINIO_NOTIFY_REDIS_PASSWORD     (string)             Redis server password
@@ -618,6 +621,7 @@ KEY:
 notify_nats[:name]  publish bucket notifications to NATS endpoints
 
 ARGS:
+MINIO_NOTIFY_NATS_ENABLE*                           (on|off)    enable notify_nats target, default is 'off'
 MINIO_NOTIFY_NATS_ADDRESS*                          (address)   NATS server address e.g. '0.0.0.0:4222'
 MINIO_NOTIFY_NATS_SUBJECT*                          (string)    NATS subscription subject
 MINIO_NOTIFY_NATS_USERNAME                          (string)    NATS username
@@ -842,6 +846,7 @@ KEY:
 notify_postgres[:name]  publish bucket notifications to Postgres databases
 
 ARGS:
+MINIO_NOTIFY_POSTGRES_ENABLE*             (on|off)             enable notify_postgres target, default is 'off'
 MINIO_NOTIFY_POSTGRES_CONNECTION_STRING*  (string)             Postgres server connection-string
 MINIO_NOTIFY_POSTGRES_TABLE*              (string)             DB table name to store/update events, table is auto-created
 MINIO_NOTIFY_POSTGRES_FORMAT*             (namespace*|access)  'namespace' reflects current bucket/object list and 'access' reflects a journal of object operations, defaults to 'namespace'
@@ -958,6 +963,7 @@ KEY:
 notify_mysql[:name]  publish bucket notifications to MySQL databases
 
 ARGS:
+MINIO_NOTIFY_MYSQL_ENABLE*      (on|off)             enable notify_mysql target, default is 'off'
 MINIO_NOTIFY_MYSQL_DSN_STRING*  (string)             MySQL data-source-name connection string
 MINIO_NOTIFY_MYSQL_TABLE*       (string)             DB table name to store/update events, table is auto-created
 MINIO_NOTIFY_MYSQL_FORMAT*      (namespace*|access)  'namespace' reflects current bucket/object list and 'access' reflects a journal of object operations, defaults to 'namespace'
@@ -971,7 +977,7 @@ MINIO_NOTIFY_MYSQL_QUEUE_LIMIT  (number)             maximum limit for undeliver
 MINIO_NOTIFY_MYSQL_COMMENT      (sentence)           optionally add a comment to this setting
 ```
 
-`dns_string` is optional, if not specified, the connection information specified by the `host`, `port`, `user`, `password` and `database` parameters are used.
+`dsn_string` is optional, if not specified, the connection information specified by the `host`, `port`, `user`, `password` and `database` parameters are used.
 
 MinIO supports persistent event store. The persistent store will backup events when the MySQL connection goes offline and replays it when the broker comes back online. The event store can be configured by setting the directory path in `queue_dir` field and the maximum limit of events in the queue_dir in `queue_limit` field. For eg, the `queue_dir` can be `/home/events` and `queue_limit` can be `1000`. By default, the `queue_limit` is set to 10000.
 
@@ -1070,6 +1076,7 @@ KEY:
 notify_kafka[:name]  publish bucket notifications to Kafka endpoints
 
 ARGS:
+MINIO_NOTIFY_KAFKA_ENABLE*          (on|off)    enable notify_kafka target, default is 'off'
 MINIO_NOTIFY_KAFKA_BROKERS*         (csv)       comma separated list of Kafka broker addresses
 MINIO_NOTIFY_KAFKA_TOPIC            (string)    Kafka topic used for bucket notifications
 MINIO_NOTIFY_KAFKA_SASL_USERNAME    (string)    username for SASL/PLAIN or SASL/SCRAM authentication
@@ -1212,6 +1219,7 @@ KEY:
 notify_webhook[:name]  publish bucket notifications to webhook endpoints
 
 ARGS:
+MINIO_NOTIFY_WEBHOOK_ENABLE*      (on|off)    enable notify_webhook target, default is 'off'
 MINIO_NOTIFY_WEBHOOK_ENDPOINT*    (url)       webhook server endpoint e.g. http://localhost:8080/minio/events
 MINIO_NOTIFY_WEBHOOK_AUTH_TOKEN   (string)    opaque string or JWT authorization token
 MINIO_NOTIFY_WEBHOOK_QUEUE_DIR    (path)      staging dir for undelivered messages e.g. '/home/events'
@@ -1317,6 +1325,7 @@ KEY:
 notify_nsq[:name]  publish bucket notifications to NSQ endpoints
 
 ARGS:
+MINIO_NOTIFY_NSQ_ENABLE*          (on|off)    enable notify_nsq target, default is 'off'
 MINIO_NOTIFY_NSQ_NSQD_ADDRESS*    (address)   NSQ server address e.g. '127.0.0.1:4150'
 MINIO_NOTIFY_NSQ_TOPIC*           (string)    NSQ topic
 MINIO_NOTIFY_NSQ_TLS              (on|off)    set to 'on' to enable TLS

@@ -34,6 +34,12 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/handlers"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
+	"github.com/RTradeLtd/s3x/pkg/tagging"
+)
+
+const (
+	copyDirective    = "COPY"
+	replaceDirective = "REPLACE"
 )
 
 // Parses location constraint from the incoming reader.
@@ -69,47 +75,27 @@ var supportedHeaders = []string{
 	"content-encoding",
 	"content-disposition",
 	xhttp.AmzStorageClass,
+	xhttp.AmzObjectTagging,
 	"expires",
 	// Add more supported headers here.
 }
 
-// isMetadataDirectiveValid - check if metadata-directive is valid.
-func isMetadataDirectiveValid(h http.Header) bool {
-	_, ok := h[http.CanonicalHeaderKey(xhttp.AmzMetadataDirective)]
-	if ok {
-		// Check atleast set metadata-directive is valid.
-		return (isMetadataCopy(h) || isMetadataReplace(h))
-	}
-	// By default if x-amz-metadata-directive is not we
+// isDirectiveValid - check if tagging-directive is valid.
+func isDirectiveValid(v string) bool {
+	// Check if set metadata-directive is valid.
+	return isDirectiveCopy(v) || isDirectiveReplace(v)
+}
+
+// Check if the directive COPY is requested.
+func isDirectiveCopy(value string) bool {
+	// By default if directive is not set we
 	// treat it as 'COPY' this function returns true.
-	return true
+	return value == copyDirective || value == ""
 }
 
-// Check if the metadata COPY is requested.
-func isMetadataCopy(h http.Header) bool {
-	return h.Get(xhttp.AmzMetadataDirective) == "COPY"
-}
-
-// Check if the metadata REPLACE is requested.
-func isMetadataReplace(h http.Header) bool {
-	return h.Get(xhttp.AmzMetadataDirective) == "REPLACE"
-}
-
-// Splits an incoming path into bucket and object components.
-func path2BucketAndObject(path string) (bucket, object string) {
-	// Skip the first element if it is '/', split the rest.
-	path = strings.TrimPrefix(path, SlashSeparator)
-	pathComponents := strings.SplitN(path, SlashSeparator, 2)
-
-	// Save the bucket and object extracted from path.
-	switch len(pathComponents) {
-	case 1:
-		bucket = pathComponents[0]
-	case 2:
-		bucket = pathComponents[0]
-		object = pathComponents[1]
-	}
-	return bucket, object
+// Check if the directive REPLACE is requested.
+func isDirectiveReplace(value string) bool {
+	return value == replaceDirective
 }
 
 // userMetadataKeyPrefixes contains the prefixes of used-defined metadata keys.
@@ -172,6 +158,26 @@ func extractMetadataFromMap(ctx context.Context, v map[string][]string, m map[st
 		}
 	}
 	return nil
+}
+
+// extractTags extracts tag key and value from given http header. It then
+// - Parses the input format X-Amz-Tagging:"Key1=Value1&Key2=Value2" into a map[string]string
+// with entries in the format X-Amg-Tag-Key1:Value1, X-Amz-Tag-Key2:Value2
+// - Validates the tags
+// - Returns the Tag in original string format "Key1=Value1&Key2=Value2"
+func extractTags(ctx context.Context, tags string) (string, error) {
+	// Check if the metadata has tagging related header
+	if tags != "" {
+		tagging, err := tagging.FromString(tags)
+		if err != nil {
+			return "", err
+		}
+		if err := tagging.Validate(); err != nil {
+			return "", err
+		}
+		return tagging.String(), nil
+	}
+	return "", nil
 }
 
 // The Query string for the redirect URL the client is

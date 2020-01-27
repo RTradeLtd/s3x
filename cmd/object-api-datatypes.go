@@ -143,11 +143,19 @@ type ObjectInfo struct {
 	// Date and time at which the object is no longer able to be cached
 	Expires time.Time
 
+	// CacheStatus sets status of whether this is a cache hit/miss
+	CacheStatus CacheStatusType
+	// CacheLookupStatus sets whether a cacheable response is present in the cache
+	CacheLookupStatus CacheStatusType
+
 	// Specify object storage class
 	StorageClass string
 
 	// User-Defined metadata
 	UserDefined map[string]string
+
+	// User-Defined object tags
+	UserTags string
 
 	// List of individual parts, maximum size of upto 10,000
 	Parts []ObjectPartInfo `json:"-"`
