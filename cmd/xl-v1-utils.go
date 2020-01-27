@@ -18,13 +18,13 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"hash/crc32"
 	"path"
 
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
+	jsoniter "github.com/json-iterator/go"
 )
 
 // Returns number of errors that occurred the most (incl. nil) and the
@@ -117,6 +117,7 @@ func hashOrder(key string, cardinality int) []int {
 
 // Constructs xlMetaV1 using `jsoniter` lib.
 func xlMetaV1UnmarshalJSON(ctx context.Context, xlMetaBuf []byte) (xlMeta xlMetaV1, err error) {
+	var json = jsoniter.ConfigCompatibleWithStandardLibrary
 	err = json.Unmarshal(xlMetaBuf, &xlMeta)
 	return xlMeta, err
 }

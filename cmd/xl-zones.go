@@ -31,6 +31,7 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/madmin"
 	"github.com/RTradeLtd/s3x/pkg/policy"
 	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
+	"github.com/RTradeLtd/s3x/pkg/tagging"
 )
 
 type xlZones struct {
@@ -60,8 +61,9 @@ func newXLZones(endpointZones EndpointZones) (ObjectLayer, error) {
 		formats = make([]*formatXLV3, len(endpointZones))
 		z       = &xlZones{zones: make([]*xlSets, len(endpointZones))}
 	)
+	local := endpointZones.FirstLocal()
 	for i, ep := range endpointZones {
-		formats[i], err = waitForFormatXL(endpointZones.FirstLocal(), ep.Endpoints,
+		formats[i], err = waitForFormatXL(local, ep.Endpoints, i+1,
 			ep.SetCount, ep.DrivesPerSet, deploymentID)
 		if err != nil {
 			return nil, err
@@ -69,8 +71,6 @@ func newXLZones(endpointZones EndpointZones) (ObjectLayer, error) {
 		if deploymentID == "" {
 			deploymentID = formats[i].ID
 		}
-	}
-	for i, ep := range endpointZones {
 		z.zones[i], err = newXLSets(ep.Endpoints, formats[i], ep.SetCount, ep.DrivesPerSet)
 		if err != nil {
 			return nil, err
@@ -212,7 +212,7 @@ func (z *xlZones) StorageInfo(ctx context.Context) StorageInfo {
 	return storageInfo
 }
 
-func (z *xlZones) crawlAndGetDataUsage(ctx context.Context, endCh <-chan struct{}) DataUsageInfo {
+func (z *xlZones) CrawlAndGetDataUsage(ctx context.Context, endCh <-chan struct{}) DataUsageInfo {
 	var aggDataUsageInfo = struct {
 		sync.Mutex
 		DataUsageInfo
@@ -227,7 +227,7 @@ func (z *xlZones) crawlAndGetDataUsage(ctx context.Context, endCh <-chan struct{
 			wg.Add(1)
 			go func(xl *xlObjects) {
 				defer wg.Done()
-				info := xl.crawlAndGetDataUsage(ctx, endCh)
+				info := xl.CrawlAndGetDataUsage(ctx, endCh)
 
 				aggDataUsageInfo.Lock()
 				aggDataUsageInfo.ObjectsCount += info.ObjectsCount
@@ -1261,16 +1261,27 @@ func (z *xlZones) HealFormat(ctx context.Context, dryRun bool) (madmin.HealResul
 		Type:   madmin.HealItemMetadata,
 		Detail: "disk-format",
 	}
+
+	var countNoHeal int
 	for _, zone := range z.zones {
 		result, err := zone.HealFormat(ctx, dryRun)
 		if err != nil && err != errNoHealRequired {
 			logger.LogIf(ctx, err)
 			continue
 		}
+		// Count errNoHealRequired across all zones,
+		// to return appropriate error to the caller
+		if err == errNoHealRequired {
+			countNoHeal++
+		}
 		r.DiskCount += result.DiskCount
 		r.SetCount += result.SetCount
 		r.Before.Drives = append(r.Before.Drives, result.Before.Drives...)
 		r.After.Drives = append(r.After.Drives, result.After.Drives...)
+	}
+	// No heal returned by all zones, return errNoHealRequired
+	if countNoHeal == len(z.zones) {
+		return r, errNoHealRequired
 	}
 	return r, nil
 }
@@ -1360,15 +1371,67 @@ func (z *xlZones) GetMetrics(ctx context.Context) (*Metrics, error) {
 	return &Metrics{}, NotImplemented{}
 }
 
-// IsReady - Returns True if all the zones have enough quorum to accept requests.
+// IsReady - Returns true if first zone returns true
 func (z *xlZones) IsReady(ctx context.Context) bool {
+	return z.zones[0].IsReady(ctx)
+}
+
+// PutObjectTag - replace or add tags to an existing object
+func (z *xlZones) PutObjectTag(ctx context.Context, bucket, object string, tags string) error {
 	if z.SingleZone() {
-		return z.zones[0].IsReady(ctx)
+		return z.zones[0].PutObjectTag(ctx, bucket, object, tags)
 	}
-	for _, xlsets := range z.zones {
-		if !xlsets.IsReady(ctx) {
-			return false
+	for _, zone := range z.zones {
+		err := zone.PutObjectTag(ctx, bucket, object, tags)
+		if err != nil {
+			if isErrBucketNotFound(err) {
+				continue
+			}
+			return err
 		}
+		return nil
 	}
-	return true
+	return BucketNotFound{
+		Bucket: bucket,
+	}
+}
+
+// DeleteObjectTag - delete object tags from an existing object
+func (z *xlZones) DeleteObjectTag(ctx context.Context, bucket, object string) error {
+	if z.SingleZone() {
+		return z.zones[0].DeleteObjectTag(ctx, bucket, object)
+	}
+	for _, zone := range z.zones {
+		err := zone.DeleteObjectTag(ctx, bucket, object)
+		if err != nil {
+			if isErrBucketNotFound(err) {
+				continue
+			}
+			return err
+		}
+		return nil
+	}
+	return BucketNotFound{
+		Bucket: bucket,
+	}
+}
+
+// GetObjectTag - get object tags from an existing object
+func (z *xlZones) GetObjectTag(ctx context.Context, bucket, object string) (tagging.Tagging, error) {
+	if z.SingleZone() {
+		return z.zones[0].GetObjectTag(ctx, bucket, object)
+	}
+	for _, zone := range z.zones {
+		tags, err := zone.GetObjectTag(ctx, bucket, object)
+		if err != nil {
+			if isErrBucketNotFound(err) {
+				continue
+			}
+			return tags, err
+		}
+		return tags, nil
+	}
+	return tagging.Tagging{}, BucketNotFound{
+		Bucket: bucket,
+	}
 }

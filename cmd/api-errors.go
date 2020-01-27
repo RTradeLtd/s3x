@@ -33,7 +33,9 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/event"
 	"github.com/RTradeLtd/s3x/pkg/hash"
+	"github.com/RTradeLtd/s3x/pkg/objectlock"
 	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/RTradeLtd/s3x/pkg/tagging"
 	minio "github.com/minio/minio-go/v6"
 )
 
@@ -143,11 +145,13 @@ const (
 	ErrBadRequest
 	ErrKeyTooLongError
 	ErrInvalidBucketObjectLockConfiguration
+	ErrObjectLockConfigurationNotAllowed
 	ErrObjectLocked
 	ErrInvalidRetentionDate
 	ErrPastObjectLockRetainDate
 	ErrUnknownWORMModeDirective
 	ErrObjectLockInvalidHeaders
+	ErrInvalidTagDirective
 	// Add new error codes here.
 
 	// SSE-S3 related API errors
@@ -732,6 +736,11 @@ var errorCodes = errorCodeMap{
 		Description:    "Bucket is missing ObjectLockConfiguration",
 		HTTPStatusCode: http.StatusBadRequest,
 	},
+	ErrObjectLockConfigurationNotAllowed: {
+		Code:           "InvalidBucketState",
+		Description:    "Object Lock configuration cannot be enabled on existing buckets.",
+		HTTPStatusCode: http.StatusConflict,
+	},
 	ErrObjectLocked: {
 		Code:           "InvalidRequest",
 		Description:    "Object is WORM protected and cannot be overwritten",
@@ -821,6 +830,11 @@ var errorCodes = errorCodeMap{
 	ErrMetadataTooLarge: {
 		Code:           "InvalidArgument",
 		Description:    "Your metadata headers exceed the maximum allowed metadata size.",
+		HTTPStatusCode: http.StatusBadRequest,
+	},
+	ErrInvalidTagDirective: {
+		Code:           "InvalidArgument",
+		Description:    "Unknown tag directive.",
 		HTTPStatusCode: http.StatusBadRequest,
 	},
 	ErrInvalidEncryptionMethod: {
@@ -1605,14 +1619,16 @@ func toAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
 		apiErr = ErrOperationTimedOut
 	case errDiskNotFound:
 		apiErr = ErrSlowDown
-	case errInvalidRetentionDate:
+	case objectlock.ErrInvalidRetentionDate:
 		apiErr = ErrInvalidRetentionDate
-	case errPastObjectLockRetainDate:
+	case objectlock.ErrPastObjectLockRetainDate:
 		apiErr = ErrPastObjectLockRetainDate
-	case errUnknownWORMModeDirective:
+	case objectlock.ErrUnknownWORMModeDirective:
 		apiErr = ErrUnknownWORMModeDirective
-	case errObjectLockInvalidHeaders:
+	case objectlock.ErrObjectLockInvalidHeaders:
 		apiErr = ErrObjectLockInvalidHeaders
+	case objectlock.ErrMalformedXML:
+		apiErr = ErrMalformedXML
 	}
 
 	// Compression errors
@@ -1727,8 +1743,6 @@ func toAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
 		apiErr = ErrUnsupportedNotification
 	case BackendDown:
 		apiErr = ErrBackendDown
-	case crypto.Error:
-		apiErr = ErrObjectTampered
 	case ObjectNameTooLong:
 		apiErr = ErrKeyTooLongError
 	default:
@@ -1773,6 +1787,12 @@ func toAPIError(ctx context.Context, err error) APIError {
 		// their internal error types. This code is only
 		// useful with gateway implementations.
 		switch e := err.(type) {
+		case tagging.Error:
+			apiErr = APIError{
+				Code:           "InvalidTag",
+				Description:    e.Error(),
+				HTTPStatusCode: http.StatusBadRequest,
+			}
 		case policy.Error:
 			apiErr = APIError{
 				Code:           "MalformedPolicy",
@@ -1781,7 +1801,7 @@ func toAPIError(ctx context.Context, err error) APIError {
 			}
 		case crypto.Error:
 			apiErr = APIError{
-				Code:           "XKMSInternalError",
+				Code:           "XMinIOEncryptionError",
 				Description:    e.Error(),
 				HTTPStatusCode: http.StatusBadRequest,
 			}

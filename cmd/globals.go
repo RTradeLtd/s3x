@@ -35,6 +35,7 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/certs"
 	"github.com/RTradeLtd/s3x/pkg/event"
+	"github.com/RTradeLtd/s3x/pkg/objectlock"
 	"github.com/RTradeLtd/s3x/pkg/pubsub"
 	etcd "github.com/coreos/etcd/clientv3"
 	humanize "github.com/dustin/go-humanize"
@@ -201,7 +202,7 @@ var (
 	// Is worm enabled
 	globalWORMEnabled bool
 
-	globalBucketObjectLockConfig = newBucketObjectLockConfig()
+	globalBucketObjectLockConfig = objectlock.NewBucketObjectLockConfig()
 
 	// Disk cache drives
 	globalCacheConfig cache.Config

@@ -24,6 +24,7 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/lifecycle"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
 	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/RTradeLtd/s3x/pkg/tagging"
 	"github.com/minio/minio-go/v6/pkg/encrypt"
 )
 
@@ -56,6 +57,7 @@ type ObjectLayer interface {
 
 	// Storage operations.
 	Shutdown(context.Context) error
+	CrawlAndGetDataUsage(context.Context, <-chan struct{}) DataUsageInfo
 	StorageInfo(context.Context) StorageInfo
 
 	// Bucket operations.
@@ -125,4 +127,9 @@ type ObjectLayer interface {
 
 	// Check Readiness
 	IsReady(ctx context.Context) bool
+
+	// ObjectTagging operations
+	PutObjectTag(context.Context, string, string, string) error
+	GetObjectTag(context.Context, string, string) (tagging.Tagging, error)
+	DeleteObjectTag(context.Context, string, string) error
 }
