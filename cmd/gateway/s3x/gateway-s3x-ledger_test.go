@@ -9,10 +9,14 @@ import (
 	dssync "github.com/ipfs/go-datastore/sync"
 )
 
-func TestLedgerStore(t *testing.T) {
+func TestS3XLedgerStore(t *testing.T) {
 	ctx := context.Background()
 	gateway := getTestGateway(t)
-	defer func() { _ = gateway.Shutdown(ctx) }()
+	defer func() {
+		if err := gateway.Shutdown(ctx); err != nil {
+			t.Fatal(err)
+		}
+	}()
 
 	ledger, err := newLedgerStore(dssync.MutexWrap(datastore.NewMapDatastore()), gateway.dagClient)
 

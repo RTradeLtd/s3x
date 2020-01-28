@@ -3,12 +3,10 @@ package s3x
 import (
 	"context"
 	"io"
-	"os"
 	"strings"
 	"testing"
 
 	"github.com/RTradeLtd/s3x/cmd"
-	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/hash"
 )
 
@@ -17,24 +15,8 @@ const (
 	testObject1Data = "testobject1data"
 )
 
-func TestGateway_Object(t *testing.T) {
-	//testDial(t)
-	testPath := "tmp-bucket-test"
-	defer func() {
-		os.Unsetenv("S3X_DS_PATH")
-		os.RemoveAll(testPath)
-	}()
-	os.Setenv("S3X_DS_PATH", testPath)
-	temx := &TEMX{
-		HTTPAddr: "localhost:8889",
-		GRPCAddr: "localhost:8888",
-		DSPath:   testPath,
-		XAddr:    "xapi-dev.temporal.cloud:9090",
-	}
-	gateway, err := temx.NewGatewayLayer(auth.Credentials{})
-	if err != nil {
-		t.Fatal(err)
-	}
+func TestS3XGateway_Object(t *testing.T) {
+	gateway := getTestGateway(t)
 	defer func() {
 		if err := gateway.Shutdown(context.Background()); err != nil {
 			t.Fatal(err)
