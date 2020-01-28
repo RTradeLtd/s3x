@@ -62,6 +62,9 @@ func TestS3XGateway_Object(t *testing.T) {
 			})
 		}
 	})
+
+	gateway.restart(t)
+
 	t.Run("ListObjects", func(t *testing.T) {
 		tests := []struct {
 			name    string

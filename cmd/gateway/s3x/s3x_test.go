@@ -12,15 +12,29 @@ import (
 
 type testGateway struct {
 	*xObjects
+	temx     *TEMX
 	testPath string
 }
 
-func (t *testGateway) Shutdown(ctx context.Context) error {
-	err := t.xObjects.Shutdown(ctx)
+func (g *testGateway) restart(t *testing.T) {
+	err := g.xObjects.Shutdown(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	gateway, err := g.temx.NewGatewayLayer(auth.Credentials{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	g.xObjects = gateway.(*xObjects)
+}
+
+func (g *testGateway) Shutdown(ctx context.Context) error {
+	err := g.xObjects.Shutdown(ctx)
 	if err != nil {
 		return err
 	}
-	return os.RemoveAll(t.testPath)
+	os.Unsetenv("S3X_DS_PATH")
+	return os.RemoveAll(g.testPath)
 }
 
 var _ minio.ObjectLayer = &testGateway{}
@@ -33,7 +47,6 @@ func getTestGateway(t *testing.T) *testGateway {
 		t.Fatal(err)
 	}
 	os.Setenv("S3X_DS_PATH", testPath)
-	defer os.Unsetenv("S3X_DS_PATH")
 	temx := &TEMX{
 		HTTPAddr: "localhost:8889",
 		GRPCAddr: "localhost:8888",
@@ -46,6 +59,7 @@ func getTestGateway(t *testing.T) *testGateway {
 	}
 	return &testGateway{
 		xObjects: g.(*xObjects),
+		temx:     temx,
 		testPath: testPath,
 	}
 }
