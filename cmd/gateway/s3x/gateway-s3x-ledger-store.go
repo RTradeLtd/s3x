@@ -70,6 +70,7 @@ func (ls *ledgerStore) object(ctx context.Context, bucket, object string) (*Obje
 
 //ObjectInfo returns the ObjectInfo of the object.
 func (ls *ledgerStore) ObjectInfo(ctx context.Context, bucket, object string) (*ObjectInfo, error) {
+	defer ls.locker.read(bucket)()
 	obj, err := ls.object(ctx, bucket, object)
 	if err != nil {
 		return nil, err
