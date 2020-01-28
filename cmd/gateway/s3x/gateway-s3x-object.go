@@ -248,7 +248,7 @@ func (x *xObjects) DeleteObject(
 	ctx context.Context,
 	bucket, object string,
 ) error {
-	err := x.ledgerStore.removeObject(ctx, bucket, object)
+	err := x.ledgerStore.RemoveObject(ctx, bucket, object)
 	return x.toMinioErr(err, bucket, object, "")
 }
 
@@ -257,7 +257,7 @@ func (x *xObjects) DeleteObjects(
 	bucket string,
 	objects []string,
 ) ([]error, error) {
-	missing, err := x.ledgerStore.removeObjects(ctx, bucket, objects...)
+	missing, err := x.ledgerStore.RemoveObjects(ctx, bucket, objects...)
 	if err != nil {
 		return nil, x.toMinioErr(err, bucket, "", "")
 	}

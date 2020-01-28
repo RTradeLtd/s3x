@@ -61,7 +61,7 @@ func (ls *ledgerStore) object(ctx context.Context, bucket, object string) (*Obje
 	if objs == nil {
 		return nil, ErrLedgerObjectDoesNotExist
 	}
-	h, ok := b.GetBucket().Objects[object]
+	h, ok := objs[object]
 	if !ok {
 		return nil, ErrLedgerObjectDoesNotExist
 	}
@@ -78,6 +78,7 @@ func (ls *ledgerStore) ObjectInfo(ctx context.Context, bucket, object string) (*
 }
 
 func (ls *ledgerStore) ObjectData(ctx context.Context, bucket, object string) ([]byte, error) {
+	defer ls.locker.read(bucket)()
 	obj, err := ls.object(ctx, bucket, object)
 	if err != nil {
 		return nil, err
@@ -85,8 +86,8 @@ func (ls *ledgerStore) ObjectData(ctx context.Context, bucket, object string) ([
 	return ipfsBytes(ctx, ls.dag, obj.GetDataHash())
 }
 
-// RemoveObject is used to remove a ledger object entry from a ledger bucket entry
-func (ls *ledgerStore) removeObject(ctx context.Context, bucket, object string) error {
+func (ls *ledgerStore) RemoveObject(ctx context.Context, bucket, object string) error {
+	defer ls.locker.write(bucket)()
 	missing, err := ls.removeObjects(ctx, bucket, object)
 	if err != nil {
 		return err
@@ -98,7 +99,14 @@ func (ls *ledgerStore) removeObject(ctx context.Context, bucket, object string) 
 	//todo: gc on ipfs
 }
 
-// removeObjects efficiently remove many objects, returns a list of objects that did not exist.
+// RemoveObjects efficiently remove many objects, returns a list of objects that did not exist.
+func (ls *ledgerStore) RemoveObjects(ctx context.Context, bucket string, objects ...string) ([]string, error) {
+	unlock := ls.locker.write(bucket)
+	missing, err := ls.removeObjects(ctx, bucket, objects...)
+	unlock()
+	return missing, err
+}
+
 func (ls *ledgerStore) removeObjects(ctx context.Context, bucket string, objects ...string) ([]string, error) {
 	b, err := ls.getBucketLoaded(ctx, bucket)
 	if err != nil {
