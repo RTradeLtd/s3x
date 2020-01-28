@@ -63,7 +63,9 @@ func (ls *ledgerStore) getBucketNilable(bucket string) (*LedgerBucketEntry, erro
 		bHash, err := ls.ds.Get(dsBucketKey.ChildString(bucket))
 		if err != nil {
 			if err == datastore.ErrNotFound {
+				ls.mapLocker.Lock()
 				ls.l.Buckets[bucket] = nil
+				ls.mapLocker.Unlock()
 				return nil, nil
 			}
 			return nil, err
