@@ -16,8 +16,11 @@ type testGateway struct {
 }
 
 func (t *testGateway) Shutdown(ctx context.Context) error {
-	os.RemoveAll(t.testPath)
-	return t.xObjects.Shutdown(ctx)
+	err := t.xObjects.Shutdown(ctx)
+	if err != nil {
+		return err
+	}
+	return os.RemoveAll(t.testPath)
 }
 
 var _ minio.ObjectLayer = &testGateway{}
