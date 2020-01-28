@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/RTradeLtd/s3x/cmd"
 	minio "github.com/RTradeLtd/s3x/cmd"
 	"github.com/RTradeLtd/s3x/pkg/hash"
 )
@@ -18,25 +17,59 @@ const (
 	testObject1Data = "testobject1data"
 )
 
+func testPutObject(t *testing.T, gateway *testGateway) {
+	ctx := context.Background()
+	type args struct {
+		bucketName, objectName, objectData string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"OK-Bucket-Exists", args{testBucket1, testObject1, testObject1Data}, false},
+		{"Fail-No-Bucket", args{testBucket2, testObject1, testObject1Data}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resp, err := gateway.PutObject(ctx, tt.args.bucketName, tt.args.objectName,
+				minio.NewPutObjReader(
+					toObjectReader(
+						t,
+						strings.NewReader(tt.args.objectData),
+						int64(len(testObject1Data)),
+					), nil, nil,
+				), minio.ObjectOptions{},
+			)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("PutObject() err %v, wantErr %v", err, tt.wantErr)
+			}
+			if err == nil && resp.Bucket != tt.args.bucketName {
+				t.Fatal("bad bucket name")
+			}
+		})
+	}
+}
+
 func testGetObject(t *testing.T, g *testGateway) {
 	ctx := context.Background()
 	buf := bytes.NewBuffer(nil)
-	err := g.GetObject(ctx, testBucket1, testObject1, 0, 1, buf, "", cmd.ObjectOptions{})
+	err := g.GetObject(ctx, testBucket1, testObject1, 0, 1, buf, "", minio.ObjectOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if buf.Len() != 1 {
 		t.Fatalf("unexpected read from object: %x", buf.Bytes())
 	}
-	err = g.GetObject(ctx, "fake bucket", testObject1, 0, 1, buf, "", cmd.ObjectOptions{})
+	err = g.GetObject(ctx, "fake bucket", testObject1, 0, 1, buf, "", minio.ObjectOptions{})
 	if _, ok := err.(minio.BucketNotFound); !ok {
 		t.Fatal("expected error BucketNotFound, but got", err)
 	}
-	err = g.GetObject(ctx, testBucket1, "fake object", 0, 1, buf, "", cmd.ObjectOptions{})
+	err = g.GetObject(ctx, testBucket1, "fake object", 0, 1, buf, "", minio.ObjectOptions{})
 	if _, ok := err.(minio.ObjectNotFound); !ok {
 		t.Fatal("expected error ObjectNotFound, but got", err)
 	}
-	err = g.GetObject(ctx, testBucket1, testObject1, math.MaxInt64-1, 1, buf, "", cmd.ObjectOptions{})
+	err = g.GetObject(ctx, testBucket1, testObject1, math.MaxInt64-1, 1, buf, "", minio.ObjectOptions{})
 	if _, ok := err.(minio.InvalidRange); !ok {
 		t.Fatal("expected error InvalidRange, but got", err)
 	}
@@ -58,36 +91,7 @@ func TestS3XGateway_Object(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Run("PutObject", func(t *testing.T) {
-		type args struct {
-			bucketName, objectName, objectData string
-		}
-		tests := []struct {
-			name    string
-			args    args
-			wantErr bool
-		}{
-			{"OK-Bucket-Exists", args{testBucket1, testObject1, testObject1Data}, false},
-			{"Fail-No-Bucket", args{testBucket2, testObject1, testObject1Data}, true},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				resp, err := gateway.PutObject(ctx, tt.args.bucketName, tt.args.objectName,
-					cmd.NewPutObjReader(
-						toObjectReader(
-							t,
-							strings.NewReader(tt.args.objectData),
-							int64(len(testObject1Data)),
-						), nil, nil,
-					), cmd.ObjectOptions{},
-				)
-				if (err != nil) != tt.wantErr {
-					t.Fatalf("PutObject() err %v, wantErr %v", err, tt.wantErr)
-				}
-				if err == nil && resp.Bucket != tt.args.bucketName {
-					t.Fatal("bad bucket name")
-				}
-			})
-		}
+		testPutObject(t, gateway)
 	})
 	t.Run("GetObject", func(t *testing.T) {
 		testGetObject(t, gateway)
@@ -134,7 +138,7 @@ func TestS3XGateway_Object(t *testing.T) {
 					ctx,
 					tt.args.bucketName,
 					tt.args.objectName,
-					cmd.ObjectOptions{},
+					minio.ObjectOptions{},
 				)
 				if (err != nil) != tt.wantErr {
 					t.Fatalf("GetObjectInfo() err %v, wantErr %v", err, tt.wantErr)
@@ -171,10 +175,10 @@ func TestS3XGateway_Object(t *testing.T) {
 					ctx,
 					tt.args.bucketName,
 					tt.args.objectName,
-					&cmd.HTTPRangeSpec{},
+					&minio.HTTPRangeSpec{},
 					nil,
 					0,
-					cmd.ObjectOptions{},
+					minio.ObjectOptions{},
 				)
 				if (err != nil) != tt.wantErr {
 					t.Fatalf("GetObjectNInfo() err %v, wantErr %v", err, tt.wantErr)
@@ -196,7 +200,20 @@ func TestS3XGateway_Object(t *testing.T) {
 		t.Skip("TODO")
 	})
 	t.Run("DeleteObject", func(t *testing.T) {
-		t.Skip("TODO")
+		err := gateway.DeleteObject(ctx, testBucket1, testObject1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = gateway.DeleteObject(ctx, testBucket1, testObject1)
+		if _, ok := err.(minio.ObjectNotFound); !ok {
+			t.Fatal("expected err ObjectNotFound, but got: ", err)
+		}
+		gateway.restart(t)
+		//conform that we deleted from datastore
+		err = gateway.DeleteObject(ctx, testBucket1, testObject1)
+		if _, ok := err.(minio.ObjectNotFound); !ok {
+			t.Fatal("expected err ObjectNotFound, but got: ", err)
+		}
 	})
 	t.Run("DeleteObjects", func(t *testing.T) {
 		t.Skip("TODO")
