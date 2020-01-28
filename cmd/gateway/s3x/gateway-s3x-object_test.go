@@ -1,12 +1,15 @@
 package s3x
 
 import (
+	"bytes"
 	"context"
 	"io"
+	"math"
 	"strings"
 	"testing"
 
 	"github.com/RTradeLtd/s3x/cmd"
+	minio "github.com/RTradeLtd/s3x/cmd"
 	"github.com/RTradeLtd/s3x/pkg/hash"
 )
 
@@ -14,6 +17,30 @@ const (
 	testObject1     = "testobject1"
 	testObject1Data = "testobject1data"
 )
+
+func testGetObject(t *testing.T, g *testGateway) {
+	ctx := context.Background()
+	buf := bytes.NewBuffer(nil)
+	err := g.GetObject(ctx, testBucket1, testObject1, 0, 1, buf, "", cmd.ObjectOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if buf.Len() != 1 {
+		t.Fatalf("unexpected read from object: %x", buf.Bytes())
+	}
+	err = g.GetObject(ctx, "fake bucket", testObject1, 0, 1, buf, "", cmd.ObjectOptions{})
+	if _, ok := err.(minio.BucketNotFound); !ok {
+		t.Fatal("expected error BucketNotFound, but got", err)
+	}
+	err = g.GetObject(ctx, testBucket1, "fake object", 0, 1, buf, "", cmd.ObjectOptions{})
+	if _, ok := err.(minio.ObjectNotFound); !ok {
+		t.Fatal("expected error ObjectNotFound, but got", err)
+	}
+	err = g.GetObject(ctx, testBucket1, testObject1, math.MaxInt64-1, 1, buf, "", cmd.ObjectOptions{})
+	if _, ok := err.(minio.InvalidRange); !ok {
+		t.Fatal("expected error InvalidRange, but got", err)
+	}
+}
 
 func TestS3XGateway_Object(t *testing.T) {
 	ctx := context.Background()
@@ -62,9 +89,13 @@ func TestS3XGateway_Object(t *testing.T) {
 			})
 		}
 	})
-
-	gateway.restart(t)
-
+	t.Run("GetObject", func(t *testing.T) {
+		testGetObject(t, gateway)
+	})
+	t.Run("GetObject from datastore", func(t *testing.T) {
+		gateway.restart(t)
+		testGetObject(t, gateway)
+	})
 	t.Run("ListObjects", func(t *testing.T) {
 		tests := []struct {
 			name    string

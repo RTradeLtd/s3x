@@ -1,7 +1,6 @@
 package s3x
 
 import (
-	"bytes"
 	"context"
 	"io"
 	"io/ioutil"
@@ -108,8 +107,7 @@ func (x *xObjects) GetObject(
 			ResourceSize: objSize,
 		}
 	}
-	reader := bytes.NewReader(objData[startOffset:end])
-	_, err = reader.WriteTo(writer)
+	_, err = writer.Write(objData[startOffset:end])
 	return err
 }
 
