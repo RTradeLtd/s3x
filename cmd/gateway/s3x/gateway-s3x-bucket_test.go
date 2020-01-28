@@ -13,13 +13,14 @@ const (
 )
 
 func TestS3XGateway_Bucket(t *testing.T) {
+	ctx := context.Background()
 	gateway := getTestGateway(t)
 	defer func() {
-		if err := gateway.Shutdown(context.Background()); err != nil {
+		if err := gateway.Shutdown(ctx); err != nil {
 			t.Fatal(err)
 		}
 	}()
-	sinfo := gateway.StorageInfo(context.Background())
+	sinfo := gateway.StorageInfo(ctx)
 	if sinfo.Backend.Type != minio.BackendGateway {
 		t.Fatal("bad type")
 	}
@@ -39,7 +40,7 @@ func TestS3XGateway_Bucket(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				err := gateway.MakeBucketWithLocation(
-					context.Background(),
+					ctx,
 					tt.args.bucketName,
 					"us-east-1",
 				)
@@ -51,7 +52,7 @@ func TestS3XGateway_Bucket(t *testing.T) {
 	})
 	t.Run("Bucket Created Time Test", func(t *testing.T) {
 		now := time.Now().UTC()
-		info, err := gateway.GetBucketInfo(context.Background(), testBucket1)
+		info, err := gateway.GetBucketInfo(ctx, testBucket1)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -70,7 +71,7 @@ func TestS3XGateway_Bucket(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				info, err := gateway.GetBucketInfo(context.Background(), tt.args.bucketName)
+				info, err := gateway.GetBucketInfo(ctx, tt.args.bucketName)
 				if (err != nil) != tt.wantErr {
 					t.Fatalf("GetBucketInfo() err %v, wantERr %v", err, tt.wantErr)
 				}
@@ -89,7 +90,7 @@ func TestS3XGateway_Bucket(t *testing.T) {
 				testBucket1: false,
 			}
 		)
-		bucketInfos, err := gateway.ListBuckets(context.Background())
+		bucketInfos, err := gateway.ListBuckets(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -115,7 +116,7 @@ func TestS3XGateway_Bucket(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				err := gateway.DeleteBucket(context.Background(), tt.args.bucketName)
+				err := gateway.DeleteBucket(ctx, tt.args.bucketName)
 				if (err != nil) != tt.wantErr {
 					t.Fatalf("DeleteBucket() err %v, wantErr %v", err, tt.wantErr)
 				}

@@ -16,9 +16,10 @@ const (
 )
 
 func TestS3XGateway_Object(t *testing.T) {
+	ctx := context.Background()
 	gateway := getTestGateway(t)
 	defer func() {
-		if err := gateway.Shutdown(context.Background()); err != nil {
+		if err := gateway.Shutdown(ctx); err != nil {
 			t.Fatal(err)
 		}
 	}()
@@ -26,11 +27,7 @@ func TestS3XGateway_Object(t *testing.T) {
 		bucketName, objectName string
 	}
 	// setup test bucket
-	if err := gateway.MakeBucketWithLocation(
-		context.Background(),
-		testBucket1,
-		"us-east-1",
-	); err != nil {
+	if err := gateway.MakeBucketWithLocation(ctx, testBucket1, "us-east-1"); err != nil {
 		t.Fatal(err)
 	}
 	t.Run("PutObject", func(t *testing.T) {
@@ -47,19 +44,14 @@ func TestS3XGateway_Object(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				resp, err := gateway.PutObject(
-					context.Background(),
-					tt.args.bucketName,
-					tt.args.objectName,
+				resp, err := gateway.PutObject(ctx, tt.args.bucketName, tt.args.objectName,
 					cmd.NewPutObjReader(
 						toObjectReader(
 							t,
 							strings.NewReader(tt.args.objectData),
 							int64(len(testObject1Data)),
-						),
-						nil, nil,
-					),
-					cmd.ObjectOptions{},
+						), nil, nil,
+					), cmd.ObjectOptions{},
 				)
 				if (err != nil) != tt.wantErr {
 					t.Fatalf("PutObject() err %v, wantErr %v", err, tt.wantErr)
@@ -82,7 +74,7 @@ func TestS3XGateway_Object(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				if _, err := gateway.ListObjects(
-					context.Background(),
+					ctx,
 					tt.args.bucketName,
 					"", "", "",
 					500,
@@ -105,7 +97,7 @@ func TestS3XGateway_Object(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				info, err := gateway.GetObjectInfo(
-					context.Background(),
+					ctx,
 					tt.args.bucketName,
 					tt.args.objectName,
 					cmd.ObjectOptions{},
@@ -142,7 +134,7 @@ func TestS3XGateway_Object(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				resp, err := gateway.GetObjectNInfo(
-					context.Background(),
+					ctx,
 					tt.args.bucketName,
 					tt.args.objectName,
 					&cmd.HTTPRangeSpec{},
