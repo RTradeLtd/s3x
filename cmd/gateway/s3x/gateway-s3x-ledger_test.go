@@ -14,7 +14,7 @@ func TestLedgerStore(t *testing.T) {
 	gateway := getTestGateway(t)
 	defer func() { _ = gateway.Shutdown(ctx) }()
 
-	ledger, err := newLedgerStore(dssync.MutexWrap(datastore.NewMapDatastore()), gateway.(*xObjects).dagClient)
+	ledger, err := newLedgerStore(dssync.MutexWrap(datastore.NewMapDatastore()), gateway.dagClient)
 
 	if err != nil {
 		t.Fatal(err)

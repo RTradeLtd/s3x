@@ -2,6 +2,7 @@ package s3x
 
 import (
 	"context"
+	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -14,13 +15,27 @@ const (
 	testBucket1, testBucket2 = "bucket1", "testbucket2"
 )
 
-func getTestGateway(t *testing.T) minio.ObjectLayer {
-	testPath := "tmp-bucket-test"
-	defer func() {
-		os.Unsetenv("S3X_DS_PATH")
-		os.RemoveAll(testPath)
-	}()
+type testGateway struct {
+	*xObjects
+	testPath string
+}
+
+func (t *testGateway) Shutdown(ctx context.Context) error {
+	os.RemoveAll(t.testPath)
+	return t.xObjects.Shutdown(ctx)
+}
+
+var _ minio.ObjectLayer = &testGateway{}
+
+// getTestGateway returns a testGateway that implements minio.ObjectLayer.
+// testGateway also removes all data save on disk when shutdown
+func getTestGateway(t *testing.T) *testGateway {
+	testPath, err := ioutil.TempDir("", "s3x-test")
+	if err != nil {
+		t.Fatal(err)
+	}
 	os.Setenv("S3X_DS_PATH", testPath)
+	defer os.Unsetenv("S3X_DS_PATH")
 	temx := &TEMX{
 		HTTPAddr: "localhost:8889",
 		GRPCAddr: "localhost:8888",
@@ -31,7 +46,10 @@ func getTestGateway(t *testing.T) minio.ObjectLayer {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return gateway
+	return &testGateway{
+		xObjects: gateway.(*xObjects),
+		testPath: testPath,
+	}
 }
 
 func TestGateway_Bucket(t *testing.T) {
