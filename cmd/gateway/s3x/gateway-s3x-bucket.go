@@ -8,6 +8,8 @@ import (
 	minio "github.com/RTradeLtd/s3x/cmd"
 )
 
+var isTest = false
+
 // MakeBucket creates a new bucket container within TemporalX.
 func (x *xObjects) MakeBucketWithLocation(
 	ctx context.Context,
@@ -15,8 +17,10 @@ func (x *xObjects) MakeBucketWithLocation(
 ) error {
 	b := &Bucket{BucketInfo: BucketInfo{
 		Location: location,
-		Created:  time.Now().UTC(),
 	}}
+	if !isTest { //only set the time if it not a test (go test), creates less test objects in ipfs
+		b.BucketInfo.Created = time.Now().UTC()
+	}
 	hash, err := x.ledgerStore.CreateBucket(ctx, name, b)
 	if err != nil {
 		return x.toMinioErr(err, name, "", "")

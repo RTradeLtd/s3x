@@ -109,15 +109,49 @@ func TestS3XGateway_Object(t *testing.T) {
 			{"Fail-BucketNotExist", args{testBucket2, ""}, true},
 			{"Success", args{testBucket1, ""}, false},
 		}
+		expectedLength := 1
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				if _, err := gateway.ListObjects(
+				list, err := gateway.ListObjects(
 					ctx,
 					tt.args.bucketName,
 					"", "", "",
 					500,
-				); (err != nil) != tt.wantErr {
-					t.Fatalf("ListObjects() err %v, wantErr %v", err, tt.wantErr)
+				)
+				if (err != nil) != tt.wantErr {
+					t.Fatalf("err %v, wantErr %v", err, tt.wantErr)
+				}
+				if err == nil && len(list.Objects) != expectedLength {
+					t.Fatalf("got unexpected list: %v", list)
+				}
+			})
+			t.Run("V2/"+tt.name, func(t *testing.T) {
+				list, err := gateway.ListObjectsV2(
+					ctx,
+					tt.args.bucketName,
+					"", "", "",
+					500, false, "",
+				)
+				if (err != nil) != tt.wantErr {
+					t.Fatalf("err %v, wantErr %v", err, tt.wantErr)
+				}
+				if err == nil && len(list.Objects) != expectedLength {
+					t.Fatalf("got unexpected list: %v", list)
+				}
+			})
+			t.Run("V2/startsAfter/"+tt.name, func(t *testing.T) {
+				//test startsAfter
+				list, err := gateway.ListObjectsV2(
+					ctx,
+					tt.args.bucketName,
+					"", "", "",
+					500, false, "x",
+				)
+				if (err != nil) != tt.wantErr {
+					t.Fatalf("err %v, wantErr %v", err, tt.wantErr)
+				}
+				if err == nil && len(list.Objects) != 0 {
+					t.Fatalf("got unexpected list: %v", list)
 				}
 			})
 		}
@@ -191,6 +225,10 @@ func TestS3XGateway_Object(t *testing.T) {
 				}
 				if resp.ObjInfo.Name != tt.args.objectName {
 					t.Fatal("bad object")
+				}
+				err = resp.Close()
+				if err != nil {
+					t.Fatal(err)
 				}
 			})
 		}

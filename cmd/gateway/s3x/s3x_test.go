@@ -10,6 +10,10 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/auth"
 )
 
+func init() {
+	isTest = true
+}
+
 type testGateway struct {
 	*xObjects
 	temx     *TEMX

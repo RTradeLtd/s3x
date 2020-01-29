@@ -51,6 +51,7 @@ func TestS3XGateway_Bucket(t *testing.T) {
 		}
 	})
 	t.Run("Bucket Created Time Test", func(t *testing.T) {
+		t.Skip("set current time is skipped for testing")
 		now := time.Now().UTC()
 		info, err := gateway.GetBucketInfo(ctx, testBucket1)
 		if err != nil {

@@ -37,7 +37,7 @@ func (ls *ledgerStore) GetObjectInfos(ctx context.Context, bucket, prefix, start
 	var names []string
 	objs := b.GetBucket().GetObjects()
 	for name := range objs {
-		if strings.HasPrefix(name, prefix) && strings.Compare(startsFrom, name) >= 0 {
+		if strings.HasPrefix(name, prefix) && strings.Compare(startsFrom, name) <= 0 {
 			names = append(names, name)
 		}
 	}
