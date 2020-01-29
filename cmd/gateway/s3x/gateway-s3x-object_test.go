@@ -233,9 +233,23 @@ func TestS3XGateway_Object(t *testing.T) {
 			})
 		}
 	})
-
 	t.Run("CopyObject", func(t *testing.T) {
-		t.Skip("TODO")
+		dstBucket := "dstBucket"
+		dstObject := "dstObject"
+		err := gateway.MakeBucketWithLocation(ctx, dstBucket, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		info, err := gateway.CopyObject(ctx, testBucket1, testObject1, dstBucket, dstObject, minio.ObjectInfo{}, minio.ObjectOptions{}, minio.ObjectOptions{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if info.Bucket != dstBucket {
+			t.Fatal("expected destination bucket, got:", info.Bucket)
+		}
+		if info.Name != dstObject {
+			t.Fatal("expected destination object name, got:", info.Name)
+		}
 	})
 	t.Run("DeleteObject", func(t *testing.T) {
 		err := gateway.DeleteObject(ctx, testBucket1, testObject1)

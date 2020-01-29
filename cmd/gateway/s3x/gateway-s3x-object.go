@@ -194,7 +194,9 @@ func (x *xObjects) CopyObject(
 	// TODO(bonedaddy): ensure the destination object is properly adjusted with metadata
 
 	//lock ordering by bucket name
-	if strings.Compare(srcBucket, dstBucket) > 0 {
+	if srcBucket == dstBucket {
+		defer x.ledgerStore.locker.write(dstBucket)()
+	} else if strings.Compare(srcBucket, dstBucket) > 0 {
 		defer x.ledgerStore.locker.read(srcBucket)()
 		defer x.ledgerStore.locker.write(dstBucket)()
 	} else {
