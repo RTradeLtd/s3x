@@ -28,6 +28,7 @@ type TEMX struct {
 	GRPCAddr string
 	DSPath   string
 	XAddr    string
+	Insecure bool // whether or not we have an insecure connection to TemporalX
 }
 
 // infoAPIServer provides access to the InfoAPI
@@ -82,6 +83,10 @@ func init() {
 				Usage: "the endpoint of the temporalx api server",
 				Value: "xapi-dev.temporal.cloud:9090",
 			},
+			cli.BoolFlag{
+				Name:  "temporalx.insecure",
+				Usage: "initiate an insecure cconnection to the temporalx endpoint",
+			},
 		},
 	})
 	if err != nil {
@@ -95,6 +100,7 @@ func temxGatewayMain(ctx *cli.Context) {
 		GRPCAddr: ctx.String("info.grpc.endpoint"),
 		DSPath:   ctx.String("ds.path"),
 		XAddr:    ctx.String("temporalx.endpoint"),
+		Insecure: ctx.Bool("temporalx.insecure"),
 	})
 }
 
@@ -110,16 +116,20 @@ func (g *TEMX) newLedgerStore(dsPath string, dag pb.NodeAPIClient) (*ledgerStore
 
 // returns an instance of xObjects
 func (g *TEMX) getXObjects(creds auth.Credentials) (*xObjects, error) {
-	// connect to TemporalX
-	conn, err := grpc.Dial(g.XAddr,
-		grpc.WithTransportCredentials(
+	var dialOpts []grpc.DialOption
+	if g.Insecure {
+		dialOpts = append(dialOpts, grpc.WithInsecure())
+	} else {
+		dialOpts = append(dialOpts, grpc.WithTransportCredentials(
 			credentials.NewTLS(
 				&tls.Config{
 					InsecureSkipVerify: true,
 				},
 			),
-		),
-	)
+		))
+	}
+	// connect to TemporalX
+	conn, err := grpc.Dial(g.XAddr, dialOpts...)
 	if err != nil {
 		return nil, err
 	}
