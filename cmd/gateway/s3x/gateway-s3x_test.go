@@ -14,6 +14,7 @@ func Test_xObjects_GetHash(t *testing.T) {
 		wantErr bool
 	}{
 		{"bucket hash", &InfoRequest{Bucket: testBucket1}, &InfoResponse{Bucket: testBucket1, Hash: "bafkreibcp6rasofwb54zyx5np2hu272ujeamrzio5zhgt7szfsriug4ypq"}, false},
+		{"InvalidArgument", &InfoRequest{Bucket: ""}, nil, true},
 		{"object hash", &InfoRequest{Bucket: testBucket1, Object: testObject1}, &InfoResponse{Bucket: testBucket1, Object: testObject1, Hash: "bafkreicqrnvazls3q7j44gneiuajfuw7b3tk7d4f6r5wvgldywoq4otg7y"}, false},
 		{"object data hash", &InfoRequest{Bucket: testBucket1, Object: testObject1, ObjectDataOnly: true}, &InfoResponse{Bucket: testBucket1, Object: testObject1, Hash: "bafkreial77jjylrtb2na7bmhnhvzrjnbxw77twwtbqblcpj5rkw6fg2qwm"}, false},
 	}

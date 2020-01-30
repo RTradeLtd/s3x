@@ -236,11 +236,11 @@ func (x *xObjects) GetHash(ctx context.Context, req *InfoRequest) (*InfoResponse
 		}
 	} else if req.ObjectDataOnly {
 		// get object data hash
-		obj, err := x.ledgerStore.object(ctx, req.GetBucket(), req.GetObject())
+		h, err := x.ledgerStore.GetObjectDataHash(ctx, req.GetBucket(), req.GetObject())
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
-		hash = obj.GetDataHash()
+		hash = h
 	} else {
 		// get protocol buffer object hash
 		hash, err = x.ledgerStore.GetObjectHash(ctx, req.GetBucket(), req.GetObject())

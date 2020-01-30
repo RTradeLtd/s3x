@@ -52,18 +52,26 @@ func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient) (*ledgerStore, 
 	return ls, nil
 }
 
-func (ls *ledgerStore) object(ctx context.Context, bucket, object string) (*Object, error) {
+func (ls *ledgerStore) getObjectHash(ctx context.Context, bucket, object string) (string, error) {
 	b, err := ls.getBucketLoaded(ctx, bucket)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	objs := b.GetBucket().Objects
 	if objs == nil {
-		return nil, ErrLedgerObjectDoesNotExist
+		return "", ErrLedgerObjectDoesNotExist
 	}
 	h, ok := objs[object]
 	if !ok {
-		return nil, ErrLedgerObjectDoesNotExist
+		return "", ErrLedgerObjectDoesNotExist
+	}
+	return h, nil
+}
+
+func (ls *ledgerStore) object(ctx context.Context, bucket, object string) (*Object, error) {
+	h, err := ls.getObjectHash(ctx, bucket, object)
+	if err != nil {
+		return nil, err
 	}
 	return ipfsObject(ctx, ls.dag, h)
 }
@@ -76,6 +84,15 @@ func (ls *ledgerStore) ObjectInfo(ctx context.Context, bucket, object string) (*
 		return nil, err
 	}
 	return &obj.ObjectInfo, nil
+}
+
+func (ls *ledgerStore) GetObjectDataHash(ctx context.Context, bucket, object string) (string, error) {
+	defer ls.locker.read(bucket)()
+	obj, err := ls.object(ctx, bucket, object)
+	if err != nil {
+		return "", err
+	}
+	return obj.GetDataHash(), nil
 }
 
 func (ls *ledgerStore) ObjectData(ctx context.Context, bucket, object string) ([]byte, error) {
