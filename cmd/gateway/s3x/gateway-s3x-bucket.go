@@ -18,7 +18,7 @@ func (x *xObjects) MakeBucketWithLocation(
 	b := &Bucket{BucketInfo: BucketInfo{
 		Location: location,
 	}}
-	if !isTest { //only set the time if it not a test (go test), creates less test objects in ipfs
+	if !isTest { // creates consistent hashes for testing
 		b.BucketInfo.Created = time.Now().UTC()
 	}
 	hash, err := x.ledgerStore.CreateBucket(ctx, name, b)

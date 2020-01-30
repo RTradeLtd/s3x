@@ -268,7 +268,15 @@ func TestS3XGateway_Object(t *testing.T) {
 		}
 	})
 	t.Run("DeleteObjects", func(t *testing.T) {
-		t.Skip("TODO")
+		testPutObject(t, gateway) // put object back before testing delete
+		list := []string{testObject1, "not an object"}
+		errs, err := gateway.DeleteObjects(ctx, testBucket1, list)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(errs) != 1 {
+			t.Fatal("expected one missing object, but go errors: ", errs)
+		}
 	})
 }
 

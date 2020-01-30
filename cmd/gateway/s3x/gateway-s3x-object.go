@@ -125,10 +125,12 @@ func (x *xObjects) GetObjectInfo(
 func newObjectInfo(bucket, object string, size int, opts minio.ObjectOptions) ObjectInfo {
 	// TODO(bonedaddy): ensure consistency with the way s3 and b2 handle this
 	obinfo := ObjectInfo{
-		Bucket:  bucket,
-		Name:    object,
-		Size_:   int64(size),
-		ModTime: time.Now().UTC(),
+		Bucket: bucket,
+		Name:   object,
+		Size_:  int64(size),
+	}
+	if !isTest { // creates consistent hashes for testing
+		obinfo.ModTime = time.Now().UTC()
 	}
 	for k, v := range opts.UserDefined {
 		switch strings.ToLower(k) {
