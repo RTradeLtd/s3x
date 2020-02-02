@@ -13,10 +13,10 @@ func Test_xObjects_GetHash(t *testing.T) {
 		want    *InfoResponse
 		wantErr bool
 	}{
-		{"bucket hash", &InfoRequest{Bucket: testBucket1}, &InfoResponse{Bucket: testBucket1, Hash: "bafkreibcp6rasofwb54zyx5np2hu272ujeamrzio5zhgt7szfsriug4ypq"}, false},
+		{"bucket hash", &InfoRequest{Bucket: testBucket1}, &InfoResponse{Bucket: testBucket1, Hash: "bafkreihi44b3qzbl6dahwyojtwrjkimefnuyrlazdvkw4ykhc4iugqaeue"}, false},
 		{"InvalidArgument", &InfoRequest{Bucket: ""}, nil, true},
-		{"object hash", &InfoRequest{Bucket: testBucket1, Object: testObject1}, &InfoResponse{Bucket: testBucket1, Object: testObject1, Hash: "bafkreicqrnvazls3q7j44gneiuajfuw7b3tk7d4f6r5wvgldywoq4otg7y"}, false},
-		{"object data hash", &InfoRequest{Bucket: testBucket1, Object: testObject1, ObjectDataOnly: true}, &InfoResponse{Bucket: testBucket1, Object: testObject1, Hash: "bafkreial77jjylrtb2na7bmhnhvzrjnbxw77twwtbqblcpj5rkw6fg2qwm"}, false},
+		{"object hash", &InfoRequest{Bucket: testBucket1, Object: testObject1}, &InfoResponse{Bucket: testBucket1, Object: testObject1, Hash: "bafkreielg2afdfwnjfr7hiz4drtd53tnyapepit6wun2etqyw6ab5suovq"}, false},
+		{"object data hash", &InfoRequest{Bucket: testBucket1, Object: testObject1, ObjectDataOnly: true}, &InfoResponse{Bucket: testBucket1, Object: testObject1, Hash: "bafybeidespqxhoavxmrq6sxcypcwatb6u3splitarmw7z46pivdhahluaa"}, false},
 	}
 
 	ctx := context.Background()
