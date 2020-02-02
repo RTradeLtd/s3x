@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	fmt "fmt"
-	"io"
 	"time"
 
-	pb "github.com/RTradeLtd/TxPB/v3/go"
 	minio "github.com/RTradeLtd/s3x/cmd"
 	"github.com/segmentio/ksuid"
 )
@@ -44,36 +42,11 @@ func (x *xObjects) PutObjectPart(
 	if err != nil {
 		return pi, x.toMinioErr(err, bucket, "", "")
 	}
-	// add the given data to ipfs
-	stream, err := x.fileClient.UploadFile(ctx)
+	hash, size, err := ipfsFileUpload(ctx, x.fileClient, r)
 	if err != nil {
-		return pi, err
+		return pi, x.toMinioErr(err, bucket, object, uploadID)
 	}
-	var (
-		buf  = make([]byte, 4194294) //10 less than 4MB
-		size int
-	)
-	for {
-		n, err := r.Read(buf)
-		if err == io.EOF {
-			if n == 0 {
-				break
-			}
-		} else if err != nil {
-			return pi, err
-		}
-		size = size + n
-		if err := stream.Send(&pb.UploadRequest{
-			Blob: &pb.Blob{Content: buf[:n]},
-		}); err != nil {
-			return pi, err
-		}
-	}
-	resp, err := stream.CloseAndRecv()
-	if err != nil {
-		return pi, err
-	}
-	err = x.ledgerStore.PutObjectPart(bucket, object, resp.GetHash(), uploadID, int64(partID))
+	err = x.ledgerStore.PutObjectPart(bucket, object, hash, uploadID, int64(partID))
 	if err != nil {
 		return pi, x.toMinioErr(err, bucket, object, uploadID)
 	}

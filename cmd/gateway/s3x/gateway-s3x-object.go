@@ -3,7 +3,6 @@ package s3x
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -94,21 +93,21 @@ func (x *xObjects) GetObject(
 	etag string,
 	opts minio.ObjectOptions,
 ) error {
-	objData, err := x.ledgerStore.ObjectData(ctx, bucket, object)
+	fileHash, size, err := x.ledgerStore.GetObjectDataHash(ctx, bucket, object)
 	if err != nil {
 		return x.toMinioErr(err, bucket, object, "")
 	}
-	end := startOffset + length
-	objSize := int64(len(objData))
-	if objSize < end {
+	if size < startOffset+length {
 		return minio.InvalidRange{
 			OffsetBegin:  startOffset,
-			OffsetEnd:    end,
-			ResourceSize: objSize,
+			OffsetEnd:    startOffset + length,
+			ResourceSize: size,
 		}
 	}
-	_, err = writer.Write(objData[startOffset:end])
-	return err
+	if _, err := ipfsFileDownload(ctx, x.fileClient, writer, fileHash, startOffset, length); err != nil {
+		return x.toMinioErr(err, bucket, object, "")
+	}
+	return nil
 }
 
 // GetObjectInfo reads object info and replies back ObjectInfo
@@ -147,7 +146,8 @@ func newObjectInfo(bucket, object string, size int, opts minio.ObjectOptions) Ob
 	return obinfo
 }
 
-// PutObject creates a new object with the incoming data,
+// PutObject creates a new object with the incoming data
+// TODO: what happens if object already exist? (overwrite or fail)
 func (x *xObjects) PutObject(
 	ctx context.Context,
 	bucket, object string,
@@ -158,26 +158,19 @@ func (x *xObjects) PutObject(
 	if err != nil {
 		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, "", "")
 	}
-
-	data, err := ioutil.ReadAll(r)
+	hash, size, err := ipfsFileUpload(ctx, x.fileClient, r)
 	if err != nil {
 		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, object, "")
 	}
-	obinfo := newObjectInfo(bucket, object, len(data), opts)
-	dataHash, err := ipfsSaveBytes(ctx, x.dagClient, data)
-	if err != nil {
-		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, object, "")
-	}
-	// add the object to bucket
+	obinfo := newObjectInfo(bucket, object, size, opts)
 	err = x.ledgerStore.PutObject(ctx, bucket, object, &Object{
-		DataHash:   dataHash,
+		DataHash:   hash,
 		ObjectInfo: obinfo,
 	})
 	if err != nil {
 		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, object, "")
 	}
-	log.Printf("bucket-name: %s, object-name: %s", bucket, object)
-	// convert the proto object into a minio.ObjectInfo type
+	log.Printf("bucket-name: %s, object-name: %s, file-hash: %s", bucket, object, hash)
 	return x.getMinioObjectInfo(&obinfo), nil
 }
 

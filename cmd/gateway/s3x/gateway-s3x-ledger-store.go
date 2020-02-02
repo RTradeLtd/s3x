@@ -86,13 +86,13 @@ func (ls *ledgerStore) ObjectInfo(ctx context.Context, bucket, object string) (*
 	return &obj.ObjectInfo, nil
 }
 
-func (ls *ledgerStore) GetObjectDataHash(ctx context.Context, bucket, object string) (string, error) {
+func (ls *ledgerStore) GetObjectDataHash(ctx context.Context, bucket, object string) (string, int64, error) {
 	defer ls.locker.read(bucket)()
 	obj, err := ls.object(ctx, bucket, object)
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
-	return obj.GetDataHash(), nil
+	return obj.GetDataHash(), obj.ObjectInfo.GetSize_(), nil
 }
 
 func (ls *ledgerStore) ObjectData(ctx context.Context, bucket, object string) ([]byte, error) {

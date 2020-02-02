@@ -2,6 +2,7 @@ package s3x
 
 import (
 	"context"
+	"io"
 
 	pb "github.com/RTradeLtd/TxPB/v3/go"
 )
@@ -68,4 +69,88 @@ func ipfsSaveBytes(ctx context.Context, dag pb.NodeAPIClient, data []byte) (stri
 		return "", err
 	}
 	return resp.GetHashes()[0], nil
+}
+
+const chunkSize = 4194294 //10 less than 4MB
+
+func ipfsFileUpload(ctx context.Context, fileClient pb.FileAPIClient, r io.Reader) (string, int, error) {
+	stream, err := fileClient.UploadFile(ctx)
+	if err != nil {
+		return "", 0, err
+	}
+	var (
+		buf  = make([]byte, chunkSize)
+		size int
+	)
+	for {
+		n, err := r.Read(buf)
+		if err == io.EOF {
+			if n == 0 {
+				break
+			}
+		} else if err != nil {
+			_ = stream.CloseSend()
+			return "", size, err
+		}
+		size = size + n
+		if err := stream.Send(&pb.UploadRequest{
+			Blob: &pb.Blob{Content: buf[:n]},
+		}); err != nil {
+			return "", size, err
+		}
+	}
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		return "", size, err
+	}
+	return resp.Hash, size, nil
+}
+
+func ipfsFileDownload(ctx context.Context, fileClient pb.FileAPIClient, w io.Writer, hash string, startOffset, length int64) (int64, error) {
+	isSubSet := startOffset != 0 || length != 0
+	//TODO: put startOffset and length in DownloadRequest to improve performance
+	stream, err := fileClient.DownloadFile(ctx, &pb.DownloadRequest{
+		Hash:      hash,
+		ChunkSize: chunkSize,
+	})
+	var n int64
+	if err != nil {
+		return n, err
+	}
+	for {
+		recv, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				return n, nil
+			}
+			return n, err
+		}
+		data := recv.GetBlob().GetContent()
+		if isSubSet {
+			if int64(len(data)) < startOffset {
+				startOffset -= int64(len(data))
+				continue
+			}
+			if startOffset > 0 {
+				data = data[startOffset:]
+				startOffset = 0
+			}
+			if int64(len(data)) > length {
+				data = data[:length]
+				length = 0
+			} else {
+				length -= int64(len(data))
+			}
+		}
+		m, err := w.Write(data)
+		n += int64(m)
+		if err != nil {
+			_ = stream.CloseSend()
+			return n, err
+		}
+		if isSubSet && length == 0 {
+			_ = stream.CloseSend()
+			return n, nil
+		}
+	}
 }
