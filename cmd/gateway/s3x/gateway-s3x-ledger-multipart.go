@@ -89,7 +89,7 @@ func (ls *ledgerStore) GetObjectDetails(id string) (*MultipartUpload, func(), er
 
 // MultipartIDExists is used to lookup if the given multipart id exists
 func (ls *ledgerStore) MultipartIDExists(id string) error {
-	return ls.accertValidUploadID(id)
+	return ls.assertValidUploadID(id)
 }
 
 // GetMultipartHashes returns the hashes of all multipart upload object parts
@@ -117,8 +117,8 @@ func (ls *ledgerStore) GetMultipartHashes(bucket, multipartID string) ([]string,
 // INTERNAL FUNCTINS //
 ///////////////////////
 
-// accertValidUploadID is a helper function to check if a multipart id exists in our ledger
-func (ls *ledgerStore) accertValidUploadID(uploadID string) error {
+// assertValidUploadID is a helper function to check if a multipart id exists in our ledger
+func (ls *ledgerStore) assertValidUploadID(uploadID string) error {
 	_, err := ls.getMultipartLoaded(uploadID)
 	return err
 }
@@ -147,10 +147,8 @@ func (ls *ledgerStore) DeleteMultipartID(uploadID string) error {
 
 // getMultipartNilable returns a MultipartUpload or nil if it did not exist
 func (ls *ledgerStore) getMultipartNilable(uploadID string) (*MultipartUpload, error) {
-
 	ls.pmapLocker.Lock()
 	defer ls.pmapLocker.Unlock()
-
 	mu, ok := ls.l.MultipartUploads[uploadID]
 	if !ok {
 		data, err := ls.ds.Get(dsPartKey.ChildString(uploadID))
