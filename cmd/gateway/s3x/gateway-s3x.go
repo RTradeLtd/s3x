@@ -57,7 +57,7 @@ type xObjects struct {
 }
 
 func init() {
-	err := minio.RegisterGatewayCommand(cli.Command{
+	if err := minio.RegisterGatewayCommand(cli.Command{
 		Name:        temxBackend,
 		Usage:       "TemporalX IPFS Gateway",
 		Description: "s3x provides a minio gateway that uses IPFS as the datastore through TemporalX's gRPC API",
@@ -85,11 +85,10 @@ func init() {
 			},
 			cli.BoolFlag{
 				Name:  "temporalx.insecure",
-				Usage: "initiate an insecure cconnection to the temporalx endpoint",
+				Usage: "initiate an insecure connection to the temporalx endpoint",
 			},
 		},
-	})
-	if err != nil {
+	}); err != nil {
 		panic(err)
 	}
 }
