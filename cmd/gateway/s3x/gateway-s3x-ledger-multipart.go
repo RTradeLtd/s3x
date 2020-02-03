@@ -150,19 +150,23 @@ func (ls *ledgerStore) getMultipartNilable(uploadID string) (*MultipartUpload, e
 	ls.pmapLocker.Lock()
 	defer ls.pmapLocker.Unlock()
 	mu, ok := ls.l.MultipartUploads[uploadID]
-	if !ok {
-		data, err := ls.ds.Get(dsPartKey.ChildString(uploadID))
-		if err == datastore.ErrNotFound {
-			return nil, nil //not found is nil, nil as documented
-		}
-		if err != nil {
-			return nil, err
-		}
-		mu = &MultipartUpload{}
-		err = mu.Unmarshal(data)
-		if err != nil {
-			return nil, err
-		}
+	if ok {
+		// fast path
+		return mu, nil
 	}
+	data, err := ls.ds.Get(dsPartKey.ChildString(uploadID))
+	if err == datastore.ErrNotFound {
+		return nil, nil // not found is nil, nil as documented
+	}
+	if err != nil {
+		return nil, err
+	}
+	mu = &MultipartUpload{}
+	err = mu.Unmarshal(data)
+	if err != nil {
+		return nil, err
+	}
+	// cache MultipartUpload
+	ls.l.MultipartUploads[uploadID] = mu
 	return mu, nil
 }
