@@ -26,21 +26,17 @@ func (ls *ledgerStore) AbortMultipartUpload(bucket, multipartID string) error {
 // NewMultipartUpload is used to store the initial start of a multipart upload request
 func (ls *ledgerStore) NewMultipartUpload(multipartID string, info *ObjectInfo) error {
 	bucket := info.GetBucket()
-	defer ls.locker.write(bucket)
 	err := ls.assertBucketExits(bucket)
 	if err != nil {
 		return err
 	}
-
 	m := &MultipartUpload{
 		ObjectInfo: info,
 		Id:         multipartID,
 	}
-
 	ls.pmapLocker.Lock()
 	ls.l.MultipartUploads[multipartID] = m
 	ls.pmapLocker.Unlock()
-
 	data, err := m.Marshal()
 	if err != nil {
 		return err
