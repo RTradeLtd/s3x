@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	fmt "fmt"
-	"io"
 	"time"
 
-	pb "github.com/RTradeLtd/TxPB/v3/go"
 	minio "github.com/RTradeLtd/s3x/cmd"
 	"github.com/segmentio/ksuid"
 )
@@ -22,14 +20,12 @@ func (x *xObjects) ListMultipartUploads(ctx context.Context, bucket string, pref
 func (x *xObjects) NewMultipartUpload(
 	ctx context.Context,
 	bucket, object string,
-	o minio.ObjectOptions,
+	opts minio.ObjectOptions,
 ) (uploadID string, err error) {
-	if !x.ledgerStore.BucketExists(bucket) {
-		return "", x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, "", "")
-	}
 	uploadID = ksuid.New().String()
+	info := newObjectInfo(bucket, object, 0, opts)
 	return uploadID, x.toMinioErr(
-		x.ledgerStore.NewMultipartUpload(bucket, object, uploadID),
+		x.ledgerStore.NewMultipartUpload(uploadID, &info),
 		bucket, object, uploadID,
 	)
 }
@@ -42,39 +38,15 @@ func (x *xObjects) PutObjectPart(
 	r *minio.PutObjReader,
 	opts minio.ObjectOptions,
 ) (pi minio.PartInfo, e error) {
-	if !x.ledgerStore.BucketExists(bucket) {
-		return pi, x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, "", "")
-	}
-	// add the given data to ipfs
-	stream, err := x.fileClient.UploadFile(ctx)
+	err := x.ledgerStore.AssertBucketExits(bucket)
 	if err != nil {
-		return pi, err
+		return pi, x.toMinioErr(err, bucket, "", "")
 	}
-	var (
-		buf  = make([]byte, 4194294)
-		size int
-	)
-	for {
-		n, err := r.Read(buf)
-		if err != nil && err == io.EOF {
-			if n == 0 {
-				break
-			}
-		} else if err != nil && err != io.EOF {
-			return pi, err
-		}
-		size = size + n
-		if err := stream.Send(&pb.UploadRequest{
-			Blob: &pb.Blob{Content: buf[:n]},
-		}); err != nil {
-			return pi, err
-		}
-	}
-	resp, err := stream.CloseAndRecv()
+	hash, size, err := ipfsFileUpload(ctx, x.fileClient, r)
 	if err != nil {
-		return pi, err
+		return pi, x.toMinioErr(err, bucket, object, uploadID)
 	}
-	err = x.ledgerStore.PutObjectPart(bucket, object, resp.GetHash(), uploadID, int64(partID))
+	err = x.ledgerStore.PutObjectPart(bucket, object, hash, uploadID, int64(partID))
 	if err != nil {
 		return pi, x.toMinioErr(err, bucket, object, uploadID)
 	}
@@ -94,6 +66,7 @@ func (x *xObjects) CopyObjectPart(ctx context.Context, srcBucket, srcObject, des
 }
 
 // ListObjectParts returns all object parts for specified object in specified bucket
+// TODO: paginate using partNumberMarker and maxParts
 func (x *xObjects) ListObjectParts(
 	ctx context.Context,
 	bucket, object, uploadID string,
@@ -107,17 +80,24 @@ func (x *xObjects) ListObjectParts(
 		MaxParts:         maxParts,
 		PartNumberMarker: partNumberMarker,
 	}
-	parts, err := x.ledgerStore.GetObjectParts(uploadID)
+	m, unlock, err := x.ledgerStore.GetObjectDetails(uploadID)
+	defer unlock()
 	if err != nil {
 		return lpi, x.toMinioErr(err, bucket, object, uploadID)
 	}
-	for _, part := range parts {
+	if m.GetObjectInfo().GetBucket() != bucket ||
+		m.GetObjectInfo().GetName() != object {
+		return lpi, x.toMinioErr(ErrInvalidUploadID, bucket, object, uploadID)
+	}
+
+	for _, part := range m.ObjectParts {
 		lpi.Parts = append(lpi.Parts, minio.PartInfo{
 			PartNumber: int(part.GetNumber()),
-			ETag:       minio.ToS3ETag(part.GetEtag()),
+			ETag:       minio.ToS3ETag(part.GetDataHash()),
 			Size:       part.GetSize_(),
 		})
 	}
+
 	return lpi, nil
 }
 
@@ -143,8 +123,9 @@ func (x *xObjects) CompleteMultipartUpload(
 	uploadedParts []minio.CompletePart,
 	opts minio.ObjectOptions,
 ) (oi minio.ObjectInfo, e error) {
-	if !x.ledgerStore.BucketExists(bucket) {
-		return oi, x.toMinioErr(ErrLedgerBucketDoesNotExist, bucket, object, uploadID)
+	err := x.ledgerStore.AssertBucketExits(bucket)
+	if err != nil {
+		return oi, x.toMinioErr(err, bucket, "", "")
 	}
 	return oi, errors.New("not finished yet")
 

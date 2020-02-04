@@ -8,51 +8,43 @@ import (
 	minio "github.com/RTradeLtd/s3x/cmd"
 )
 
+var isTest = false
+
 // MakeBucket creates a new bucket container within TemporalX.
 func (x *xObjects) MakeBucketWithLocation(
 	ctx context.Context,
 	name, location string,
 ) error {
-	// check to see whether or not the bucket already exists
-	if x.ledgerStore.BucketExists(name) {
-		return x.toMinioErr(ErrLedgerBucketExists, name, "", "")
+	b := &Bucket{BucketInfo: BucketInfo{
+		Location: location,
+	}}
+	if !isTest { // creates consistent hashes for testing
+		b.BucketInfo.Created = time.Now().UTC()
 	}
-	// create the bucket
-	hash, err := x.bucketToIPFS(ctx, &Bucket{
-		BucketInfo: BucketInfo{
-			Name:     name,
-			Location: location,
-			Created:  time.Now().UTC(),
-		},
-	})
+	hash, err := x.ledgerStore.CreateBucket(ctx, name, b)
 	if err != nil {
 		return x.toMinioErr(err, name, "", "")
 	}
 	log.Printf("bucket-name: %s\tbucket-hash: %s", name, hash)
-	//  update internal ledger state and return
-	return x.toMinioErr(x.ledgerStore.NewBucket(name, hash), name, "", "")
+	return nil
 }
 
 // GetBucketInfo gets bucket metadata..
 func (x *xObjects) GetBucketInfo(
 	ctx context.Context,
-	name string,
+	bucket string,
 ) (bi minio.BucketInfo, err error) {
-	// check to see whether or not the bucket exists
-	if !x.ledgerStore.BucketExists(name) {
-		return bi, x.toMinioErr(ErrLedgerBucketDoesNotExist, name, "", "")
-	}
-	bucket, err := x.bucketFromIPFS(ctx, name)
+	b, err := x.ledgerStore.GetBucketInfo(ctx, bucket)
 	if err != nil {
-		return bi, x.toMinioErr(err, name, "", "")
+		return bi, x.toMinioErr(err, bucket, "", "")
 	}
 	return minio.BucketInfo{
-		Name: bucket.GetBucketInfo().Name,
+		Name: bucket,
 		// TODO(bonedaddy): decide what to do here,
 		// in the examples of other gateway its a nil time
 		// bucket the bucket actually has a created timestamp
 		// Created: time.Unix(0, 0),
-		Created: bucket.GetBucketInfo().Created,
+		Created: b.Created,
 	}, nil
 }
 
@@ -65,6 +57,7 @@ func (x *xObjects) ListBuckets(ctx context.Context) ([]minio.BucketInfo, error) 
 	}
 	var infos = make([]minio.BucketInfo, len(names))
 	for i, name := range names {
+		//TODO(George): detect context cancelation here (or in GetBucketInfo), as this could be a long running process
 		info, err := x.GetBucketInfo(ctx, name)
 		if err != nil {
 			return nil, err // no need to handle GetBucketInfo parses error accordingly
@@ -76,14 +69,6 @@ func (x *xObjects) ListBuckets(ctx context.Context) ([]minio.BucketInfo, error) 
 
 // DeleteBucket deletes a bucket on S3
 func (x *xObjects) DeleteBucket(ctx context.Context, name string) error {
-	// check to see whether or not the bucket exists
-	if !x.ledgerStore.BucketExists(name) {
-		return x.toMinioErr(ErrLedgerBucketDoesNotExist, name, "", "")
-	}
-	// prevent deleting non-empty bucktes
-	if err := x.ledgerStore.IsEmptyBucket(name); err != nil {
-		return x.toMinioErr(err, name, "", "")
-	}
 	// TODO(bonedaddy): implement removal call from TemporalX
 	return x.toMinioErr(x.ledgerStore.DeleteBucket(name), name, "", "")
 }

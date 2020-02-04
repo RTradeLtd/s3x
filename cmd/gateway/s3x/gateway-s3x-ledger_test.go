@@ -1,6 +1,7 @@
 package s3x
 
 import (
+	"context"
 	"testing"
 
 	"github.com/ipfs/go-datastore"
@@ -8,48 +9,53 @@ import (
 	dssync "github.com/ipfs/go-datastore/sync"
 )
 
-func TestLedger(t *testing.T) {
-	ledger := newLedgerStore(dssync.MutexWrap(datastore.NewMapDatastore()))
-	type args struct {
-		name, hash string
+func TestS3XLedgerStore(t *testing.T) {
+	ctx := context.Background()
+	gateway := getTestGateway(t)
+	defer func() {
+		if err := gateway.Shutdown(ctx); err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	ledger, err := newLedgerStore(dssync.MutexWrap(datastore.NewMapDatastore()), gateway.dagClient)
+
+	if err != nil {
+		t.Fatal(err)
 	}
-	t.Run("NewBucket", func(t *testing.T) {
+	t.Run("create Buckets", func(t *testing.T) {
 		tests := []struct {
-			name    string
-			args    args
-			wantErr bool
+			name             string
+			bucket           string
+			location         string
+			wantCreateErr    bool
+			locationExpected string
 		}{
-			{"1", args{"testbucket", "hash1"}, false},
-			{"2", args{"testbucket", "hash2"}, true},
-			{"3", args{"testbucket3", "hash3"}, false},
+			{"add new bucket", "bucket1", "1", false, "1"},
+			{"add existing bucket", "bucket1", "0", true, "1"},
+			{"add bucket with different name", "bucket2", "2", false, "2"},
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				err := ledger.NewBucket(tt.args.name, tt.args.hash)
-				if (err != nil) != tt.wantErr {
-					t.Fatalf("NewBucket() err %v, wantErr %v", err, tt.wantErr)
+				_, err := ledger.CreateBucket(ctx, tt.bucket, &Bucket{
+					BucketInfo: BucketInfo{
+						Location: tt.location,
+					},
+				})
+				if (err != nil) != tt.wantCreateErr {
+					t.Fatalf("NewBucket() err %v, wantErr %v", err, tt.wantCreateErr)
 				}
-			})
-		}
-	})
-	t.Run("GetBucketHash", func(t *testing.T) {
-		tests := []struct {
-			name     string
-			args     args
-			wantHash string
-			wantErr  bool
-		}{
-			{"1", args{"testbucket", ""}, "hash1", false},
-			{"2", args{"testbucket99999", ""}, "hash2", true},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				hash, err := ledger.GetBucketHash(tt.args.name)
-				if (err != nil) != tt.wantErr {
-					t.Fatalf("GetBucketHash() err %v, wantErr %v", err, tt.wantErr)
+				bi, err := ledger.GetBucketInfo(ctx, tt.bucket)
+				if err != nil {
+					t.Fatal(err)
 				}
-				if err == nil && hash != tt.wantHash {
-					t.Fatal("bad bucket hash returned")
+				name := bi.GetName()
+				if name != tt.bucket {
+					t.Fatalf("expected bucket name %v, but got %v", tt.bucket, name)
+				}
+				l := bi.GetLocation()
+				if l != tt.locationExpected {
+					t.Fatalf("expected location %v, but got %v", tt.locationExpected, l)
 				}
 			})
 		}
@@ -58,24 +64,24 @@ func TestLedger(t *testing.T) {
 		args := struct {
 			wantLen     int
 			wantBuckets []string
-		}{2, []string{"testbucket", "testbucket3"}}
+		}{2, []string{"bucket1", "bucket2"}}
 		names, err := ledger.GetBucketNames()
 		if err != nil {
 			t.Fatal(err)
 		}
 		if len(names) != args.wantLen {
-			t.Fatal("bad number of buckets")
+			t.Fatalf("bad number of buckets, got: %v", names)
 		}
-		var found1, found3 bool
+		var found1, found2 bool
 		for _, name := range names {
 			switch name {
-			case "testbucket":
+			case "bucket1":
 				found1 = true
-			case "testbucket3":
-				found3 = true
+			case "bucket2":
+				found2 = true
 			}
 		}
-		if !found1 || !found3 {
+		if !found1 || !found2 {
 			t.Fatal("failed to find buckets")
 		}
 	})

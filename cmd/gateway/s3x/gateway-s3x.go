@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"net"
 	"net/http"
-	"sync"
 
 	pb "github.com/RTradeLtd/TxPB/v3/go"
 	badger "github.com/RTradeLtd/go-ds-badger/v2"
@@ -23,7 +22,7 @@ const (
 	temxBackend = "s3x"
 )
 
-// TEMX implements a MinIO gateway ontop of TemporalX
+// TEMX implements a MinIO gateway on top of TemporalX
 type TEMX struct {
 	HTTPAddr string
 	GRPCAddr string
@@ -45,13 +44,12 @@ type infoAPIServer struct {
 // xObjects bridges S3 -> TemporalX (IPFS)
 type xObjects struct {
 	minio.GatewayUnsupported
-	mu         sync.Mutex
 	dagClient  pb.NodeAPIClient
 	fileClient pb.FileAPIClient
 	ctx        context.Context
 
 	// ledgerStore is responsible for updating our internal ledger state
-	ledgerStore *LedgerStore
+	ledgerStore *ledgerStore
 
 	infoAPI *infoAPIServer
 
@@ -59,7 +57,7 @@ type xObjects struct {
 }
 
 func init() {
-	minio.RegisterGatewayCommand(cli.Command{
+	if err := minio.RegisterGatewayCommand(cli.Command{
 		Name:        temxBackend,
 		Usage:       "TemporalX IPFS Gateway",
 		Description: "s3x provides a minio gateway that uses IPFS as the datastore through TemporalX's gRPC API",
@@ -87,10 +85,12 @@ func init() {
 			},
 			cli.BoolFlag{
 				Name:  "temporalx.insecure",
-				Usage: "initiate an insecure cconnection to the temporalx endpoint",
+				Usage: "initiate an insecure connection to the temporalx endpoint",
 			},
 		},
-	})
+	}); err != nil {
+		panic(err)
+	}
 }
 
 func temxGatewayMain(ctx *cli.Context) {
@@ -104,13 +104,13 @@ func temxGatewayMain(ctx *cli.Context) {
 }
 
 // newLedgerStore returns an instance of ledgerStore that uses badgerv2
-func (g *TEMX) newLedgerStore(dsPath string) (*LedgerStore, error) {
+func (g *TEMX) newLedgerStore(dsPath string, dag pb.NodeAPIClient) (*ledgerStore, error) {
 	opts := badger.DefaultOptions
 	ds, err := badger.NewDatastore(dsPath, &opts)
 	if err != nil {
 		return nil, err
 	}
-	return newLedgerStore(ds), nil
+	return newLedgerStore(ds, dag)
 }
 
 // returns an instance of xObjects
@@ -132,8 +132,9 @@ func (g *TEMX) getXObjects(creds auth.Credentials) (*xObjects, error) {
 	if err != nil {
 		return nil, err
 	}
+	dag := pb.NewNodeAPIClient(conn)
 	// instantiate our internal ledger
-	ledger, err := g.newLedgerStore(g.DSPath)
+	ledger, err := g.newLedgerStore(g.DSPath, dag)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +146,7 @@ func (g *TEMX) getXObjects(creds auth.Credentials) (*xObjects, error) {
 	// instantiate initial xObjects type
 	// responsible for bridging S3 -> TemporalX (IPFS)
 	xobj := &xObjects{
-		dagClient:   pb.NewNodeAPIClient(conn),
+		dagClient:   dag,
 		fileClient:  pb.NewFileAPIClient(conn),
 		ctx:         context.Background(),
 		ledgerStore: ledger,
@@ -220,61 +221,35 @@ func (x *xObjects) IsEncryptionSupported() bool {
 
 func (x *xObjects) GetHash(ctx context.Context, req *InfoRequest) (*InfoResponse, error) {
 	var (
-		err            error
-		resp           *InfoResponse
-		hash           string
-		emptyBucketErr = "bucket name is empty"
-		emptyObjectErr = "object name is empty"
+		hash string
+		err  error
 	)
-	switch req.GetObject() {
-	case "": // indicates that we just want to process bucket data
-		if req.GetBucket() == "" {
-			err = status.Error(codes.InvalidArgument, emptyBucketErr)
-			break
-		}
+	if req.GetBucket() == "" {
+		return nil, status.Error(codes.InvalidArgument, "bucket name is empty")
+	}
+	if req.GetObject() == "" {
+		// get bucket hash when object is not specified
 		hash, err = x.ledgerStore.GetBucketHash(req.GetBucket())
 		if err != nil {
-			err = status.Error(codes.Internal, err.Error())
-		} else {
-			resp = &InfoResponse{
-				Bucket: req.GetBucket(),
-				Hash:   hash,
-			}
+			return nil, status.Error(codes.Internal, err.Error())
 		}
-	default: // indicates we want to process object data
-		if req.GetBucket() == "" {
-			err = status.Error(codes.InvalidArgument, emptyBucketErr)
-			break
-		}
-		if req.GetObject() == "" {
-			err = status.Error(codes.InvalidArgument, emptyObjectErr)
-			break
-		}
-		// if this is set, then lets return the hash of the object data
-		// instead of the hash of the protocol buffer object.
-		if req.ObjectDataOnly {
-			obj, e := x.objectFromBucket(ctx, req.GetBucket(), req.GetObject())
-			if e != nil {
-				err = status.Error(codes.Internal, e.Error())
-				break
-			}
-			resp = &InfoResponse{
-				Bucket: req.GetBucket(),
-				Object: req.GetObject(),
-				Hash:   obj.GetDataHash(),
-			}
-			break
-		}
-		hash, err = x.ledgerStore.GetObjectHash(req.GetBucket(), req.GetObject())
+	} else if req.ObjectDataOnly {
+		// get object data hash
+		h, _, err := x.ledgerStore.GetObjectDataHash(ctx, req.GetBucket(), req.GetObject())
 		if err != nil {
-			err = status.Error(codes.Internal, err.Error())
-		} else {
-			resp = &InfoResponse{
-				Bucket: req.GetBucket(),
-				Object: req.GetObject(),
-				Hash:   hash,
-			}
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		hash = h
+	} else {
+		// get protocol buffer object hash
+		hash, err = x.ledgerStore.GetObjectHash(ctx, req.GetBucket(), req.GetObject())
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
 		}
 	}
-	return resp, err
+	return &InfoResponse{
+		Bucket: req.GetBucket(),
+		Object: req.GetObject(),
+		Hash:   hash,
+	}, nil
 }

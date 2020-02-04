@@ -2,38 +2,25 @@ package s3x
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
 	minio "github.com/RTradeLtd/s3x/cmd"
-	"github.com/RTradeLtd/s3x/pkg/auth"
 )
 
 const (
 	testBucket1, testBucket2 = "bucket1", "testbucket2"
 )
 
-func TestGateway_Bucket(t *testing.T) {
-	//	testDial(t)
-	testPath := "tmp-bucket-test"
+func TestS3XGateway_Bucket(t *testing.T) {
+	ctx := context.Background()
+	gateway := getTestGateway(t)
 	defer func() {
-		os.Unsetenv("S3X_DS_PATH")
-		os.RemoveAll(testPath)
+		if err := gateway.Shutdown(ctx); err != nil {
+			t.Fatal(err)
+		}
 	}()
-	os.Setenv("S3X_DS_PATH", testPath)
-	temx := &TEMX{
-		HTTPAddr: "0.0.0.0:8889",
-		GRPCAddr: "0.0.0.0:8888",
-		DSPath:   testPath,
-		XAddr:    "xapi-dev.temporal.cloud:9090",
-	}
-	gateway, err := temx.NewGatewayLayer(auth.Credentials{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer gateway.Shutdown(context.Background())
-	sinfo := gateway.StorageInfo(context.Background())
+	sinfo := gateway.StorageInfo(ctx)
 	if sinfo.Backend.Type != minio.BackendGateway {
 		t.Fatal("bad type")
 	}
@@ -53,7 +40,7 @@ func TestGateway_Bucket(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				err := gateway.MakeBucketWithLocation(
-					context.Background(),
+					ctx,
 					tt.args.bucketName,
 					"us-east-1",
 				)
@@ -64,8 +51,9 @@ func TestGateway_Bucket(t *testing.T) {
 		}
 	})
 	t.Run("Bucket Created Time Test", func(t *testing.T) {
+		t.Skip("set current time is skipped for testing")
 		now := time.Now().UTC()
-		info, err := gateway.GetBucketInfo(context.Background(), testBucket1)
+		info, err := gateway.GetBucketInfo(ctx, testBucket1)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -84,7 +72,7 @@ func TestGateway_Bucket(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				info, err := gateway.GetBucketInfo(context.Background(), tt.args.bucketName)
+				info, err := gateway.GetBucketInfo(ctx, tt.args.bucketName)
 				if (err != nil) != tt.wantErr {
 					t.Fatalf("GetBucketInfo() err %v, wantERr %v", err, tt.wantErr)
 				}
@@ -103,7 +91,7 @@ func TestGateway_Bucket(t *testing.T) {
 				testBucket1: false,
 			}
 		)
-		bucketInfos, err := gateway.ListBuckets(context.Background())
+		bucketInfos, err := gateway.ListBuckets(ctx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -129,7 +117,7 @@ func TestGateway_Bucket(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				err := gateway.DeleteBucket(context.Background(), tt.args.bucketName)
+				err := gateway.DeleteBucket(ctx, tt.args.bucketName)
 				if (err != nil) != tt.wantErr {
 					t.Fatalf("DeleteBucket() err %v, wantErr %v", err, tt.wantErr)
 				}
