@@ -34,10 +34,10 @@ import (
 	"testing"
 
 	"github.com/RTradeLtd/s3x/pkg/auth"
-	"github.com/RTradeLtd/s3x/pkg/hash"
-	"github.com/RTradeLtd/s3x/pkg/madmin"
 	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 	"github.com/RTradeLtd/s3x/pkg/bucket/policy/condition"
+	"github.com/RTradeLtd/s3x/pkg/hash"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
 	jwtgo "github.com/dgrijalva/jwt-go"
 	humanize "github.com/dustin/go-humanize"
 	miniogopolicy "github.com/minio/minio-go/v6/pkg/policy"

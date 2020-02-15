@@ -30,10 +30,10 @@ import (
 	"time"
 
 	"github.com/RTradeLtd/s3x/cmd/logger"
-	"github.com/RTradeLtd/s3x/pkg/event"
 	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
-	objectlock objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
+	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
 	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/event"
 	trace "github.com/RTradeLtd/s3x/pkg/trace"
 	"github.com/gorilla/mux"
 )

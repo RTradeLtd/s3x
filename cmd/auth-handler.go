@@ -31,9 +31,9 @@ import (
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 	"github.com/RTradeLtd/s3x/pkg/hash"
 	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
-	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 	jwtgo "github.com/dgrijalva/jwt-go"
 )
 

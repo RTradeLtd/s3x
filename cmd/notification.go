@@ -31,12 +31,12 @@ import (
 
 	"github.com/RTradeLtd/s3x/cmd/crypto"
 	"github.com/RTradeLtd/s3x/cmd/logger"
-	"github.com/RTradeLtd/s3x/pkg/event"
 	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
-	"github.com/RTradeLtd/s3x/pkg/madmin"
-	xnet "github.com/RTradeLtd/s3x/pkg/net"
 	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
 	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/event"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
 	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 	"github.com/klauspost/compress/zip"
 )

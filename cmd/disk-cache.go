@@ -30,8 +30,8 @@ import (
 
 	"github.com/RTradeLtd/s3x/cmd/config/cache"
 	"github.com/RTradeLtd/s3x/cmd/logger"
-	"github.com/RTradeLtd/s3x/pkg/color"
 	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
+	"github.com/RTradeLtd/s3x/pkg/color"
 	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 	"github.com/RTradeLtd/s3x/pkg/wildcard"
 	"github.com/djherbis/atime"

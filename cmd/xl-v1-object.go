@@ -25,9 +25,9 @@ import (
 
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/bucket/tagging"
 	"github.com/RTradeLtd/s3x/pkg/mimedb"
 	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
-	"github.com/RTradeLtd/s3x/pkg/bucket/tagging"
 )
 
 // list all errors which can be ignored in object operations.
