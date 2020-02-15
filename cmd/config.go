@@ -20,14 +20,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"path"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/RTradeLtd/s3x/cmd/config"
-	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
 	jsoniter "github.com/json-iterator/go"
 )
@@ -212,33 +210,7 @@ func (sys *ConfigSys) Init(objAPI ObjectLayer) error {
 		return errInvalidArgument
 	}
 
-	doneCh := make(chan struct{})
-	defer close(doneCh)
-
-	// Initializing configuration needs a retry mechanism for
-	// the following reasons:
-	//  - Read quorum is lost just after the initialization
-	//    of the object layer.
-	//  - Write quorum not met when upgrading configuration
-	//    version is needed.
-	retryTimerCh := newRetryTimerSimple(doneCh)
-	for {
-		select {
-		case <-retryTimerCh:
-			if err := initConfig(objAPI); err != nil {
-				if err == errDiskNotFound ||
-					strings.Contains(err.Error(), InsufficientReadQuorum{}.Error()) ||
-					strings.Contains(err.Error(), InsufficientWriteQuorum{}.Error()) {
-					logger.Info("Waiting for configuration to be initialized..")
-					continue
-				}
-				return err
-			}
-			return nil
-		case <-globalOSSignalCh:
-			return fmt.Errorf("Initializing config sub-system gracefully stopped")
-		}
-	}
+	return initConfig(objAPI)
 }
 
 // NewConfigSys - creates new config system object.

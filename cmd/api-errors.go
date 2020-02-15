@@ -21,6 +21,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/Azure/azure-storage-blob-go/azblob"
@@ -31,11 +32,12 @@ import (
 	"github.com/RTradeLtd/s3x/cmd/crypto"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
+	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
+	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
+	"github.com/RTradeLtd/s3x/pkg/bucket/object/tagging"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 	"github.com/RTradeLtd/s3x/pkg/event"
 	"github.com/RTradeLtd/s3x/pkg/hash"
-	"github.com/RTradeLtd/s3x/pkg/objectlock"
-	"github.com/RTradeLtd/s3x/pkg/policy"
-	"github.com/RTradeLtd/s3x/pkg/tagging"
 	minio "github.com/minio/minio-go/v6"
 )
 
@@ -96,6 +98,8 @@ const (
 	ErrNoSuchBucket
 	ErrNoSuchBucketPolicy
 	ErrNoSuchBucketLifecycle
+	ErrNoSuchLifecycleConfiguration
+	ErrNoSuchBucketSSEConfig
 	ErrNoSuchKey
 	ErrNoSuchUpload
 	ErrNoSuchVersion
@@ -485,6 +489,16 @@ var errorCodes = errorCodeMap{
 	ErrNoSuchBucketLifecycle: {
 		Code:           "NoSuchBucketLifecycle",
 		Description:    "The bucket lifecycle configuration does not exist",
+		HTTPStatusCode: http.StatusNotFound,
+	},
+	ErrNoSuchLifecycleConfiguration: {
+		Code:           "NoSuchLifecycleConfiguration",
+		Description:    "The lifecycle configuration does not exist",
+		HTTPStatusCode: http.StatusNotFound,
+	},
+	ErrNoSuchBucketSSEConfig: {
+		Code:           "ServerSideEncryptionConfigurationNotFoundError",
+		Description:    "The server side encryption configuration was not found",
 		HTTPStatusCode: http.StatusNotFound,
 	},
 	ErrNoSuchKey: {
@@ -1718,7 +1732,9 @@ func toAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
 	case BucketPolicyNotFound:
 		apiErr = ErrNoSuchBucketPolicy
 	case BucketLifecycleNotFound:
-		apiErr = ErrNoSuchBucketLifecycle
+		apiErr = ErrNoSuchLifecycleConfiguration
+	case BucketSSEConfigNotFound:
+		apiErr = ErrNoSuchBucketSSEConfig
 	case *event.ErrInvalidEventName:
 		apiErr = ErrEventNotification
 	case *event.ErrInvalidARN:
@@ -1787,9 +1803,22 @@ func toAPIError(ctx context.Context, err error) APIError {
 		// their internal error types. This code is only
 		// useful with gateway implementations.
 		switch e := err.(type) {
+		case url.EscapeError:
+			apiErr = APIError{
+				Code: "XMinioInvalidObjectName",
+				Description: fmt.Sprintf("%s (%s)", errorCodes[ErrInvalidObjectName].Description,
+					e.Error()),
+				HTTPStatusCode: http.StatusBadRequest,
+			}
+		case lifecycle.Error:
+			apiErr = APIError{
+				Code:           "InvalidRequest",
+				Description:    e.Error(),
+				HTTPStatusCode: http.StatusBadRequest,
+			}
 		case tagging.Error:
 			apiErr = APIError{
-				Code:           "InvalidTag",
+				Code:           e.Code(),
 				Description:    e.Error(),
 				HTTPStatusCode: http.StatusBadRequest,
 			}

@@ -19,7 +19,6 @@ package cmd
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -36,13 +35,14 @@ import (
 	"github.com/RTradeLtd/s3x/cmd/config"
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/cmd/logger"
-	"github.com/RTradeLtd/s3x/pkg/lifecycle"
+	bucketsse "github.com/RTradeLtd/s3x/pkg/bucket/encryption"
+	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
+	"github.com/RTradeLtd/s3x/pkg/bucket/object/tagging"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 	"github.com/RTradeLtd/s3x/pkg/lock"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
 	"github.com/RTradeLtd/s3x/pkg/mimedb"
 	"github.com/RTradeLtd/s3x/pkg/mountinfo"
-	"github.com/RTradeLtd/s3x/pkg/policy"
-	"github.com/RTradeLtd/s3x/pkg/tagging"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/minio/minio-go/v6/pkg/s3utils"
 )
@@ -226,18 +226,10 @@ func (fs *FSObjects) StorageInfo(ctx context.Context) StorageInfo {
 	return storageInfo
 }
 
-func (fs *FSObjects) waitForLowActiveIO() error {
+func (fs *FSObjects) waitForLowActiveIO() {
 	for atomic.LoadInt64(&fs.activeIOCount) >= fs.maxActiveIOCount {
-		select {
-		case <-GlobalServiceDoneCh:
-			return errors.New("forced exit")
-		case <-time.NewTimer(lowActiveIOWaitTick).C:
-			continue
-		}
+		time.Sleep(lowActiveIOWaitTick)
 	}
-
-	return nil
-
 }
 
 // CrawlAndGetDataUsage returns data usage stats of the current FS deployment
@@ -1254,7 +1246,7 @@ func (fs *FSObjects) HealBucket(ctx context.Context, bucket string, dryRun, remo
 }
 
 // HealObjects - no-op for fs. Valid only for XL.
-func (fs *FSObjects) HealObjects(ctx context.Context, bucket, prefix string, fn func(string, string) error) (e error) {
+func (fs *FSObjects) HealObjects(ctx context.Context, bucket, prefix string, fn healObjectFn) (e error) {
 	logger.LogIf(ctx, NotImplemented{})
 	return NotImplemented{}
 }
@@ -1263,12 +1255,6 @@ func (fs *FSObjects) HealObjects(ctx context.Context, bucket, prefix string, fn 
 func (fs *FSObjects) ListBucketsHeal(ctx context.Context) ([]BucketInfo, error) {
 	logger.LogIf(ctx, NotImplemented{})
 	return []BucketInfo{}, NotImplemented{}
-}
-
-// ListObjectsHeal - list all objects to be healed. Valid only for XL
-func (fs *FSObjects) ListObjectsHeal(ctx context.Context, bucket, prefix, marker, delimiter string, maxKeys int) (result ListObjectsInfo, err error) {
-	logger.LogIf(ctx, NotImplemented{})
-	return ListObjectsInfo{}, NotImplemented{}
 }
 
 // GetMetrics - no op
@@ -1305,6 +1291,21 @@ func (fs *FSObjects) GetBucketLifecycle(ctx context.Context, bucket string) (*li
 // DeleteBucketLifecycle deletes all lifecycle on bucket
 func (fs *FSObjects) DeleteBucketLifecycle(ctx context.Context, bucket string) error {
 	return removeLifecycleConfig(ctx, fs, bucket)
+}
+
+// GetBucketSSEConfig returns bucket encryption config on given bucket
+func (fs *FSObjects) GetBucketSSEConfig(ctx context.Context, bucket string) (*bucketsse.BucketSSEConfig, error) {
+	return getBucketSSEConfig(fs, bucket)
+}
+
+// SetBucketSSEConfig sets bucket encryption config on given bucket
+func (fs *FSObjects) SetBucketSSEConfig(ctx context.Context, bucket string, config *bucketsse.BucketSSEConfig) error {
+	return saveBucketSSEConfig(ctx, fs, bucket, config)
+}
+
+// DeleteBucketSSEConfig deletes bucket encryption config on given bucket
+func (fs *FSObjects) DeleteBucketSSEConfig(ctx context.Context, bucket string) error {
+	return removeBucketSSEConfig(ctx, fs, bucket)
 }
 
 // ListObjectsV2 lists all blobs in bucket filtered by prefix

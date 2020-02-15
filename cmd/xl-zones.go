@@ -27,11 +27,12 @@ import (
 
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/cmd/logger"
-	"github.com/RTradeLtd/s3x/pkg/lifecycle"
+	bucketsse "github.com/RTradeLtd/s3x/pkg/bucket/encryption"
+	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
+	"github.com/RTradeLtd/s3x/pkg/bucket/object/tagging"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
-	"github.com/RTradeLtd/s3x/pkg/policy"
 	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
-	"github.com/RTradeLtd/s3x/pkg/tagging"
 )
 
 type xlZones struct {
@@ -48,7 +49,7 @@ func (z *xlZones) quickHealBuckets(ctx context.Context) {
 		return
 	}
 	for _, bucket := range bucketsInfo {
-		z.HealBucket(ctx, bucket.Name, false, false)
+		z.MakeBucketWithLocation(ctx, bucket.Name, "")
 	}
 }
 
@@ -76,7 +77,9 @@ func newXLZones(endpointZones EndpointZones) (ObjectLayer, error) {
 			return nil, err
 		}
 	}
-	z.quickHealBuckets(context.Background())
+	if !z.SingleZone() {
+		z.quickHealBuckets(context.Background())
+	}
 	return z, nil
 }
 
@@ -697,7 +700,7 @@ func (z *xlZones) listObjects(ctx context.Context, bucket, prefix, marker, delim
 	var zonesEndWalkCh []chan struct{}
 
 	for _, zone := range z.zones {
-		entryChs, endWalkCh := zone.pool.Release(listParams{bucket, recursive, marker, prefix, heal})
+		entryChs, endWalkCh := zone.pool.Release(listParams{bucket, recursive, marker, prefix})
 		if entryChs == nil {
 			endWalkCh = make(chan struct{})
 			entryChs = zone.startMergeWalks(ctx, bucket, prefix, marker, recursive, endWalkCh)
@@ -766,7 +769,7 @@ func (z *xlZones) listObjects(ctx context.Context, bucket, prefix, marker, delim
 	}
 	if loi.IsTruncated {
 		for i, zone := range z.zones {
-			zone.pool.Set(listParams{bucket, recursive, loi.NextMarker, prefix, heal}, zonesEntryChs[i],
+			zone.pool.Set(listParams{bucket, recursive, loi.NextMarker, prefix}, zonesEntryChs[i],
 				zonesEndWalkCh[i])
 		}
 	}
@@ -1144,6 +1147,21 @@ func (z *xlZones) DeleteBucketLifecycle(ctx context.Context, bucket string) erro
 	return removeLifecycleConfig(ctx, z, bucket)
 }
 
+// GetBucketSSEConfig returns bucket encryption config on given bucket
+func (z *xlZones) GetBucketSSEConfig(ctx context.Context, bucket string) (*bucketsse.BucketSSEConfig, error) {
+	return getBucketSSEConfig(z, bucket)
+}
+
+// SetBucketSSEConfig sets bucket encryption config on given bucket
+func (z *xlZones) SetBucketSSEConfig(ctx context.Context, bucket string, config *bucketsse.BucketSSEConfig) error {
+	return saveBucketSSEConfig(ctx, z, bucket, config)
+}
+
+// DeleteBucketSSEConfig deletes bucket encryption config on given bucket
+func (z *xlZones) DeleteBucketSSEConfig(ctx context.Context, bucket string) error {
+	return removeBucketSSEConfig(ctx, z, bucket)
+}
+
 // IsNotificationSupported returns whether bucket notification is applicable for this layer.
 func (z *xlZones) IsNotificationSupported() bool {
 	return true
@@ -1309,19 +1327,50 @@ func (z *xlZones) HealBucket(ctx context.Context, bucket string, dryRun, remove 
 	return r, nil
 }
 
-func (z *xlZones) ListObjectsHeal(ctx context.Context, bucket, prefix, marker, delimiter string, maxKeys int) (ListObjectsInfo, error) {
-	if z.SingleZone() {
-		return z.zones[0].ListObjectsHeal(ctx, bucket, prefix, marker, delimiter, maxKeys)
-	}
-	return z.listObjects(ctx, bucket, prefix, marker, delimiter, maxKeys, true)
-}
+type healObjectFn func(string, string) error
 
-func (z *xlZones) HealObjects(ctx context.Context, bucket, prefix string, healObjectFn func(string, string) error) error {
+func (z *xlZones) HealObjects(ctx context.Context, bucket, prefix string, healObject healObjectFn) error {
+	var zonesEntryChs [][]FileInfoCh
+
+	recursive := true
 	for _, zone := range z.zones {
-		if err := zone.HealObjects(ctx, bucket, prefix, healObjectFn); err != nil {
-			return err
+		endWalkCh := make(chan struct{})
+		defer close(endWalkCh)
+		zonesEntryChs = append(zonesEntryChs,
+			zone.startMergeWalks(ctx, bucket, prefix, "", recursive, endWalkCh))
+	}
+
+	var zoneDrivesPerSet []int
+	for _, zone := range z.zones {
+		zoneDrivesPerSet = append(zoneDrivesPerSet, zone.drivesPerSet)
+	}
+
+	var zonesEntriesInfos [][]FileInfo
+	var zonesEntriesValid [][]bool
+	for _, entryChs := range zonesEntryChs {
+		zonesEntriesInfos = append(zonesEntriesInfos, make([]FileInfo, len(entryChs)))
+		zonesEntriesValid = append(zonesEntriesValid, make([]bool, len(entryChs)))
+	}
+
+	for {
+		entry, quorumCount, zoneIndex, ok := leastEntryZone(zonesEntryChs, zonesEntriesInfos, zonesEntriesValid)
+		if !ok {
+			break
+		}
+
+		if quorumCount == zoneDrivesPerSet[zoneIndex] {
+			// Skip good entries.
+			continue
+		}
+
+		// Wait and proceed if there are active requests
+		waitForLowHTTPReq(int32(zoneDrivesPerSet[zoneIndex]))
+
+		if err := healObject(bucket, entry.Name); err != nil {
+			return toObjectErr(err, bucket, entry.Name)
 		}
 	}
+
 	return nil
 }
 

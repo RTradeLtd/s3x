@@ -56,8 +56,8 @@ require (
 	github.com/ipfs/go-datastore v0.3.1
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/json-iterator/go v1.1.7
-	github.com/klauspost/compress v1.9.7
-	github.com/klauspost/cpuid v1.2.2 // indirect
+	github.com/klauspost/compress v1.9.8
+	github.com/klauspost/cpuid v1.2.2
 	github.com/klauspost/pgzip v1.2.1
 	github.com/klauspost/readahead v1.3.1
 	github.com/klauspost/reedsolomon v1.9.3
@@ -73,9 +73,10 @@ require (
 	github.com/minio/hdfs/v3 v3.0.1
 	github.com/minio/highwayhash v1.0.0
 	github.com/minio/lsync v1.0.1
-	github.com/minio/minio-go/v6 v6.0.45-0.20200117140906-66cf57d21ba4
-	github.com/minio/parquet-go v0.0.0-20191231003236-20b3c07bcd2c
+	github.com/minio/minio-go/v6 v6.0.45
+	github.com/minio/parquet-go v0.0.0-20200125064549-a1e49702e174
 	github.com/minio/sha256-simd v0.1.1
+	github.com/minio/simdjson-go v0.1.2
 	github.com/minio/sio v0.2.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect

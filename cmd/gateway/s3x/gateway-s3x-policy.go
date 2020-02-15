@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 )
 
 // SetBucketPolicy sets policy on bucket

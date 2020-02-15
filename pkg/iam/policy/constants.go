@@ -17,7 +17,7 @@
 package iampolicy
 
 import (
-	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 )
 
 // Policy claim constants
@@ -60,6 +60,19 @@ var WriteOnly = Policy{
 			SID:       policy.ID(""),
 			Effect:    policy.Allow,
 			Actions:   NewActionSet(PutObjectAction),
+			Resources: NewResourceSet(NewResource("*", "")),
+		},
+	},
+}
+
+// AdminDiagnostics - provides admin diagnostics access.
+var AdminDiagnostics = Policy{
+	Version: DefaultVersion,
+	Statements: []Statement{
+		{
+			SID:       policy.ID(""),
+			Effect:    policy.Allow,
+			Actions:   NewActionSet(PerfInfoAdminAction, ProfilingAdminAction, TraceAdminAction, ConsoleLogAdminAction, ServerInfoAdminAction, ServerHardwareInfoAdminAction),
 			Resources: NewResourceSet(NewResource("*", "")),
 		},
 	},

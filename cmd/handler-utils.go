@@ -32,9 +32,9 @@ import (
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
+	"github.com/RTradeLtd/s3x/pkg/bucket/object/tagging"
 	"github.com/RTradeLtd/s3x/pkg/handlers"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
-	"github.com/RTradeLtd/s3x/pkg/tagging"
 )
 
 const (
@@ -201,7 +201,9 @@ func getReqAccessCred(r *http.Request, region string) (cred auth.Credentials) {
 		if owner {
 			return globalActiveCred
 		}
-		cred, _ = globalIAMSys.GetUser(claims.AccessKey())
+		if claims != nil {
+			cred, _ = globalIAMSys.GetUser(claims.AccessKey)
+		}
 	}
 	return cred
 }

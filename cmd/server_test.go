@@ -34,7 +34,7 @@ import (
 	"time"
 
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
-	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 	humanize "github.com/dustin/go-humanize"
 )
 

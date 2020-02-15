@@ -39,8 +39,8 @@ import (
 	"github.com/RTradeLtd/s3x/cmd"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
-	"github.com/RTradeLtd/s3x/pkg/policy"
-	"github.com/RTradeLtd/s3x/pkg/policy/condition"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy/condition"
 	humanize "github.com/dustin/go-humanize"
 	"github.com/minio/cli"
 	miniogopolicy "github.com/minio/minio-go/v6/pkg/policy"
@@ -146,7 +146,14 @@ func (g *Azure) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, erro
 		return &azureObjects{}, err
 	}
 
-	httpClient := &http.Client{Transport: minio.NewCustomHTTPTransport()}
+	metrics := minio.NewMetrics()
+
+	t := &minio.MetricsTransport{
+		Transport: minio.NewCustomHTTPTransport(),
+		Metrics:   metrics,
+	}
+
+	httpClient := &http.Client{Transport: t}
 	userAgent := fmt.Sprintf("APN/1.0 MinIO/1.0 MinIO/%s", minio.Version)
 
 	pipeline := azblob.NewPipeline(credential, azblob.PipelineOptions{
@@ -168,6 +175,7 @@ func (g *Azure) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, erro
 		endpoint:   endpointURL.String(),
 		httpClient: httpClient,
 		client:     client,
+		metrics:    metrics,
 	}, nil
 }
 
@@ -357,6 +365,7 @@ type azureObjects struct {
 	minio.GatewayUnsupported
 	endpoint   string
 	httpClient *http.Client
+	metrics    *minio.Metrics
 	client     azblob.ServiceURL // Azure sdk client
 }
 
@@ -458,6 +467,11 @@ func parseAzurePart(metaPartFileName, prefix string) (partID int, err error) {
 		return
 	}
 	return
+}
+
+// GetMetrics returns this gateway's metrics
+func (a *azureObjects) GetMetrics(ctx context.Context) (*minio.Metrics, error) {
+	return a.metrics, nil
 }
 
 // Shutdown - save any gateway metadata to disk

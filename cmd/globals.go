@@ -33,9 +33,9 @@ import (
 	"github.com/RTradeLtd/s3x/cmd/crypto"
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/pkg/auth"
+	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
 	"github.com/RTradeLtd/s3x/pkg/certs"
 	"github.com/RTradeLtd/s3x/pkg/event"
-	"github.com/RTradeLtd/s3x/pkg/objectlock"
 	"github.com/RTradeLtd/s3x/pkg/pubsub"
 	etcd "github.com/coreos/etcd/clientv3"
 	humanize "github.com/dustin/go-humanize"
@@ -95,6 +95,9 @@ const (
 
 	// Limit of location constraint XML for unauthenticted PUT bucket operations.
 	maxLocationConstraintSize = 3 * humanize.MiByte
+
+	// Maximum size of default bucket encryption configuration allowed
+	maxBucketSSEConfigSize = 1 * humanize.MiByte
 )
 
 var globalCLIContext = struct {
@@ -144,7 +147,8 @@ var (
 	globalPolicySys        *PolicySys
 	globalIAMSys           *IAMSys
 
-	globalLifecycleSys *LifecycleSys
+	globalLifecycleSys       *LifecycleSys
+	globalBucketSSEConfigSys *BucketSSEConfigSys
 
 	globalStorageClass storageclass.Config
 	globalLDAPConfig   xldap.Config

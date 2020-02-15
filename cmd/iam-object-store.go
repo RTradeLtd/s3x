@@ -579,6 +579,8 @@ func listIAMConfigItems(objectAPI ObjectLayer, pathPrefix string, dirs bool,
 	}
 
 	go func() {
+		defer close(ch)
+
 		marker := ""
 		for {
 			lo, err := objectAPI.ListObjects(context.Background(),
@@ -588,9 +590,17 @@ func listIAMConfigItems(objectAPI ObjectLayer, pathPrefix string, dirs bool,
 				case ch <- itemOrErr{Err: err}:
 				case <-doneCh:
 				}
-				close(ch)
 				return
 			}
+
+			// Attempt a slow down load only when server is
+			// active and initialized.
+			if !globalSafeMode {
+				// Slow down listing and loading for config items to
+				// reduce load on the server
+				waitForLowHTTPReq(int32(globalEndpoints.Nodes()))
+			}
+
 			marker = lo.NextMarker
 			lister := dirList(lo)
 			if !dirs {
@@ -602,12 +612,10 @@ func listIAMConfigItems(objectAPI ObjectLayer, pathPrefix string, dirs bool,
 				select {
 				case ch <- itemOrErr{Item: item}:
 				case <-doneCh:
-					close(ch)
 					return
 				}
 			}
 			if !lo.IsTruncated {
-				close(ch)
 				return
 			}
 		}
@@ -617,17 +625,17 @@ func listIAMConfigItems(objectAPI ObjectLayer, pathPrefix string, dirs bool,
 
 func (iamOS *IAMObjectStore) watch(sys *IAMSys) {
 	watchDisk := func() {
-		ticker := time.NewTicker(globalRefreshIAMInterval)
-		defer ticker.Stop()
 		for {
 			select {
 			case <-GlobalServiceDoneCh:
 				return
-			case <-ticker.C:
-				iamOS.loadAll(sys, nil)
+			case <-time.NewTimer(globalRefreshIAMInterval).C:
+				err := iamOS.loadAll(sys, nil)
+				logger.LogIf(context.Background(), err)
 			}
 		}
 	}
+
 	// Refresh IAMSys in background.
 	go watchDisk()
 }

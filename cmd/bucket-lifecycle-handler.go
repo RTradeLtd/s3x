@@ -22,8 +22,8 @@ import (
 	"net/http"
 
 	"github.com/RTradeLtd/s3x/cmd/logger"
-	"github.com/RTradeLtd/s3x/pkg/lifecycle"
-	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 	"github.com/gorilla/mux"
 )
 
@@ -67,7 +67,7 @@ func (api objectAPIHandlers) PutBucketLifecycleHandler(w http.ResponseWriter, r 
 
 	bucketLifecycle, err := lifecycle.ParseLifecycleConfig(io.LimitReader(r.Body, r.ContentLength))
 	if err != nil {
-		writeErrorResponse(ctx, w, errorCodes.ToAPIErr(ErrMalformedXML), r.URL, guessIsBrowserReq(r))
+		writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
 		return
 	}
 

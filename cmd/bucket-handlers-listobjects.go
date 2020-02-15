@@ -24,7 +24,7 @@ import (
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/gorilla/mux"
 
-	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 )
 
 // Validate all the ListObjects query arguments, returns an APIErrorCode
