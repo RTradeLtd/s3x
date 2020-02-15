@@ -21,7 +21,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/RTradeLtd/s3x/pkg/policy/condition"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy/condition"
 	"github.com/RTradeLtd/s3x/pkg/wildcard"
 )
 

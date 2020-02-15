@@ -21,7 +21,7 @@ import (
 	"net/http"
 
 	"github.com/RTradeLtd/s3x/cmd/logger"
-	"github.com/RTradeLtd/s3x/pkg/objectlock"
+	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
 )
 
 // enforceRetentionBypassForDelete enforces whether an existing object under governance can be deleted

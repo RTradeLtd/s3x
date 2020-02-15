@@ -21,7 +21,7 @@ import (
 	"net/http"
 
 	"github.com/RTradeLtd/s3x/cmd/logger"
-	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 	"github.com/gorilla/mux"
 )
 

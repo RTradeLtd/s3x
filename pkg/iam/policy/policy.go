@@ -21,7 +21,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 )
 
 // DefaultVersion - default policy version as per AWS S3 specification.

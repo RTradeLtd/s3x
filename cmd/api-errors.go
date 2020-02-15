@@ -33,9 +33,9 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/event"
 	"github.com/RTradeLtd/s3x/pkg/hash"
-	"github.com/RTradeLtd/s3x/pkg/objectlock"
-	"github.com/RTradeLtd/s3x/pkg/policy"
-	"github.com/RTradeLtd/s3x/pkg/tagging"
+	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/tagging"
 	minio "github.com/minio/minio-go/v6"
 )
 

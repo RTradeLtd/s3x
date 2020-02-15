@@ -20,8 +20,8 @@ import (
 	"encoding/xml"
 	"net/http"
 
-	"github.com/RTradeLtd/s3x/pkg/policy"
-	"github.com/RTradeLtd/s3x/pkg/tagging"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/tagging"
 	"github.com/gorilla/mux"
 )
 

@@ -17,7 +17,7 @@
 package iampolicy
 
 import (
-	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 )
 
 // Policy claim constants

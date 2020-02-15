@@ -33,7 +33,7 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/hash"
 	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
-	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 	jwtgo "github.com/dgrijalva/jwt-go"
 )
 

@@ -31,9 +31,9 @@ import (
 
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/event"
-	"github.com/RTradeLtd/s3x/pkg/lifecycle"
-	objectlock "github.com/RTradeLtd/s3x/pkg/objectlock"
-	"github.com/RTradeLtd/s3x/pkg/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
+	objectlock objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 	trace "github.com/RTradeLtd/s3x/pkg/trace"
 	"github.com/gorilla/mux"
 )

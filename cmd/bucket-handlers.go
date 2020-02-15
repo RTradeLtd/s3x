@@ -39,8 +39,8 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/handlers"
 	"github.com/RTradeLtd/s3x/pkg/hash"
 	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
-	"github.com/RTradeLtd/s3x/pkg/objectlock"
-	"github.com/RTradeLtd/s3x/pkg/policy"
+	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 	"github.com/minio/minio-go/v6/pkg/set"
 )

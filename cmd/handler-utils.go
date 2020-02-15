@@ -34,7 +34,7 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/handlers"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
-	"github.com/RTradeLtd/s3x/pkg/tagging"
+	"github.com/RTradeLtd/s3x/pkg/bucket/tagging"
 )
 
 const (

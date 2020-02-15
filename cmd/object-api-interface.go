@@ -21,10 +21,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/RTradeLtd/s3x/pkg/lifecycle"
+	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
-	"github.com/RTradeLtd/s3x/pkg/policy"
-	"github.com/RTradeLtd/s3x/pkg/tagging"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/tagging"
 	"github.com/minio/minio-go/v6/pkg/encrypt"
 )
 

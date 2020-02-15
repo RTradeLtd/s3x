@@ -22,7 +22,7 @@ import (
 
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/event"
-	"github.com/RTradeLtd/s3x/pkg/lifecycle"
+	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
 )
 
 const (

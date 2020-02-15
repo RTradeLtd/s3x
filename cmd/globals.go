@@ -35,7 +35,7 @@ import (
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/certs"
 	"github.com/RTradeLtd/s3x/pkg/event"
-	"github.com/RTradeLtd/s3x/pkg/objectlock"
+	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
 	"github.com/RTradeLtd/s3x/pkg/pubsub"
 	etcd "github.com/coreos/etcd/clientv3"
 	humanize "github.com/dustin/go-humanize"
