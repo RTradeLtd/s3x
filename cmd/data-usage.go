@@ -25,9 +25,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/hash"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/hash"
 )
 
 const (

@@ -19,7 +19,7 @@ import (
 	"encoding/base64"
 	"errors"
 
-	"github.com/minio/minio/cmd/logger"
+	"github.com/RTradeLtd/s3x/cmd/logger"
 )
 
 // IsMultiPart returns true if the object metadata indicates

@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/RTradeLtd/s3x/browser"
 	assetfs "github.com/elazarl/go-bindata-assetfs"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	jsonrpc "github.com/gorilla/rpc/v2"
 	"github.com/gorilla/rpc/v2/json2"
-	"github.com/minio/minio/browser"
 )
 
 // webAPI container for Web API.

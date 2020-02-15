@@ -23,9 +23,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/RTradeLtd/s3x/cmd/config"
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
 	"github.com/gorilla/mux"
-	"github.com/minio/minio/cmd/config"
-	xnet "github.com/minio/minio/pkg/net"
 )
 
 ///////////////////////////////////////////////////////////////////////////////

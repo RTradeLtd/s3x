@@ -35,8 +35,8 @@ import (
 	"strings"
 	"time"
 
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/minio/minio-go/v6/pkg/s3utils"
-	xhttp "github.com/minio/minio/cmd/http"
 	sha256 "github.com/minio/sha256-simd"
 )
 

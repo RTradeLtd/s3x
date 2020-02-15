@@ -18,15 +18,15 @@ package gateway
 
 import (
 	// Import all gateways.
-	_ "github.com/minio/minio/cmd/gateway/azure"
-	_ "github.com/minio/minio/cmd/gateway/gcs"
-	_ "github.com/minio/minio/cmd/gateway/hdfs"
-	_ "github.com/minio/minio/cmd/gateway/nas"
-	_ "github.com/minio/minio/cmd/gateway/oss"
-	_ "github.com/minio/minio/cmd/gateway/s3"
+	_ "github.com/RTradeLtd/s3x/cmd/gateway/azure"
+	_ "github.com/RTradeLtd/s3x/cmd/gateway/gcs"
+	_ "github.com/RTradeLtd/s3x/cmd/gateway/hdfs"
+	_ "github.com/RTradeLtd/s3x/cmd/gateway/nas"
+	_ "github.com/RTradeLtd/s3x/cmd/gateway/oss"
+	_ "github.com/RTradeLtd/s3x/cmd/gateway/s3"
 
 	// B2 is specifically kept here to avoid re-ordering by goimports,
-	// please ask on github.com/minio/minio/issues before changing this.
-	_ "github.com/minio/minio/cmd/gateway/b2"
+	// please ask on github.com/RTradeLtd/s3x/issues before changing this.
+	_ "github.com/RTradeLtd/s3x/cmd/gateway/b2"
 	// Add your gateway here.
 )

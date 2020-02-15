@@ -20,7 +20,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/minio/minio/cmd/crypto"
+	"github.com/RTradeLtd/s3x/cmd/crypto"
 )
 
 // TestSkipContentSha256Cksum - Test validate the logic which decides whether

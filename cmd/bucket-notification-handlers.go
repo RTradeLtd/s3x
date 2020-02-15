@@ -27,11 +27,11 @@ import (
 	"reflect"
 	"time"
 
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/event"
 	"github.com/gorilla/mux"
-	xhttp "github.com/minio/minio/cmd/http"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/bucket/policy"
-	"github.com/minio/minio/pkg/event"
 )
 
 const (

@@ -27,9 +27,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/dsync"
 	"github.com/minio/lsync"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/dsync"
 )
 
 // local lock servers
@@ -277,7 +277,7 @@ func getSource() string {
 	if ok {
 		filename = pathutil.Base(filename)
 		funcName = strings.TrimPrefix(runtime.FuncForPC(pc).Name(),
-			"github.com/minio/minio/cmd.")
+			"github.com/RTradeLtd/s3x/cmd.")
 	} else {
 		filename = "<unknown>"
 		lineNum = 0

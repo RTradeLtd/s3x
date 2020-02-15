@@ -37,13 +37,13 @@ import (
 
 	"bytes"
 
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/disk"
+	xioutil "github.com/RTradeLtd/s3x/pkg/ioutil"
+	"github.com/RTradeLtd/s3x/pkg/mountinfo"
 	humanize "github.com/dustin/go-humanize"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/klauspost/readahead"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/disk"
-	xioutil "github.com/minio/minio/pkg/ioutil"
-	"github.com/minio/minio/pkg/mountinfo"
 	"github.com/ncw/directio"
 )
 

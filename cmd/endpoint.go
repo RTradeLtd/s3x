@@ -28,12 +28,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RTradeLtd/s3x/cmd/config"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/env"
+	"github.com/RTradeLtd/s3x/pkg/mountinfo"
 	humanize "github.com/dustin/go-humanize"
 	"github.com/minio/minio-go/v6/pkg/set"
-	"github.com/minio/minio/cmd/config"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/env"
-	"github.com/minio/minio/pkg/mountinfo"
 )
 
 // EndpointType - enum for endpoint type.

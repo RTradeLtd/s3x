@@ -28,16 +28,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/auth"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy/condition"
+	h2 "github.com/RTradeLtd/s3x/pkg/hash"
 	b2 "github.com/kurin/blazer/base"
 	"github.com/minio/cli"
 	miniogopolicy "github.com/minio/minio-go/v6/pkg/policy"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/auth"
-	"github.com/minio/minio/pkg/bucket/policy"
-	"github.com/minio/minio/pkg/bucket/policy/condition"
-	h2 "github.com/minio/minio/pkg/hash"
 
-	minio "github.com/minio/minio/cmd"
+	minio "github.com/RTradeLtd/s3x/cmd"
 )
 
 // Supported bucket types by B2 backend.

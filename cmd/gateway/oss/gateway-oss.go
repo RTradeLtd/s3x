@@ -28,16 +28,16 @@ import (
 	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	humanize "github.com/dustin/go-humanize"
 
+	minio "github.com/RTradeLtd/s3x/cmd"
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/auth"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy/condition"
+	"github.com/RTradeLtd/s3x/pkg/hash"
 	"github.com/minio/cli"
 	miniogopolicy "github.com/minio/minio-go/v6/pkg/policy"
 	"github.com/minio/minio-go/v6/pkg/s3utils"
-	minio "github.com/minio/minio/cmd"
-	xhttp "github.com/minio/minio/cmd/http"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/auth"
-	"github.com/minio/minio/pkg/bucket/policy"
-	"github.com/minio/minio/pkg/bucket/policy/condition"
-	"github.com/minio/minio/pkg/hash"
 )
 
 const (

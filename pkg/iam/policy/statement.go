@@ -20,8 +20,8 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/minio/minio/pkg/bucket/policy"
-	"github.com/minio/minio/pkg/bucket/policy/condition"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy/condition"
 )
 
 // Statement - iam policy statement.

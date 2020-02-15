@@ -19,7 +19,7 @@ package lifecycle
 import (
 	"encoding/xml"
 
-	"github.com/minio/minio/pkg/bucket/object/tagging"
+	"github.com/RTradeLtd/s3x/pkg/bucket/object/tagging"
 )
 
 // And - a tag to combine a prefix and multiple tags for lifecycle configuration rule.

@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/minio/minio/cmd/logger/message/log"
+	"github.com/RTradeLtd/s3x/cmd/logger/message/log"
 )
 
 // LogInfo holds console log messages

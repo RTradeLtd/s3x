@@ -28,17 +28,17 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/minio/minio/cmd/http"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/cmd/rest"
-	bucketsse "github.com/minio/minio/pkg/bucket/encryption"
-	"github.com/minio/minio/pkg/bucket/lifecycle"
-	objectlock "github.com/minio/minio/pkg/bucket/object/lock"
-	"github.com/minio/minio/pkg/bucket/policy"
-	"github.com/minio/minio/pkg/event"
-	"github.com/minio/minio/pkg/madmin"
-	xnet "github.com/minio/minio/pkg/net"
-	trace "github.com/minio/minio/pkg/trace"
+	"github.com/RTradeLtd/s3x/cmd/http"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/cmd/rest"
+	bucketsse "github.com/RTradeLtd/s3x/pkg/bucket/encryption"
+	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
+	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/event"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
+	trace "github.com/RTradeLtd/s3x/pkg/trace"
 )
 
 // client to talk to peer Nodes.

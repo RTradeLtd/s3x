@@ -21,12 +21,12 @@ import (
 	"context"
 	"sync"
 
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/cmd/logger/message/log"
-	"github.com/minio/minio/cmd/logger/target/console"
-	"github.com/minio/minio/pkg/madmin"
-	xnet "github.com/minio/minio/pkg/net"
-	"github.com/minio/minio/pkg/pubsub"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/cmd/logger/message/log"
+	"github.com/RTradeLtd/s3x/cmd/logger/target/console"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
+	"github.com/RTradeLtd/s3x/pkg/pubsub"
 )
 
 // number of log messages to buffer

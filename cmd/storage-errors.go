@@ -17,7 +17,7 @@
 package cmd
 
 // errUnexpected - unexpected error, requires manual intervention.
-var errUnexpected = StorageErr("Unexpected error, please report this issue at https://github.com/minio/minio/issues")
+var errUnexpected = StorageErr("Unexpected error, please report this issue at https://github.com/RTradeLtd/s3x/issues")
 
 // errCorruptedFormat - corrupted backend format.
 var errCorruptedFormat = StorageErr("corrupted backend format, please join https://slack.min.io for assistance")

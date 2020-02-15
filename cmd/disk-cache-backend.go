@@ -30,11 +30,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/RTradeLtd/s3x/cmd/crypto"
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/disk"
 	"github.com/djherbis/atime"
-	"github.com/minio/minio/cmd/crypto"
-	xhttp "github.com/minio/minio/cmd/http"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/disk"
 	"github.com/minio/sio"
 	"github.com/ncw/directio"
 )

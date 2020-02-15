@@ -21,7 +21,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/minio/minio/cmd/logger"
+	"github.com/RTradeLtd/s3x/cmd/logger"
 )
 
 func handleSignals() {

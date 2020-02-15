@@ -19,8 +19,8 @@ package policy
 import (
 	"encoding/json"
 
+	"github.com/RTradeLtd/s3x/pkg/wildcard"
 	"github.com/minio/minio-go/v6/pkg/set"
-	"github.com/minio/minio/pkg/wildcard"
 )
 
 // Principal - policy principal.

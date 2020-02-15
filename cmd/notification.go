@@ -29,19 +29,19 @@ import (
 	"sync"
 	"time"
 
+	"github.com/RTradeLtd/s3x/cmd/crypto"
+	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/klauspost/compress/zip"
-	"github.com/minio/minio/cmd/crypto"
-	"github.com/minio/minio/cmd/logger"
 
-	bucketsse "github.com/minio/minio/pkg/bucket/encryption"
-	"github.com/minio/minio/pkg/bucket/lifecycle"
-	objectlock "github.com/minio/minio/pkg/bucket/object/lock"
-	"github.com/minio/minio/pkg/bucket/policy"
+	bucketsse "github.com/RTradeLtd/s3x/pkg/bucket/encryption"
+	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
+	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 
-	"github.com/minio/minio/pkg/event"
-	"github.com/minio/minio/pkg/madmin"
-	xnet "github.com/minio/minio/pkg/net"
-	"github.com/minio/minio/pkg/sync/errgroup"
+	"github.com/RTradeLtd/s3x/pkg/event"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
+	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 )
 
 // NotificationSys - notification system.

@@ -25,7 +25,7 @@ import (
 	"path"
 	"sync"
 
-	bucketsse "github.com/minio/minio/pkg/bucket/encryption"
+	bucketsse "github.com/RTradeLtd/s3x/pkg/bucket/encryption"
 )
 
 // BucketSSEConfigSys - in-memory cache of bucket encryption config

@@ -26,11 +26,11 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/RTradeLtd/s3x/cmd/config/storageclass"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/color"
+	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 	humanize "github.com/dustin/go-humanize"
-	"github.com/minio/minio/cmd/config/storageclass"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/color"
-	"github.com/minio/minio/pkg/sync/errgroup"
 	sha256 "github.com/minio/sha256-simd"
 )
 

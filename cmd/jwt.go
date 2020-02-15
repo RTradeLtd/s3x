@@ -22,11 +22,11 @@ import (
 	"net/http"
 	"time"
 
+	xjwt "github.com/RTradeLtd/s3x/cmd/jwt"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/auth"
 	jwtgo "github.com/dgrijalva/jwt-go"
 	jwtreq "github.com/dgrijalva/jwt-go/request"
-	xjwt "github.com/minio/minio/cmd/jwt"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/auth"
 )
 
 const (

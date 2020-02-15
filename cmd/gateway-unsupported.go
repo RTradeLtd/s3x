@@ -20,14 +20,14 @@ import (
 	"context"
 	"errors"
 
-	"github.com/minio/minio/cmd/logger"
+	"github.com/RTradeLtd/s3x/cmd/logger"
 
-	bucketsse "github.com/minio/minio/pkg/bucket/encryption"
-	"github.com/minio/minio/pkg/bucket/lifecycle"
-	"github.com/minio/minio/pkg/bucket/object/tagging"
-	"github.com/minio/minio/pkg/bucket/policy"
+	bucketsse "github.com/RTradeLtd/s3x/pkg/bucket/encryption"
+	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
+	"github.com/RTradeLtd/s3x/pkg/bucket/object/tagging"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 
-	"github.com/minio/minio/pkg/madmin"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
 )
 
 // GatewayLocker implements custom NeNSLock implementation

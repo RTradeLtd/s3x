@@ -24,8 +24,8 @@ import (
 	"path"
 	"time"
 
+	"github.com/RTradeLtd/s3x/pkg/dsync"
 	"github.com/gorilla/mux"
-	"github.com/minio/minio/pkg/dsync"
 )
 
 const (

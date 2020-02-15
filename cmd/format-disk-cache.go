@@ -28,8 +28,8 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/RTradeLtd/s3x/cmd/logger"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/minio/minio/cmd/logger"
 	"github.com/minio/sio"
 )
 

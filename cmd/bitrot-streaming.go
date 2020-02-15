@@ -24,7 +24,7 @@ import (
 	"hash"
 	"io"
 
-	"github.com/minio/minio/cmd/logger"
+	"github.com/RTradeLtd/s3x/cmd/logger"
 )
 
 // Calculates bitrot in chunks and writes the hash into the stream.

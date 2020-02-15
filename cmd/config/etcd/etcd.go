@@ -22,11 +22,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RTradeLtd/s3x/cmd/config"
+	"github.com/RTradeLtd/s3x/pkg/env"
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/clientv3/namespace"
-	"github.com/minio/minio/cmd/config"
-	"github.com/minio/minio/pkg/env"
-	xnet "github.com/minio/minio/pkg/net"
 )
 
 const (

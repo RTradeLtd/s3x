@@ -28,13 +28,13 @@ import (
 	"sync"
 	"time"
 
+	"github.com/RTradeLtd/s3x/cmd/config/cache"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
+	"github.com/RTradeLtd/s3x/pkg/color"
+	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
+	"github.com/RTradeLtd/s3x/pkg/wildcard"
 	"github.com/djherbis/atime"
-	"github.com/minio/minio/cmd/config/cache"
-	"github.com/minio/minio/cmd/logger"
-	objectlock "github.com/minio/minio/pkg/bucket/object/lock"
-	"github.com/minio/minio/pkg/color"
-	"github.com/minio/minio/pkg/sync/errgroup"
-	"github.com/minio/minio/pkg/wildcard"
 )
 
 const (

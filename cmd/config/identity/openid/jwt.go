@@ -26,12 +26,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/RTradeLtd/s3x/cmd/config"
+	"github.com/RTradeLtd/s3x/pkg/auth"
+	"github.com/RTradeLtd/s3x/pkg/env"
+	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
 	jwtgo "github.com/dgrijalva/jwt-go"
-	"github.com/minio/minio/cmd/config"
-	"github.com/minio/minio/pkg/auth"
-	"github.com/minio/minio/pkg/env"
-	iampolicy "github.com/minio/minio/pkg/iam/policy"
-	xnet "github.com/minio/minio/pkg/net"
 )
 
 // Config - OpenID Config

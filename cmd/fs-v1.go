@@ -32,21 +32,21 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/RTradeLtd/s3x/cmd/config"
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
+	"github.com/RTradeLtd/s3x/cmd/logger"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/minio/minio-go/v6/pkg/s3utils"
-	"github.com/minio/minio/cmd/config"
-	xhttp "github.com/minio/minio/cmd/http"
-	"github.com/minio/minio/cmd/logger"
 
-	bucketsse "github.com/minio/minio/pkg/bucket/encryption"
-	"github.com/minio/minio/pkg/bucket/lifecycle"
-	"github.com/minio/minio/pkg/bucket/object/tagging"
-	"github.com/minio/minio/pkg/bucket/policy"
+	bucketsse "github.com/RTradeLtd/s3x/pkg/bucket/encryption"
+	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
+	"github.com/RTradeLtd/s3x/pkg/bucket/object/tagging"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 
-	"github.com/minio/minio/pkg/lock"
-	"github.com/minio/minio/pkg/madmin"
-	"github.com/minio/minio/pkg/mimedb"
-	"github.com/minio/minio/pkg/mountinfo"
+	"github.com/RTradeLtd/s3x/pkg/lock"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
+	"github.com/RTradeLtd/s3x/pkg/mimedb"
+	"github.com/RTradeLtd/s3x/pkg/mountinfo"
 )
 
 // Default etag is used for pre-existing objects.

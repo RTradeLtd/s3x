@@ -22,9 +22,9 @@ import (
 	"hash/crc32"
 	"path"
 
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/sync/errgroup"
 )
 
 // Returns number of errors that occurred the most (incl. nil) and the

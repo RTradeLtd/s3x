@@ -22,8 +22,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/RTradeLtd/s3x/pkg/disk"
 	humanize "github.com/dustin/go-humanize"
-	"github.com/minio/minio/pkg/disk"
 )
 
 // defaultAppendBufferSize - Default buffer size for the AppendFile

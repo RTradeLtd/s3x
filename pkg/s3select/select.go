@@ -27,11 +27,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/minio/minio/pkg/s3select/csv"
-	"github.com/minio/minio/pkg/s3select/json"
-	"github.com/minio/minio/pkg/s3select/parquet"
-	"github.com/minio/minio/pkg/s3select/simdj"
-	"github.com/minio/minio/pkg/s3select/sql"
+	"github.com/RTradeLtd/s3x/pkg/s3select/csv"
+	"github.com/RTradeLtd/s3x/pkg/s3select/json"
+	"github.com/RTradeLtd/s3x/pkg/s3select/parquet"
+	"github.com/RTradeLtd/s3x/pkg/s3select/simdj"
+	"github.com/RTradeLtd/s3x/pkg/s3select/sql"
 	"github.com/minio/simdjson-go"
 )
 

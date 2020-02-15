@@ -23,8 +23,8 @@ import (
 	pathutil "path"
 	"runtime"
 
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/lock"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/lock"
 )
 
 // Removes only the file at given path does not remove

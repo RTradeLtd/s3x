@@ -23,7 +23,7 @@ import (
 	"net/url"
 	"strconv"
 
-	trace "github.com/minio/minio/pkg/trace"
+	trace "github.com/RTradeLtd/s3x/pkg/trace"
 )
 
 // ServiceRestart - restarts the MinIO cluster

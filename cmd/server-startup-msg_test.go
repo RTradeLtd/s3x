@@ -26,8 +26,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/minio/minio/pkg/color"
-	"github.com/minio/minio/pkg/madmin"
+	"github.com/RTradeLtd/s3x/pkg/color"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
 )
 
 // Tests if we generate storage info.

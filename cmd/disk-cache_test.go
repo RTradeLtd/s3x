@@ -23,7 +23,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/minio/minio/pkg/hash"
+	"github.com/RTradeLtd/s3x/pkg/hash"
 )
 
 // Initialize cache objects.

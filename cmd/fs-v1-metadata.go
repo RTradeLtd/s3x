@@ -27,11 +27,11 @@ import (
 	pathutil "path"
 	"time"
 
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/lock"
+	"github.com/RTradeLtd/s3x/pkg/mimedb"
 	jsoniter "github.com/json-iterator/go"
-	xhttp "github.com/minio/minio/cmd/http"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/lock"
-	"github.com/minio/minio/pkg/mimedb"
 )
 
 // FS format, and object metadata.

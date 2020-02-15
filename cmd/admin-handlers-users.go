@@ -23,11 +23,11 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/auth"
+	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
 	"github.com/gorilla/mux"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/auth"
-	iampolicy "github.com/minio/minio/pkg/iam/policy"
-	"github.com/minio/minio/pkg/madmin"
 )
 
 func validateAdminUsersReq(ctx context.Context, w http.ResponseWriter, r *http.Request, action iampolicy.AdminAction) (ObjectLayer, auth.Credentials) {

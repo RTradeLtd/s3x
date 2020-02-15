@@ -24,8 +24,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/minio/minio/pkg/event"
-	xnet "github.com/minio/minio/pkg/net"
+	"github.com/RTradeLtd/s3x/pkg/event"
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
 	"github.com/pkg/errors"
 
 	"gopkg.in/olivere/elastic.v5"

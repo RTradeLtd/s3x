@@ -19,8 +19,8 @@ package iampolicy
 import (
 	"encoding/json"
 
-	"github.com/minio/minio/pkg/bucket/policy/condition"
-	"github.com/minio/minio/pkg/wildcard"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy/condition"
+	"github.com/RTradeLtd/s3x/pkg/wildcard"
 )
 
 // Action - policy action.

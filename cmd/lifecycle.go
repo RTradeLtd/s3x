@@ -23,7 +23,7 @@ import (
 	"path"
 	"sync"
 
-	"github.com/minio/minio/pkg/bucket/lifecycle"
+	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
 )
 
 const (

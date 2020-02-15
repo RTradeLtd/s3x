@@ -23,8 +23,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/RTradeLtd/s3x/pkg/s3select/json"
 	"github.com/klauspost/compress/zstd"
-	"github.com/minio/minio/pkg/s3select/json"
 	"github.com/minio/simdjson-go"
 )
 

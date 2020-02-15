@@ -21,7 +21,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/minio/minio/pkg/lock"
+	"github.com/RTradeLtd/s3x/pkg/lock"
 )
 
 // Tests long path calls.

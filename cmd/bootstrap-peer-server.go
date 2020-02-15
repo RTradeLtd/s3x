@@ -28,11 +28,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/cmd/rest"
 	"github.com/gorilla/mux"
 	"github.com/minio/minio-go/v6/pkg/set"
-	xhttp "github.com/minio/minio/cmd/http"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/cmd/rest"
 )
 
 const (

@@ -26,17 +26,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/minio/minio/cmd/config/storageclass"
-	xhttp "github.com/minio/minio/cmd/http"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/bpool"
-	bucketsse "github.com/minio/minio/pkg/bucket/encryption"
-	"github.com/minio/minio/pkg/bucket/lifecycle"
-	"github.com/minio/minio/pkg/bucket/object/tagging"
-	"github.com/minio/minio/pkg/bucket/policy"
-	"github.com/minio/minio/pkg/dsync"
-	"github.com/minio/minio/pkg/madmin"
-	"github.com/minio/minio/pkg/sync/errgroup"
+	"github.com/RTradeLtd/s3x/cmd/config/storageclass"
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/bpool"
+	bucketsse "github.com/RTradeLtd/s3x/pkg/bucket/encryption"
+	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
+	"github.com/RTradeLtd/s3x/pkg/bucket/object/tagging"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/dsync"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
+	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 )
 
 // setsStorageAPI is encapsulated type for Close()

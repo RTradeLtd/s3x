@@ -20,8 +20,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/minio/minio/cmd/logger"
-	objectlock "github.com/minio/minio/pkg/bucket/object/lock"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
 )
 
 // enforceRetentionBypassForDelete enforces whether an existing object under governance can be deleted

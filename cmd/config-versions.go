@@ -19,19 +19,19 @@ package cmd
 import (
 	"sync"
 
-	"github.com/minio/minio/cmd/config"
-	"github.com/minio/minio/cmd/config/cache"
-	"github.com/minio/minio/cmd/config/compress"
-	xldap "github.com/minio/minio/cmd/config/identity/ldap"
-	"github.com/minio/minio/cmd/config/identity/openid"
-	"github.com/minio/minio/cmd/config/notify"
-	"github.com/minio/minio/cmd/config/policy/opa"
-	"github.com/minio/minio/cmd/config/storageclass"
-	"github.com/minio/minio/cmd/crypto"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/auth"
-	"github.com/minio/minio/pkg/event/target"
-	"github.com/minio/minio/pkg/quick"
+	"github.com/RTradeLtd/s3x/cmd/config"
+	"github.com/RTradeLtd/s3x/cmd/config/cache"
+	"github.com/RTradeLtd/s3x/cmd/config/compress"
+	xldap "github.com/RTradeLtd/s3x/cmd/config/identity/ldap"
+	"github.com/RTradeLtd/s3x/cmd/config/identity/openid"
+	"github.com/RTradeLtd/s3x/cmd/config/notify"
+	"github.com/RTradeLtd/s3x/cmd/config/policy/opa"
+	"github.com/RTradeLtd/s3x/cmd/config/storageclass"
+	"github.com/RTradeLtd/s3x/cmd/crypto"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/auth"
+	"github.com/RTradeLtd/s3x/pkg/event/target"
+	"github.com/RTradeLtd/s3x/pkg/quick"
 )
 
 /////////////////// Config V1 ///////////////////

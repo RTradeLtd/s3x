@@ -20,9 +20,9 @@ import (
 	"encoding/xml"
 	"net/http"
 
+	"github.com/RTradeLtd/s3x/pkg/bucket/object/tagging"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 	"github.com/gorilla/mux"
-	"github.com/minio/minio/pkg/bucket/object/tagging"
-	"github.com/minio/minio/pkg/bucket/policy"
 )
 
 // Data types used for returning dummy tagging XML.

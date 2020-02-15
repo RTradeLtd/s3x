@@ -21,10 +21,10 @@ import (
 	"path/filepath"
 	"sort"
 
+	"github.com/RTradeLtd/s3x/pkg/console"
+	"github.com/RTradeLtd/s3x/pkg/trie"
+	"github.com/RTradeLtd/s3x/pkg/words"
 	"github.com/minio/cli"
-	"github.com/minio/minio/pkg/console"
-	"github.com/minio/minio/pkg/trie"
-	"github.com/minio/minio/pkg/words"
 )
 
 // GlobalFlags - global flags for minio.

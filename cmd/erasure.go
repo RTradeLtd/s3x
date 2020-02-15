@@ -19,8 +19,8 @@ package cmd
 import (
 	"context"
 
+	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/klauspost/reedsolomon"
-	"github.com/minio/minio/cmd/logger"
 )
 
 // Erasure - erasure encoding details.

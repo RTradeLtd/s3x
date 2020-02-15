@@ -24,7 +24,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/minio/minio/cmd/logger"
+	"github.com/RTradeLtd/s3x/cmd/logger"
 	sha256 "github.com/minio/sha256-simd"
 	"github.com/minio/sio"
 )

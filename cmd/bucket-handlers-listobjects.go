@@ -20,11 +20,11 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/RTradeLtd/s3x/cmd/crypto"
+	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/gorilla/mux"
-	"github.com/minio/minio/cmd/crypto"
-	"github.com/minio/minio/cmd/logger"
 
-	"github.com/minio/minio/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 )
 
 // Validate all the ListObjects query arguments, returns an APIErrorCode

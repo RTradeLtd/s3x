@@ -21,8 +21,8 @@ import (
 	"context"
 	"io"
 
+	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/klauspost/reedsolomon"
-	"github.com/minio/minio/cmd/logger"
 )
 
 // getDataBlockLen - get length of data blocks from encoded blocks.

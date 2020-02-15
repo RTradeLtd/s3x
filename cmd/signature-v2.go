@@ -28,9 +28,9 @@ import (
 	"strconv"
 	"strings"
 
-	xhttp "github.com/minio/minio/cmd/http"
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 
-	"github.com/minio/minio/pkg/auth"
+	"github.com/RTradeLtd/s3x/pkg/auth"
 )
 
 // Signature and API related constants.

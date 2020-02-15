@@ -19,7 +19,7 @@ package lifecycle
 import (
 	"encoding/xml"
 
-	"github.com/minio/minio/pkg/bucket/object/tagging"
+	"github.com/RTradeLtd/s3x/pkg/bucket/object/tagging"
 )
 
 // Filter - a filter for a lifecycle configuration Rule.

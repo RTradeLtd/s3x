@@ -19,8 +19,8 @@ package cmd
 import (
 	"net/http"
 
+	"github.com/RTradeLtd/s3x/pkg/madmin"
 	"github.com/gorilla/mux"
-	"github.com/minio/minio/pkg/madmin"
 )
 
 const (

@@ -27,7 +27,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/minio/minio/pkg/dsync"
+	. "github.com/RTradeLtd/s3x/pkg/dsync"
 )
 
 const (

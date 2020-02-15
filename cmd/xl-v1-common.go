@@ -20,7 +20,7 @@ import (
 	"context"
 	"path"
 
-	"github.com/minio/minio/pkg/sync/errgroup"
+	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 )
 
 // getLoadBalancedDisks - fetches load balanced (sufficiently randomized) disk slice.

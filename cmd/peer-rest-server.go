@@ -29,14 +29,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	bucketsse "github.com/RTradeLtd/s3x/pkg/bucket/encryption"
+	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
+	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/event"
+	trace "github.com/RTradeLtd/s3x/pkg/trace"
 	"github.com/gorilla/mux"
-	"github.com/minio/minio/cmd/logger"
-	bucketsse "github.com/minio/minio/pkg/bucket/encryption"
-	"github.com/minio/minio/pkg/bucket/lifecycle"
-	objectlock "github.com/minio/minio/pkg/bucket/object/lock"
-	"github.com/minio/minio/pkg/bucket/policy"
-	"github.com/minio/minio/pkg/event"
-	trace "github.com/minio/minio/pkg/trace"
 )
 
 // To abstract a node over network.

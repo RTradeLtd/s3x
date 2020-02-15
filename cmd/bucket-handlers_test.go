@@ -26,7 +26,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/minio/minio/pkg/auth"
+	"github.com/RTradeLtd/s3x/pkg/auth"
 )
 
 // Wrapper for calling GetBucketPolicy HTTP handler tests for both XL multiple disks and single node setup.

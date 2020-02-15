@@ -22,12 +22,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/bpool"
-	"github.com/minio/minio/pkg/dsync"
-	"github.com/minio/minio/pkg/madmin"
-	xnet "github.com/minio/minio/pkg/net"
-	"github.com/minio/minio/pkg/sync/errgroup"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/bpool"
+	"github.com/RTradeLtd/s3x/pkg/dsync"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
+	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 )
 
 // XL constants.

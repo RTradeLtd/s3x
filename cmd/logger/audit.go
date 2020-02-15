@@ -24,8 +24,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/RTradeLtd/s3x/cmd/logger/message/audit"
 	"github.com/gorilla/mux"
-	"github.com/minio/minio/cmd/logger/message/audit"
 )
 
 // ResponseWriter - is a wrapper to trap the http response status code.

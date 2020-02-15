@@ -28,9 +28,9 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/RTradeLtd/s3x/pkg/auth"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
 	"github.com/gorilla/mux"
-	"github.com/minio/minio/pkg/auth"
-	"github.com/minio/minio/pkg/madmin"
 )
 
 // adminXLTestBed - encapsulates subsystems that need to be setup for

@@ -30,18 +30,18 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/RTradeLtd/s3x/cmd/config/etcd/dns"
+	"github.com/RTradeLtd/s3x/cmd/crypto"
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/event"
+	"github.com/RTradeLtd/s3x/pkg/handlers"
+	"github.com/RTradeLtd/s3x/pkg/hash"
+	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
+	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 	"github.com/minio/minio-go/v6/pkg/set"
-	"github.com/minio/minio/cmd/config/etcd/dns"
-	"github.com/minio/minio/cmd/crypto"
-	xhttp "github.com/minio/minio/cmd/http"
-	"github.com/minio/minio/cmd/logger"
-	objectlock "github.com/minio/minio/pkg/bucket/object/lock"
-	"github.com/minio/minio/pkg/bucket/policy"
-	"github.com/minio/minio/pkg/event"
-	"github.com/minio/minio/pkg/handlers"
-	"github.com/minio/minio/pkg/hash"
-	iampolicy "github.com/minio/minio/pkg/iam/policy"
-	"github.com/minio/minio/pkg/sync/errgroup"
 )
 
 const (

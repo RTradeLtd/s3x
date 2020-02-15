@@ -28,13 +28,13 @@ import (
 	"net/http"
 	"strings"
 
-	xhttp "github.com/minio/minio/cmd/http"
-	xjwt "github.com/minio/minio/cmd/jwt"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/auth"
-	"github.com/minio/minio/pkg/bucket/policy"
-	"github.com/minio/minio/pkg/hash"
-	iampolicy "github.com/minio/minio/pkg/iam/policy"
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
+	xjwt "github.com/RTradeLtd/s3x/cmd/jwt"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/auth"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/hash"
+	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
 )
 
 // Verify if request has JWT.

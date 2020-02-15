@@ -17,7 +17,7 @@
 package target
 
 import (
-	xnet "github.com/minio/minio/pkg/net"
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
 	"testing"
 )
 

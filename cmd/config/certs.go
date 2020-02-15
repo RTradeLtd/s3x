@@ -27,7 +27,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/minio/minio/pkg/env"
+	"github.com/RTradeLtd/s3x/pkg/env"
 )
 
 // EnvCertPassword is the environment variable which contains the password used

@@ -20,8 +20,8 @@ import (
 	"io"
 	"time"
 
-	"github.com/minio/minio/pkg/hash"
-	"github.com/minio/minio/pkg/madmin"
+	"github.com/RTradeLtd/s3x/pkg/hash"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
 )
 
 // BackendType - represents different backend types.

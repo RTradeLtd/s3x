@@ -25,9 +25,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/RTradeLtd/s3x/cmd/config"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/minio/minio/cmd/config"
-	"github.com/minio/minio/pkg/madmin"
 )
 
 const (
