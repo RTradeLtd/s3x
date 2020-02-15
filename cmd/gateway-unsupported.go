@@ -21,9 +21,10 @@ import (
 	"errors"
 
 	"github.com/RTradeLtd/s3x/cmd/logger"
+	bucketsse "github.com/RTradeLtd/s3x/pkg/bucket/encryption"
 	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
+	"github.com/RTradeLtd/s3x/pkg/bucket/object/tagging"
 	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
-	"github.com/RTradeLtd/s3x/pkg/bucket/tagging"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
 )
 
@@ -128,6 +129,21 @@ func (a GatewayUnsupported) DeleteBucketLifecycle(ctx context.Context, bucket st
 	return NotImplemented{}
 }
 
+// GetBucketSSEConfig returns bucket encryption config on given bucket
+func (a GatewayUnsupported) GetBucketSSEConfig(ctx context.Context, bucket string) (*bucketsse.BucketSSEConfig, error) {
+	return nil, NotImplemented{}
+}
+
+// SetBucketSSEConfig sets bucket encryption config on given bucket
+func (a GatewayUnsupported) SetBucketSSEConfig(ctx context.Context, bucket string, config *bucketsse.BucketSSEConfig) error {
+	return NotImplemented{}
+}
+
+// DeleteBucketSSEConfig deletes bucket encryption config on given bucket
+func (a GatewayUnsupported) DeleteBucketSSEConfig(ctx context.Context, bucket string) error {
+	return NotImplemented{}
+}
+
 // ReloadFormat - Not implemented stub.
 func (a GatewayUnsupported) ReloadFormat(ctx context.Context, dryRun bool) error {
 	return NotImplemented{}
@@ -148,11 +164,6 @@ func (a GatewayUnsupported) ListBucketsHeal(ctx context.Context) (buckets []Buck
 	return nil, NotImplemented{}
 }
 
-// ListObjectsHeal - Not implemented stub
-func (a GatewayUnsupported) ListObjectsHeal(ctx context.Context, bucket, prefix, marker, delimiter string, maxKeys int) (result ListObjectsInfo, err error) {
-	return ListObjectsInfo{}, NotImplemented{}
-}
-
 // HealObject - Not implemented stub
 func (a GatewayUnsupported) HealObject(ctx context.Context, bucket, object string, dryRun, remove bool, scanMode madmin.HealScanMode) (h madmin.HealResultItem, e error) {
 	return h, NotImplemented{}
@@ -164,7 +175,7 @@ func (a GatewayUnsupported) ListObjectsV2(ctx context.Context, bucket, prefix, c
 }
 
 // HealObjects - Not implemented stub
-func (a GatewayUnsupported) HealObjects(ctx context.Context, bucket, prefix string, fn func(string, string) error) (e error) {
+func (a GatewayUnsupported) HealObjects(ctx context.Context, bucket, prefix string, fn healObjectFn) (e error) {
 	return NotImplemented{}
 }
 

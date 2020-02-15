@@ -35,15 +35,6 @@ import (
 	"github.com/minio/cli"
 )
 
-func init() {
-	logger.Init(GOPATH, GOROOT)
-	logger.RegisterError(config.FmtError)
-
-	// Initialize globalConsoleSys system
-	globalConsoleSys = NewConsoleLogger(context.Background())
-	logger.AddTarget(globalConsoleSys)
-}
-
 var (
 	gatewayCmd = cli.Command{
 		Name:            "gateway",
@@ -165,7 +156,10 @@ func StartGateway(ctx *cli.Context, gw Gateway) {
 	globalServerConfig = srvCfg
 	globalServerConfigMu.Unlock()
 
-	router := mux.NewRouter().SkipClean(true)
+	// Initialize router. `SkipClean(true)` stops gorilla/mux from
+	// normalizing URL path minio/minio#3256
+	// avoid URL path encoding minio/minio#8950
+	router := mux.NewRouter().SkipClean(true).UseEncodedPath()
 
 	if globalEtcdClient != nil {
 		// Enable STS router if etcd is enabled.
@@ -243,12 +237,16 @@ func StartGateway(ctx *cli.Context, gw Gateway) {
 	// sub-systems, make sure that we do not move the above codeblock elsewhere.
 	if enableConfigOps {
 		logger.FatalIf(globalConfigSys.Init(newObject), "Unable to initialize config system")
+		buckets, err := newObject.ListBuckets(context.Background())
+		if err != nil {
+			logger.Fatal(err, "Unable to list buckets")
+		}
 
+		logger.FatalIf(globalNotificationSys.Init(buckets, newObject), "Unable to initialize notification system")
 		// Start watching disk for reloading config, this
 		// is only enabled for "NAS" gateway.
 		globalConfigSys.WatchConfigNASDisk(newObject)
 	}
-
 	// This is only to uniquely identify each gateway deployments.
 	globalDeploymentID = env.Get("MINIO_GATEWAY_DEPLOYMENT_ID", mustGetUUID())
 	logger.SetDeploymentID(globalDeploymentID)

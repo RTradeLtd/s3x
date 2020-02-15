@@ -21,9 +21,10 @@ import (
 	"io"
 	"net/http"
 
+	bucketsse "github.com/RTradeLtd/s3x/pkg/bucket/encryption"
 	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
+	"github.com/RTradeLtd/s3x/pkg/bucket/object/tagging"
 	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
-	"github.com/RTradeLtd/s3x/pkg/bucket/tagging"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
 	"github.com/minio/minio-go/v6/pkg/encrypt"
 )
@@ -99,10 +100,9 @@ type ObjectLayer interface {
 	HealFormat(ctx context.Context, dryRun bool) (madmin.HealResultItem, error)
 	HealBucket(ctx context.Context, bucket string, dryRun, remove bool) (madmin.HealResultItem, error)
 	HealObject(ctx context.Context, bucket, object string, dryRun, remove bool, scanMode madmin.HealScanMode) (madmin.HealResultItem, error)
-	HealObjects(ctx context.Context, bucket, prefix string, healObjectFn func(string, string) error) error
+	HealObjects(ctx context.Context, bucket, prefix string, fn healObjectFn) error
 
 	ListBucketsHeal(ctx context.Context) (buckets []BucketInfo, err error)
-	ListObjectsHeal(ctx context.Context, bucket, prefix, marker, delimiter string, maxKeys int) (result ListObjectsInfo, err error)
 
 	// Policy operations
 	SetBucketPolicy(context.Context, string, *policy.Policy) error
@@ -121,6 +121,11 @@ type ObjectLayer interface {
 	SetBucketLifecycle(context.Context, string, *lifecycle.Lifecycle) error
 	GetBucketLifecycle(context.Context, string) (*lifecycle.Lifecycle, error)
 	DeleteBucketLifecycle(context.Context, string) error
+
+	// Bucket Encryption operations
+	SetBucketSSEConfig(context.Context, string, *bucketsse.BucketSSEConfig) error
+	GetBucketSSEConfig(context.Context, string) (*bucketsse.BucketSSEConfig, error)
+	DeleteBucketSSEConfig(context.Context, string) error
 
 	// Backend related metrics
 	GetMetrics(ctx context.Context) (*Metrics, error)

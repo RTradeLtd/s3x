@@ -84,8 +84,8 @@ func (api objectAPIHandlers) GetBucketNotificationHandler(w http.ResponseWriter,
 			writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))
 			return
 		}
-		config.XMLNS = "http://s3.amazonaws.com/doc/2006-03-01/"
 		config.SetRegion(globalServerRegion)
+		config.XMLNS = "http://s3.amazonaws.com/doc/2006-03-01/"
 		notificationBytes, err := xml.Marshal(config)
 		if err != nil {
 			writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL, guessIsBrowserReq(r))

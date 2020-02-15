@@ -21,10 +21,12 @@ import (
 	"sort"
 
 	"github.com/RTradeLtd/s3x/cmd/logger"
+	bucketsse "github.com/RTradeLtd/s3x/pkg/bucket/encryption"
 	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
 	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
-	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 	"github.com/minio/minio-go/v6/pkg/s3utils"
+
+	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 )
 
 // list all errors that can be ignore in a bucket operation.
@@ -291,6 +293,21 @@ func (xl xlObjects) GetBucketLifecycle(ctx context.Context, bucket string) (*lif
 // DeleteBucketLifecycle deletes all lifecycle on bucket
 func (xl xlObjects) DeleteBucketLifecycle(ctx context.Context, bucket string) error {
 	return removeLifecycleConfig(ctx, xl, bucket)
+}
+
+// GetBucketSSEConfig returns bucket encryption config on given bucket
+func (xl xlObjects) GetBucketSSEConfig(ctx context.Context, bucket string) (*bucketsse.BucketSSEConfig, error) {
+	return getBucketSSEConfig(xl, bucket)
+}
+
+// SetBucketSSEConfig sets bucket encryption config on given bucket
+func (xl xlObjects) SetBucketSSEConfig(ctx context.Context, bucket string, config *bucketsse.BucketSSEConfig) error {
+	return saveBucketSSEConfig(ctx, xl, bucket, config)
+}
+
+// DeleteBucketSSEConfig deletes bucket encryption config on given bucket
+func (xl xlObjects) DeleteBucketSSEConfig(ctx context.Context, bucket string) error {
+	return removeBucketSSEConfig(ctx, xl, bucket)
 }
 
 // IsNotificationSupported returns whether bucket notification is applicable for this layer.

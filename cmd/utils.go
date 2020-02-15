@@ -29,6 +29,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -43,6 +44,7 @@ import (
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/handlers"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
+
 	humanize "github.com/dustin/go-humanize"
 	"github.com/gorilla/mux"
 )
@@ -426,12 +428,10 @@ func newCustomHTTPTransport(tlsConfig *tls.Config, dialTimeout, dialKeepAlive ti
 	tr := &http.Transport{
 		Proxy:                 http.ProxyFromEnvironment,
 		DialContext:           newCustomDialContext(dialTimeout, dialKeepAlive),
-		MaxIdleConns:          256,
 		MaxIdleConnsPerHost:   256,
-		IdleConnTimeout:       30 * time.Second,
+		IdleConnTimeout:       60 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
-		ResponseHeaderTimeout: 10 * time.Second,
-		ExpectContinueTimeout: 3 * time.Second,
+		ExpectContinueTimeout: 10 * time.Second,
 		TLSClientConfig:       tlsConfig,
 		// Go net/http automatically unzip if content-type is
 		// gzip disable this feature, as we are always interested
@@ -507,9 +507,14 @@ func ceilFrac(numerator, denominator int64) (ceil int64) {
 func newContext(r *http.Request, w http.ResponseWriter, api string) context.Context {
 	vars := mux.Vars(r)
 	bucket := vars["bucket"]
-	object := vars["object"]
-	prefix := vars["prefix"]
-
+	object, err := url.PathUnescape(vars["object"])
+	if err != nil {
+		object = vars["object"]
+	}
+	prefix, err := url.QueryUnescape(vars["prefix"])
+	if err != nil {
+		prefix = vars["prefix"]
+	}
 	if prefix != "" {
 		object = prefix
 	}

@@ -19,12 +19,12 @@ package csv
 import (
 	"bufio"
 	"bytes"
-	"encoding/csv"
 	"fmt"
 	"io"
 	"runtime"
 	"sync"
 
+	csv "github.com/RTradeLtd/s3x/pkg/csvparser"
 	"github.com/RTradeLtd/s3x/pkg/s3select/sql"
 )
 

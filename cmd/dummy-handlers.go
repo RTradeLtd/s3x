@@ -18,11 +18,10 @@ package cmd
 
 import (
 	"encoding/xml"
-	"net/http"
-
+	"github.com/RTradeLtd/s3x/pkg/bucket/object/tagging"
 	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
-	"github.com/RTradeLtd/s3x/pkg/bucket/tagging"
 	"github.com/gorilla/mux"
+	"net/http"
 )
 
 // Data types used for returning dummy tagging XML.

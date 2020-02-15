@@ -30,9 +30,10 @@ import (
 	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/bpool"
+	bucketsse "github.com/RTradeLtd/s3x/pkg/bucket/encryption"
 	"github.com/RTradeLtd/s3x/pkg/bucket/lifecycle"
+	"github.com/RTradeLtd/s3x/pkg/bucket/object/tagging"
 	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
-	"github.com/RTradeLtd/s3x/pkg/bucket/tagging"
 	"github.com/RTradeLtd/s3x/pkg/dsync"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
 	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
@@ -597,6 +598,21 @@ func (s *xlSets) DeleteBucketLifecycle(ctx context.Context, bucket string) error
 	return removeLifecycleConfig(ctx, s, bucket)
 }
 
+// GetBucketSSEConfig returns bucket encryption config on given bucket
+func (s *xlSets) GetBucketSSEConfig(ctx context.Context, bucket string) (*bucketsse.BucketSSEConfig, error) {
+	return getBucketSSEConfig(s, bucket)
+}
+
+// SetBucketSSEConfig sets bucket encryption config on given bucket
+func (s *xlSets) SetBucketSSEConfig(ctx context.Context, bucket string, config *bucketsse.BucketSSEConfig) error {
+	return saveBucketSSEConfig(ctx, s, bucket, config)
+}
+
+// DeleteBucketSSEConfig deletes bucket encryption config on given bucket
+func (s *xlSets) DeleteBucketSSEConfig(ctx context.Context, bucket string) error {
+	return removeBucketSSEConfig(ctx, s, bucket)
+}
+
 // IsNotificationSupported returns whether bucket notification is applicable for this layer.
 func (s *xlSets) IsNotificationSupported() bool {
 	return s.getHashedSet("").IsNotificationSupported()
@@ -857,7 +873,8 @@ func leastEntry(entryChs []FileInfoCh, entries []FileInfo, entriesValid []bool) 
 }
 
 // mergeEntriesCh - merges FileInfo channel to entries upto maxKeys.
-func mergeEntriesCh(entryChs []FileInfoCh, maxKeys int, totalDrives int, heal bool) (entries FilesInfo) {
+// If partialQuorumOnly is set only objects that does not have full quorum is returned.
+func mergeEntriesCh(entryChs []FileInfoCh, maxKeys int, totalDrives int, partialQuorumOnly bool) (entries FilesInfo) {
 	var i = 0
 	entriesInfos := make([]FileInfo, len(entryChs))
 	entriesValid := make([]bool, len(entryChs))
@@ -875,7 +892,7 @@ func mergeEntriesCh(entryChs []FileInfoCh, maxKeys int, totalDrives int, heal bo
 			rquorum = totalDrives / 2
 		}
 
-		if heal {
+		if partialQuorumOnly {
 			// When healing is enabled, we should
 			// list only objects which need healing.
 			if quorumCount == totalDrives {
@@ -1045,10 +1062,11 @@ func (s *xlSets) listObjectsNonSlash(ctx context.Context, bucket, prefix, marker
 	return result, nil
 }
 
-// ListObjects - implements listing of objects across disks, each disk is indepenently
+// ListObjects - implements listing of objects across disks, each disk is independently
 // walked and merged at this layer. Resulting value through the merge process sends
 // the data in lexically sorted order.
-func (s *xlSets) listObjects(ctx context.Context, bucket, prefix, marker, delimiter string, maxKeys int, heal bool) (loi ListObjectsInfo, err error) {
+// If partialQuorumOnly is set only objects that does not have full quorum is returned.
+func (s *xlSets) listObjects(ctx context.Context, bucket, prefix, marker, delimiter string, maxKeys int, partialQuorumOnly bool) (loi ListObjectsInfo, err error) {
 	if err = checkListObjsArgs(ctx, bucket, prefix, marker, delimiter, s); err != nil {
 		return loi, err
 	}
@@ -1091,13 +1109,13 @@ func (s *xlSets) listObjects(ctx context.Context, bucket, prefix, marker, delimi
 		recursive = false
 	}
 
-	entryChs, endWalkCh := s.pool.Release(listParams{bucket, recursive, marker, prefix, heal})
+	entryChs, endWalkCh := s.pool.Release(listParams{bucket: bucket, recursive: recursive, marker: marker, prefix: prefix})
 	if entryChs == nil {
 		endWalkCh = make(chan struct{})
 		entryChs = s.startMergeWalks(context.Background(), bucket, prefix, marker, recursive, endWalkCh)
 	}
 
-	entries := mergeEntriesCh(entryChs, maxKeys, s.drivesPerSet, heal)
+	entries := mergeEntriesCh(entryChs, maxKeys, s.drivesPerSet, partialQuorumOnly)
 	if len(entries.Files) == 0 {
 		return loi, nil
 	}
@@ -1151,7 +1169,7 @@ func (s *xlSets) listObjects(ctx context.Context, bucket, prefix, marker, delimi
 		loi.Objects = append(loi.Objects, objInfo)
 	}
 	if loi.IsTruncated {
-		s.pool.Set(listParams{bucket, recursive, loi.NextMarker, prefix, heal}, entryChs, endWalkCh)
+		s.pool.Set(listParams{bucket, recursive, loi.NextMarker, prefix}, entryChs, endWalkCh)
 	}
 	return loi, nil
 }
@@ -1626,44 +1644,35 @@ func (s *xlSets) ListBucketsHeal(ctx context.Context) ([]BucketInfo, error) {
 
 // HealObjects - Heal all objects recursively at a specified prefix, any
 // dangling objects deleted as well automatically.
-func (s *xlSets) HealObjects(ctx context.Context, bucket, prefix string, healObjectFn func(string, string) error) error {
+func (s *xlSets) HealObjects(ctx context.Context, bucket, prefix string, healObject healObjectFn) error {
+	endWalkCh := make(chan struct{})
+	defer close(endWalkCh)
 
-	marker := ""
+	recursive := true
+	entryChs := s.startMergeWalks(ctx, bucket, prefix, "", recursive, endWalkCh)
+
+	entriesValid := make([]bool, len(entryChs))
+	entries := make([]FileInfo, len(entryChs))
 	for {
-		if httpServer := newHTTPServerFn(); httpServer != nil {
-			// Wait at max 10 minute for an inprogress request before proceeding to heal
-			waitCount := 600
-			// Any requests in progress, delay the heal.
-			for (httpServer.GetRequestCount() >= int32(s.setCount*s.drivesPerSet)) &&
-				waitCount > 0 {
-				waitCount--
-				time.Sleep(1 * time.Second)
-			}
-		}
-
-		res, err := s.ListObjectsHeal(ctx, bucket, prefix, marker, "", maxObjectList)
-		if err != nil {
-			continue
-		}
-
-		for _, obj := range res.Objects {
-			if err = healObjectFn(bucket, obj.Name); err != nil {
-				return toObjectErr(err, bucket, obj.Name)
-			}
-		}
-
-		if !res.IsTruncated {
+		entry, quorumCount, ok := leastEntry(entryChs, entries, entriesValid)
+		if !ok {
 			break
 		}
 
-		marker = res.NextMarker
+		if quorumCount == s.drivesPerSet {
+			// Skip good entries.
+			continue
+		}
+
+		// Wait and proceed if there are active requests
+		waitForLowHTTPReq(int32(s.drivesPerSet))
+
+		if err := healObject(bucket, entry.Name); err != nil {
+			return toObjectErr(err, bucket, entry.Name)
+		}
 	}
 
 	return nil
-}
-
-func (s *xlSets) ListObjectsHeal(ctx context.Context, bucket, prefix, marker, delimiter string, maxKeys int) (loi ListObjectsInfo, err error) {
-	return s.listObjects(ctx, bucket, prefix, marker, delimiter, maxKeys, true)
 }
 
 // PutObjectTag - replace or add tags to an existing object
