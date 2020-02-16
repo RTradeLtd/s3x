@@ -105,7 +105,7 @@ func ipfsFileUpload(ctx context.Context, fileClient pb.FileAPIClient, r io.Reade
 	if err != nil {
 		return "", size, err
 	}
-	if _, _, err := cid.CidFromBytes([]byte(resp.Hash)); err != nil {
+	if _, err := cid.Decode(resp.Hash); err != nil {
 		return "", size, fmt.Errorf("resp.Hash mush be a valid cid, but got error: %v", err)
 	}
 	return resp.Hash, size, nil
