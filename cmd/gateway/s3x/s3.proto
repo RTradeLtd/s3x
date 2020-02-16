@@ -100,7 +100,7 @@ message ObjectPartInfo {
     // name of object in bucket
     string name = 2;
     // Date and time at which the part was uploaded.
-	google.protobuf.Timestamp lastModified = 3 [(gogoproto.stdtime) = true, (gogoproto.nullable) = false];
+    google.protobuf.Timestamp lastModified = 3 [(gogoproto.stdtime) = true, (gogoproto.nullable) = false];
     // Size in bytes of the part.
     int64 size = 4;
     // Decompressed Size.
