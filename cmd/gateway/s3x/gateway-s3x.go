@@ -180,8 +180,12 @@ func (g *TEMX) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error
 	if err != nil {
 		return nil, err
 	}
-	go xobj.infoAPI.grpcServer.Serve(xobj.listener)
-	go xobj.infoAPI.httpServer.ListenAndServe()
+	go func() {
+		_ = xobj.infoAPI.grpcServer.Serve(xobj.listener)
+	}()
+	go func() {
+		_ = xobj.infoAPI.httpServer.ListenAndServe()
+	}()
 	return xobj, nil
 }
 
