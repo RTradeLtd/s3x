@@ -22,7 +22,6 @@ require (
 	github.com/coredns/coredns v1.4.0
 	github.com/coreos/bbolt v1.3.3 // indirect
 	github.com/coreos/etcd v3.3.12+incompatible
-	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e // indirect
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
 	github.com/dgraph-io/badger/v2 v2.0.1-rc1.0.20200127094334-3e25d771067d // indirect
@@ -41,7 +40,6 @@ require (
 	github.com/golang/groupcache v0.0.0-20190702054246-869f871628b6 // indirect
 	github.com/golang/protobuf v1.3.3
 	github.com/gomodule/redigo v2.0.0+incompatible
-	github.com/gopherjs/gopherjs v0.0.0-20190328170749-bb2674552d8f // indirect
 	github.com/gorilla/handlers v1.4.0
 	github.com/gorilla/mux v1.7.0
 	github.com/gorilla/rpc v1.2.0
@@ -55,6 +53,9 @@ require (
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf
 	github.com/ipfs/go-cid v0.0.5
 	github.com/ipfs/go-datastore v0.3.1
+	github.com/ipfs/go-ipld-format v0.0.2
+	github.com/ipfs/go-merkledag v0.3.1
+	github.com/ipfs/go-unixfs v0.2.4
 	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/json-iterator/go v1.1.7
 	github.com/klauspost/compress v1.9.8
@@ -64,11 +65,11 @@ require (
 	github.com/klauspost/reedsolomon v1.9.3
 	github.com/kurin/blazer v0.5.4-0.20190613185654-cf2f27cc0be3
 	github.com/lib/pq v1.1.1
-	github.com/mattn/go-colorable v0.1.1
+	github.com/mattn/go-colorable v0.1.2
 	github.com/mattn/go-ieproxy v0.0.0-20190805055040-f9202b1cfdeb // indirect
-	github.com/mattn/go-isatty v0.0.7
+	github.com/mattn/go-isatty v0.0.8
 	github.com/mattn/go-runewidth v0.0.4 // indirect
-	github.com/miekg/dns v1.1.8
+	github.com/miekg/dns v1.1.12
 	github.com/minio/cli v1.22.0
 	github.com/minio/gokrb5/v7 v7.2.5
 	github.com/minio/hdfs/v3 v3.0.1
@@ -103,7 +104,6 @@ require (
 	github.com/shirou/gopsutil v2.18.12+incompatible
 	github.com/sirupsen/logrus v1.4.2
 	github.com/skyrings/skyring-common v0.0.0-20160929130248-d1c0bb1cbd5e
-	github.com/smartystreets/assertions v0.0.0-20190401211740-f487f9de1cd3 // indirect
 	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/streadway/amqp v0.0.0-20190404075320-75d898a42a94
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
@@ -117,7 +117,6 @@ require (
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a // indirect
 	golang.org/x/sys v0.0.0-20190922100055-0a153f010e69
-	golang.org/x/text v0.3.2 // indirect
 	google.golang.org/api v0.5.0
 	google.golang.org/appengine v1.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20200212174721-66ed5ce911ce

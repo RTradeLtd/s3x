@@ -12,7 +12,7 @@ Any error parsing to return minio errors should be done in the calling S3 functi
 */
 
 // getMinioObjectInfo is used to convert between object info in our protocol buffer format, to a minio object layer info type
-func (x *xObjects) getMinioObjectInfo(o *ObjectInfo) minio.ObjectInfo {
+func getMinioObjectInfo(o *ObjectInfo) minio.ObjectInfo {
 	if o == nil {
 		return minio.ObjectInfo{}
 	}
