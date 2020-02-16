@@ -1,6 +1,9 @@
 package s3x
 
-import "github.com/ipfs/go-datastore"
+import (
+	minio "github.com/RTradeLtd/s3x/cmd"
+	"github.com/ipfs/go-datastore"
+)
 
 /* Design Notes
 ---------------
@@ -45,7 +48,7 @@ func (ls *ledgerStore) NewMultipartUpload(multipartID string, info *ObjectInfo) 
 }
 
 // PutObjectPart is used to record an individual object part within a multipart upload
-func (ls *ledgerStore) PutObjectPart(bucketName, objectName, partHash, multipartID string, partNumber int64) error {
+func (ls *ledgerStore) PutObjectPart(bucketName, objectName, multipartID string, pi minio.PartInfo) error {
 	err := ls.AssertBucketExits(bucketName)
 	if err != nil {
 		return err
@@ -56,9 +59,14 @@ func (ls *ledgerStore) PutObjectPart(bucketName, objectName, partHash, multipart
 	if err != nil {
 		return err
 	}
-	m.ObjectParts[partNumber] = ObjectPartInfo{
-		Number:   partNumber,
-		DataHash: partHash,
+	pn := int64(pi.PartNumber)
+	m.ObjectParts[pn] = ObjectPartInfo{
+		Number:       pn,
+		Name:         objectName,
+		LastModified: pi.LastModified,
+		Size_:        pi.Size,
+		ActualSize:   pi.ActualSize,
+		DataHash:     pi.ETag,
 	}
 	data, err := m.Marshal()
 	if err != nil {
