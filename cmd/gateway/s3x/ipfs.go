@@ -2,9 +2,11 @@ package s3x
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	pb "github.com/RTradeLtd/TxPB/v3/go"
+	"github.com/ipfs/go-cid"
 )
 
 type unmarshaller interface {
@@ -102,6 +104,9 @@ func ipfsFileUpload(ctx context.Context, fileClient pb.FileAPIClient, r io.Reade
 	resp, err := stream.CloseAndRecv()
 	if err != nil {
 		return "", size, err
+	}
+	if _, _, err := cid.CidFromBytes([]byte(resp.Hash)); err != nil {
+		return "", size, fmt.Errorf("resp.Hash mush be a valid cid, but got error: %v", err)
 	}
 	return resp.Hash, size, nil
 }
