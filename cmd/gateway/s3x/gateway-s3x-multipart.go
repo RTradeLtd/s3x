@@ -182,8 +182,8 @@ func (x *xObjects) CompleteMultipartUpload(
 	}
 	loi := m.ObjectInfo
 	if loi == nil || len(opts.UserDefined) != 0 {
-		loi_ := newObjectInfo(bucket, object, int(totalSize), opts)
-		loi = &loi_
+		noi := newObjectInfo(bucket, object, int(totalSize), opts)
+		loi = &noi
 	} else {
 		loi.Size_ = int64(totalSize)
 		loi.ModTime = time.Now().UTC()
