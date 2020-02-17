@@ -57,9 +57,9 @@ require (
 	github.com/ipfs/go-merkledag v0.3.1
 	github.com/ipfs/go-unixfs v0.2.4
 	github.com/jonboulle/clockwork v0.1.0 // indirect
-	github.com/json-iterator/go v1.1.7
-	github.com/klauspost/compress v1.9.8
-	github.com/klauspost/cpuid v1.2.2
+	github.com/json-iterator/go v1.1.9
+	github.com/klauspost/compress v1.10.0
+	github.com/klauspost/cpuid v1.2.3
 	github.com/klauspost/pgzip v1.2.1
 	github.com/klauspost/readahead v1.3.1
 	github.com/klauspost/reedsolomon v1.9.3
@@ -78,9 +78,10 @@ require (
 	github.com/minio/minio-go/v6 v6.0.45
 	github.com/minio/parquet-go v0.0.0-20200125064549-a1e49702e174
 	github.com/minio/sha256-simd v0.1.1
-	github.com/minio/simdjson-go v0.1.2
+	github.com/minio/simdjson-go v0.1.3
 	github.com/minio/sio v0.2.0
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/mmcloughlin/avo v0.0.0-20200201205037-fb157e1de836 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/nats-io/gnatsd v1.4.1 // indirect
@@ -117,6 +118,7 @@ require (
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a // indirect
 	golang.org/x/sys v0.0.0-20190922100055-0a153f010e69
+	golang.org/x/tools v0.0.0-20200216192241-b320d3a0f5a2 // indirect
 	google.golang.org/api v0.5.0
 	google.golang.org/appengine v1.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20200212174721-66ed5ce911ce
