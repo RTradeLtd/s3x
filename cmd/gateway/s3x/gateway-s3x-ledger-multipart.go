@@ -34,8 +34,9 @@ func (ls *ledgerStore) NewMultipartUpload(multipartID string, info *ObjectInfo) 
 		return err
 	}
 	m := &MultipartUpload{
-		ObjectInfo: info,
-		Id:         multipartID,
+		ObjectInfo:  info,
+		Id:          multipartID,
+		ObjectParts: make(map[int64]ObjectPartInfo),
 	}
 	ls.pmapLocker.Lock()
 	ls.l.MultipartUploads[multipartID] = m

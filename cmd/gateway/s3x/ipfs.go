@@ -2,11 +2,13 @@ package s3x
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
 	pb "github.com/RTradeLtd/TxPB/v3/go"
 	"github.com/ipfs/go-cid"
+	"github.com/ipfs/go-merkledag"
 )
 
 type unmarshaller interface {
@@ -71,6 +73,10 @@ func ipfsSaveBytes(ctx context.Context, dag pb.NodeAPIClient, data []byte) (stri
 		return "", err
 	}
 	return resp.GetHashes()[0], nil
+}
+
+func ipfsSaveProtoNode(ctx context.Context, dag pb.NodeAPIClient, node *merkledag.ProtoNode) (string, error) {
+	return "", errors.New("not implemented")
 }
 
 const chunkSize = 4194294 //10 less than 4MB
