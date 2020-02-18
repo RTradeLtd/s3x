@@ -2,7 +2,6 @@ package s3x
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 
@@ -76,7 +75,20 @@ func ipfsSaveBytes(ctx context.Context, dag pb.NodeAPIClient, data []byte) (stri
 }
 
 func ipfsSaveProtoNode(ctx context.Context, dag pb.NodeAPIClient, node *merkledag.ProtoNode) (string, error) {
-	return "", errors.New("not implemented")
+	data, err := node.Marshal()
+	if err != nil {
+		return "", err
+	}
+	resp, err := dag.Dag(ctx, &pb.DagRequest{
+		RequestType:         pb.DAGREQTYPE_DAG_PUT,
+		Data:                data,
+		ObjectEncoding:      "protobuf",
+		SerializationFormat: "protobuf",
+	})
+	if err != nil {
+		return "", err
+	}
+	return resp.GetHashes()[0], nil
 }
 
 const chunkSize = 4194294 //10 less than 4MB

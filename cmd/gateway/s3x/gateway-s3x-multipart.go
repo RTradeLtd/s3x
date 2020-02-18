@@ -176,7 +176,7 @@ func (x *xObjects) CompleteMultipartUpload(
 		return oi, x.toMinioErr(err, bucket, object, uploadID)
 	}
 	protoNode.SetData(data)
-	dataHash, err := ipfsSave(ctx, x.dagClient, protoNode)
+	dataHash, err := ipfsSaveProtoNode(ctx, x.dagClient, protoNode)
 	if err != nil {
 		return oi, x.toMinioErr(err, bucket, object, uploadID)
 	}
