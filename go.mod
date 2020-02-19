@@ -19,7 +19,7 @@ require (
 	github.com/bcicen/jstream v0.0.0-20190220045926-16c1f8af81c2
 	github.com/beevik/ntp v0.2.0
 	github.com/cheggaaa/pb v1.0.28
-	github.com/coredns/coredns v1.4.0
+	github.com/coredns/coredns v1.6.7
 	github.com/coreos/bbolt v1.3.3 // indirect
 	github.com/coreos/etcd v3.3.12+incompatible
 	github.com/coreos/go-semver v0.3.0 // indirect
