@@ -88,7 +88,7 @@ require (
 	github.com/nats-io/nats-server/v2 v2.1.2
 	github.com/nats-io/nats-streaming-server v0.14.2 // indirect
 	github.com/nats-io/nats.go v1.9.1
-	github.com/nats-io/stan.go v0.4.5
+	github.com/nats-io/stan.go v0.6.0
 	github.com/ncw/directio v1.0.5
 	github.com/nsqio/go-nsq v1.0.7
 	github.com/pkg/errors v0.8.1
