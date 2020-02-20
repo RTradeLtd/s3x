@@ -50,6 +50,11 @@ func (ls *ledgerStore) NewMultipartUpload(multipartID string, info *ObjectInfo) 
 
 // PutObjectPart is used to record an individual object part within a multipart upload
 func (ls *ledgerStore) PutObjectPart(bucketName, objectName, multipartID string, pi minio.PartInfo) error {
+	pn := int64(pi.PartNumber)
+	if pn > 10000 {
+		return ErrInvalidPartNumber
+	}
+
 	err := ls.AssertBucketExits(bucketName)
 	if err != nil {
 		return err
@@ -60,7 +65,6 @@ func (ls *ledgerStore) PutObjectPart(bucketName, objectName, multipartID string,
 	if err != nil {
 		return err
 	}
-	pn := int64(pi.PartNumber)
 	m.ObjectParts[pn] = ObjectPartInfo{
 		Number:       pn,
 		Name:         objectName,

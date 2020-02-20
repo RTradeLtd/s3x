@@ -22,6 +22,9 @@ var (
 	// ErrInvalidUploadID is an error message returned when the multipart upload id
 	// does not exist
 	ErrInvalidUploadID = errors.New("invalid multipart upload id")
+	// ErrInvalidPartNumber is an error message returned when the multipart part
+	// number is out of range (not mappable to a minio error type)
+	ErrInvalidPartNumber = errors.New("invalid multipart part number")
 )
 
 // toMinioErr converts gRPC or ledger errors into compatible minio errors
