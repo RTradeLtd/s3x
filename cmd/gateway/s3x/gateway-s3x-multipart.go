@@ -58,11 +58,9 @@ func (x *xObjects) PutObjectPart(
 		Size:         int64(size),
 		ActualSize:   int64(size),
 	}
-	err = x.ledgerStore.PutObjectPart(bucket, object, uploadID, pi)
-	if err != nil {
-		return pi, x.toMinioErr(err, bucket, object, uploadID)
-	}
-	return pi, nil
+	return pi, x.toMinioErr(
+		x.ledgerStore.PutObjectPart(bucket, object, uploadID, pi),
+		bucket, object, uploadID)
 }
 
 // CopyObjectPart creates a part in a multipart upload by copying
