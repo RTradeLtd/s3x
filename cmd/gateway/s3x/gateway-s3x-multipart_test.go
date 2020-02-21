@@ -49,7 +49,7 @@ func TestS3XGateway_Multipart(t *testing.T) {
 			partsInfo = append(partsInfo, pi)
 		}
 	})
-
+	gateway.restart(t) //make sure parts still exist after restart
 	t.Run("complete", func(t *testing.T) {
 		uploadParts := make([]minio.CompletePart, 0, parts)
 		for _, pi := range partsInfo {
