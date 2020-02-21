@@ -65,6 +65,9 @@ func (ls *ledgerStore) PutObjectPart(bucketName, objectName, multipartID string,
 	if err != nil {
 		return err
 	}
+	if m.ObjectParts == nil {
+		m.ObjectParts = make(map[int64]ObjectPartInfo)
+	}
 	m.ObjectParts[pn] = ObjectPartInfo{
 		Number:       pn,
 		Name:         objectName,
