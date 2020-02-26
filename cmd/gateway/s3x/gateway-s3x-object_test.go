@@ -5,7 +5,6 @@ import (
 	"context"
 	"io"
 	"math"
-	"strings"
 	"testing"
 
 	minio "github.com/RTradeLtd/s3x/cmd"
@@ -32,15 +31,10 @@ func testPutObject(t *testing.T, gateway *testGateway) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, err := gateway.PutObject(ctx, tt.args.bucketName, tt.args.objectName,
-				minio.NewPutObjReader(
-					toObjectReader(
-						t,
-						strings.NewReader(tt.args.objectData),
-						int64(len(testObject1Data)),
-					), nil, nil,
-				), minio.ObjectOptions{},
-			)
+			resp, err := gateway.PutObject(
+				ctx, tt.args.bucketName, tt.args.objectName,
+				getTestPutObjectReader(t, []byte(tt.args.objectData)),
+				minio.ObjectOptions{})
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("PutObject() err %v, wantErr %v", err, tt.wantErr)
 			}
@@ -280,10 +274,19 @@ func TestS3XGateway_Object(t *testing.T) {
 	})
 }
 
-func toObjectReader(t *testing.T, input io.Reader, size int64) *hash.Reader {
+func getTestHashReader(t testing.TB, input io.Reader, size int64) *hash.Reader {
 	r, err := hash.NewReader(input, size, "", "", size, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return r
+}
+
+func getTestPutObjectReader(t testing.TB, data []byte) *minio.PutObjReader {
+	return minio.NewPutObjReader(
+		getTestHashReader(
+			t,
+			bytes.NewReader(data),
+			int64(len(data)),
+		), nil, nil)
 }

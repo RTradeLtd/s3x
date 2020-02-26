@@ -97,13 +97,18 @@ message ObjectInfo {
 message ObjectPartInfo {
     // convertable to "int" type in minio.PartInfo
     int64 number = 1;
+    // name of object in bucket
     string name = 2;
-    int64 size = 3;
-    int64 actualSize = 4;
+    // Date and time at which the part was uploaded.
+    google.protobuf.Timestamp lastModified = 3 [(gogoproto.stdtime) = true, (gogoproto.nullable) = false];
+    // Size in bytes of the part.
+    int64 size = 4;
+    // Decompressed Size.
+    int64 actualSize = 5;
     // the hash of the data on ipfs
     // in the case of multipart uploads
     // this will refer to a unixfs object
-    string dataHash = 5;
+    string dataHash = 6;
 }
 
 message MultipartUpload {

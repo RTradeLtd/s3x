@@ -7,6 +7,11 @@ import (
 	"time"
 
 	minio "github.com/RTradeLtd/s3x/cmd"
+	proto "github.com/gogo/protobuf/proto"
+	"github.com/ipfs/go-cid"
+	ipld "github.com/ipfs/go-ipld-format"
+	"github.com/ipfs/go-merkledag"
+	unixfs_pb "github.com/ipfs/go-unixfs/pb"
 	"github.com/segmentio/ksuid"
 )
 
@@ -46,15 +51,16 @@ func (x *xObjects) PutObjectPart(
 	if err != nil {
 		return pi, x.toMinioErr(err, bucket, object, uploadID)
 	}
-	err = x.ledgerStore.PutObjectPart(bucket, object, hash, uploadID, int64(partID))
-	if err != nil {
-		return pi, x.toMinioErr(err, bucket, object, uploadID)
-	}
-	return minio.PartInfo{
+	pi = minio.PartInfo{
 		PartNumber:   partID,
 		LastModified: time.Now().UTC(),
+		ETag:         hash,
 		Size:         int64(size),
-	}, nil
+		ActualSize:   int64(size),
+	}
+	return pi, x.toMinioErr(
+		x.ledgerStore.PutObjectPart(bucket, object, uploadID, pi),
+		bucket, object, uploadID)
 }
 
 // CopyObjectPart creates a part in a multipart upload by copying
@@ -125,8 +131,67 @@ func (x *xObjects) CompleteMultipartUpload(
 ) (oi minio.ObjectInfo, e error) {
 	err := x.ledgerStore.AssertBucketExits(bucket)
 	if err != nil {
-		return oi, x.toMinioErr(err, bucket, "", "")
+		return oi, x.toMinioErr(err, bucket, object, uploadID)
 	}
-	return oi, errors.New("not finished yet")
-
+	m, unlock, err := x.ledgerStore.GetObjectDetails(uploadID)
+	if err != nil {
+		return oi, x.toMinioErr(err, bucket, object, uploadID)
+	}
+	defer unlock()
+	totalSize := uint64(0)
+	links := make([]*ipld.Link, 0, len(uploadedParts))
+	blocks := make([]uint64, 0, len(uploadedParts))
+	for _, p := range uploadedParts {
+		number := int64(p.PartNumber)
+		pi, ok := m.ObjectParts[number]
+		if !ok {
+			return oi, x.toMinioErr(fmt.Errorf("PartNumber %v not found", number), bucket, object, uploadID)
+		}
+		if pi.ActualSize <= 0 {
+			return oi, x.toMinioErr(fmt.Errorf("PartNumber %v reported ActualSize as %v", number, pi.ActualSize), bucket, object, uploadID)
+		}
+		cid, err := cid.Decode(pi.DataHash)
+		if err != nil {
+			return oi, x.toMinioErr(fmt.Errorf("PartNumber %v hash is not cid, %v", number, err), bucket, object, uploadID)
+		}
+		size := uint64(pi.ActualSize)
+		totalSize += size
+		links = append(links, &ipld.Link{
+			Size: size,
+			Cid:  cid,
+		})
+		blocks = append(blocks, size)
+	}
+	protoNode := &merkledag.ProtoNode{}
+	protoNode.SetCidBuilder(merkledag.V1CidPrefix())
+	protoNode.SetLinks(links)
+	data, err := proto.Marshal(&unixfs_pb.Data{
+		Type:       unixfs_pb.Data_File.Enum(),
+		Filesize:   &totalSize,
+		Blocksizes: blocks,
+	})
+	if err != nil {
+		return oi, x.toMinioErr(err, bucket, object, uploadID)
+	}
+	protoNode.SetData(data)
+	dataHash, err := ipfsSaveProtoNode(ctx, x.dagClient, protoNode)
+	if err != nil {
+		return oi, x.toMinioErr(err, bucket, object, uploadID)
+	}
+	loi := m.ObjectInfo
+	if loi == nil || len(opts.UserDefined) != 0 {
+		noi := newObjectInfo(bucket, object, int(totalSize), opts)
+		loi = &noi
+	} else {
+		loi.Size_ = int64(totalSize)
+		loi.ModTime = time.Now().UTC()
+	}
+	err = x.ledgerStore.PutObject(ctx, bucket, object, &Object{
+		DataHash:   dataHash,
+		ObjectInfo: *loi,
+	})
+	if err != nil {
+		return oi, x.toMinioErr(err, bucket, object, uploadID)
+	}
+	return getMinioObjectInfo(loi), x.AbortMultipartUpload(ctx, bucket, object, uploadID)
 }

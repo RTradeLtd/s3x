@@ -24,7 +24,7 @@ func (x *xObjects) ListObjects(
 	}
 	loi.Objects = make([]minio.ObjectInfo, 0, len(objs))
 	for _, obj := range objs {
-		loi.Objects = append(loi.Objects, x.getMinioObjectInfo(&obj))
+		loi.Objects = append(loi.Objects, getMinioObjectInfo(&obj))
 	}
 	// TODO(bonedaddy): consider if we should use the following helper func
 	// return minio.FromMinioClientListBucketResult(bucket, result), nil
@@ -45,7 +45,7 @@ func (x *xObjects) ListObjectsV2(
 	}
 	loi.Objects = make([]minio.ObjectInfo, 0, len(objs))
 	for _, obj := range objs {
-		loi.Objects = append(loi.Objects, x.getMinioObjectInfo(&obj))
+		loi.Objects = append(loi.Objects, getMinioObjectInfo(&obj))
 	}
 	return loi, nil
 }
@@ -117,7 +117,7 @@ func (x *xObjects) GetObjectInfo(
 	opts minio.ObjectOptions,
 ) (objInfo minio.ObjectInfo, err error) {
 	oi, err := x.ledgerStore.ObjectInfo(ctx, bucket, object)
-	return x.getMinioObjectInfo(oi), x.toMinioErr(err, bucket, object, "")
+	return getMinioObjectInfo(oi), x.toMinioErr(err, bucket, object, "")
 }
 
 //newObjectInfo create an ObjectInfo
@@ -171,7 +171,7 @@ func (x *xObjects) PutObject(
 		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, object, "")
 	}
 	log.Printf("bucket-name: %s, object-name: %s, file-hash: %s", bucket, object, hash)
-	return x.getMinioObjectInfo(&obinfo), nil
+	return getMinioObjectInfo(&obinfo), nil
 }
 
 // CopyObject copies an object from source bucket to a destination bucket.
@@ -236,7 +236,7 @@ func (x *xObjects) CopyObject(
 		"dst-bucket: %s,  dst-object: %s\n",
 		dstBucket, dstObject,
 	)
-	objInfo = x.getMinioObjectInfo(&obj.ObjectInfo)
+	objInfo = getMinioObjectInfo(&obj.ObjectInfo)
 	return objInfo, x.toMinioErr(err, dstBucket, dstObject, "")
 }
 

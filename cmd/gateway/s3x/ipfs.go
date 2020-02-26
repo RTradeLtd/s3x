@@ -2,9 +2,12 @@ package s3x
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	pb "github.com/RTradeLtd/TxPB/v3/go"
+	"github.com/ipfs/go-cid"
+	"github.com/ipfs/go-merkledag"
 )
 
 type unmarshaller interface {
@@ -71,6 +74,23 @@ func ipfsSaveBytes(ctx context.Context, dag pb.NodeAPIClient, data []byte) (stri
 	return resp.GetHashes()[0], nil
 }
 
+func ipfsSaveProtoNode(ctx context.Context, dag pb.NodeAPIClient, node *merkledag.ProtoNode) (string, error) {
+	data, err := node.Marshal()
+	if err != nil {
+		return "", err
+	}
+	resp, err := dag.Dag(ctx, &pb.DagRequest{
+		RequestType:         pb.DAGREQTYPE_DAG_PUT,
+		Data:                data,
+		ObjectEncoding:      "protobuf",
+		SerializationFormat: "protobuf",
+	})
+	if err != nil {
+		return "", err
+	}
+	return resp.GetHashes()[0], nil
+}
+
 const chunkSize = 4194294 //10 less than 4MB
 
 func ipfsFileUpload(ctx context.Context, fileClient pb.FileAPIClient, r io.Reader) (string, int, error) {
@@ -102,6 +122,9 @@ func ipfsFileUpload(ctx context.Context, fileClient pb.FileAPIClient, r io.Reade
 	resp, err := stream.CloseAndRecv()
 	if err != nil {
 		return "", size, err
+	}
+	if _, err := cid.Decode(resp.Hash); err != nil {
+		return "", size, fmt.Errorf("resp.Hash mush be a valid cid, but got error: %v", err)
 	}
 	return resp.Hash, size, nil
 }
