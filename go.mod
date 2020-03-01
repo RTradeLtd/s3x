@@ -83,7 +83,7 @@ require (
 	github.com/nats-io/nats.go v1.9.1
 	github.com/nats-io/stan.go v0.6.0
 	github.com/ncw/directio v1.0.5
-	github.com/nsqio/go-nsq v1.0.7
+	github.com/nsqio/go-nsq v1.0.8
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.3.0
 	github.com/rcrowley/go-metrics v0.0.0-20190704165056-9c2d0518ed81 // indirect
