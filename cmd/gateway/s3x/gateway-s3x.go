@@ -207,7 +207,7 @@ func (x *xObjects) Shutdown(ctx context.Context) error {
 }
 
 // StorageInfo is not relevant to TemporalX backend.
-func (x *xObjects) StorageInfo(ctx context.Context) (si minio.StorageInfo) {
+func (x *xObjects) StorageInfo(ctx context.Context, local bool) (si minio.StorageInfo) {
 	si.Backend.Type = minio.BackendGateway
 	//si.Backend.GatewayOnline = minio.IsBackendOnline(ctx, x.httpClient, "https://docsx.temporal.cloud")
 	return si

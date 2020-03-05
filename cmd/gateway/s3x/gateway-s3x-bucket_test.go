@@ -20,7 +20,7 @@ func TestS3XGateway_Bucket(t *testing.T) {
 			t.Fatal(err)
 		}
 	}()
-	sinfo := gateway.StorageInfo(ctx)
+	sinfo := gateway.StorageInfo(ctx, false)
 	if sinfo.Backend.Type != minio.BackendGateway {
 		t.Fatal("bad type")
 	}

@@ -17,11 +17,13 @@
 package cmd
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"math/rand"
 	"net/http"
 	"path"
+	"sort"
 	"time"
 
 	"github.com/RTradeLtd/s3x/pkg/dsync"
@@ -55,12 +57,25 @@ func (l *lockRESTServer) IsValid(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
-func getLockArgs(r *http.Request) dsync.LockArgs {
-	return dsync.LockArgs{
-		UID:      r.URL.Query().Get(lockRESTUID),
-		Source:   r.URL.Query().Get(lockRESTSource),
-		Resource: r.URL.Query().Get(lockRESTResource),
+func getLockArgs(r *http.Request) (args dsync.LockArgs, err error) {
+	args = dsync.LockArgs{
+		UID:    r.URL.Query().Get(lockRESTUID),
+		Source: r.URL.Query().Get(lockRESTSource),
 	}
+
+	var resources []string
+	bio := bufio.NewScanner(r.Body)
+	for bio.Scan() {
+		resources = append(resources, bio.Text())
+	}
+
+	if err := bio.Err(); err != nil {
+		return args, err
+	}
+
+	sort.Strings(resources)
+	args.Resources = resources
+	return args, nil
 }
 
 // LockHandler - Acquires a lock.
@@ -70,7 +85,13 @@ func (l *lockRESTServer) LockHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	success, err := l.ll.Lock(getLockArgs(r))
+	args, err := getLockArgs(r)
+	if err != nil {
+		l.writeErrorResponse(w, err)
+		return
+	}
+
+	success, err := l.ll.Lock(args)
 	if err == nil && !success {
 		err = errLockConflict
 	}
@@ -87,7 +108,13 @@ func (l *lockRESTServer) UnlockHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := l.ll.Unlock(getLockArgs(r))
+	args, err := getLockArgs(r)
+	if err != nil {
+		l.writeErrorResponse(w, err)
+		return
+	}
+
+	_, err = l.ll.Unlock(args)
 	// Ignore the Unlock() "reply" return value because if err == nil, "reply" is always true
 	// Consequently, if err != nil, reply is always false
 	if err != nil {
@@ -103,7 +130,13 @@ func (l *lockRESTServer) RLockHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	success, err := l.ll.RLock(getLockArgs(r))
+	args, err := getLockArgs(r)
+	if err != nil {
+		l.writeErrorResponse(w, err)
+		return
+	}
+
+	success, err := l.ll.RLock(args)
 	if err == nil && !success {
 		err = errLockConflict
 	}
@@ -120,10 +153,15 @@ func (l *lockRESTServer) RUnlockHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	args, err := getLockArgs(r)
+	if err != nil {
+		l.writeErrorResponse(w, err)
+		return
+	}
+
 	// Ignore the RUnlock() "reply" return value because if err == nil, "reply" is always true.
 	// Consequently, if err != nil, reply is always false
-	_, err := l.ll.RUnlock(getLockArgs(r))
-	if err != nil {
+	if _, err = l.ll.RUnlock(args); err != nil {
 		l.writeErrorResponse(w, err)
 		return
 	}
@@ -136,17 +174,24 @@ func (l *lockRESTServer) ExpiredHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	lockArgs := getLockArgs(r)
+	args, err := getLockArgs(r)
+	if err != nil {
+		l.writeErrorResponse(w, err)
+		return
+	}
 
 	l.ll.mutex.Lock()
 	defer l.ll.mutex.Unlock()
+
 	// Lock found, proceed to verify if belongs to given uid.
-	if lri, ok := l.ll.lockMap[lockArgs.Resource]; ok {
-		// Check whether uid is still active
-		for _, entry := range lri {
-			if entry.UID == lockArgs.UID {
-				l.writeErrorResponse(w, errLockNotExpired)
-				return
+	for _, resource := range args.Resources {
+		if lri, ok := l.ll.lockMap[resource]; ok {
+			// Check whether uid is still active
+			for _, entry := range lri {
+				if entry.UID == args.UID {
+					l.writeErrorResponse(w, errLockNotExpired)
+					return
+				}
 			}
 		}
 	}
@@ -202,42 +247,43 @@ func lockMaintenance(ctx context.Context, interval time.Duration, objAPI ObjectL
 	// Get list of long lived locks to check for staleness.
 	for lendpoint, nlrips := range getLongLivedLocks(interval) {
 		for _, nlrip := range nlrips {
-			for _, ep := range globalEndpoints {
-				for _, endpoint := range ep.Endpoints {
-					if endpoint.String() == lendpoint.String() {
-						continue
-					}
-
-					c := newLockAPI(endpoint)
-					if !c.IsOnline() {
-						continue
-					}
-
-					// Call back to original server verify whether the lock is
-					// still active (based on name & uid)
-					expired, err := c.Expired(dsync.LockArgs{
-						UID:      nlrip.lri.UID,
-						Resource: nlrip.name,
-					})
-
-					if err != nil {
-						c.Close()
-						continue
-					}
-
-					// For successful response, verify if lock was indeed active or stale.
-					if expired {
-						// The lock is no longer active at server that originated
-						// the lock, attempt to remove the lock.
-						globalLockServers[lendpoint].mutex.Lock()
-						// Purge the stale entry if it exists.
-						globalLockServers[lendpoint].removeEntryIfExists(nlrip)
-						globalLockServers[lendpoint].mutex.Unlock()
-					}
-
-					// Close the connection regardless of the call response.
-					c.Close()
+			// Locks are only held on first zone, make sure that
+			// we only look for ownership of locks from endpoints
+			// on first zone.
+			for _, endpoint := range globalEndpoints[0].Endpoints {
+				if endpoint.String() == lendpoint.String() {
+					continue
 				}
+
+				c := newLockAPI(endpoint)
+				if !c.IsOnline() {
+					continue
+				}
+
+				// Call back to original server verify whether the lock is
+				// still active (based on name & uid)
+				expired, err := c.Expired(dsync.LockArgs{
+					UID:       nlrip.lri.UID,
+					Resources: []string{nlrip.name},
+				})
+
+				if err != nil {
+					c.Close()
+					continue
+				}
+
+				// For successful response, verify if lock was indeed active or stale.
+				if expired {
+					// The lock is no longer active at server that originated
+					// the lock, attempt to remove the lock.
+					globalLockServers[lendpoint].mutex.Lock()
+					// Purge the stale entry if it exists.
+					globalLockServers[lendpoint].removeEntryIfExists(nlrip)
+					globalLockServers[lendpoint].mutex.Unlock()
+				}
+
+				// Close the connection regardless of the call response.
+				c.Close()
 			}
 		}
 	}
@@ -287,7 +333,7 @@ func startLockMaintenance() {
 
 // registerLockRESTHandlers - register lock rest router.
 func registerLockRESTHandlers(router *mux.Router, endpointZones EndpointZones) {
-	queries := restQueries(lockRESTUID, lockRESTSource, lockRESTResource)
+	queries := restQueries(lockRESTUID, lockRESTSource)
 	for _, ep := range endpointZones {
 		for _, endpoint := range ep.Endpoints {
 			if !endpoint.IsLocal {

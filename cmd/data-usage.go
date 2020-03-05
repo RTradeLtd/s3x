@@ -22,10 +22,11 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"sync"
 	"time"
 
+	"github.com/RTradeLtd/s3x/cmd/config"
 	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/env"
 	"github.com/RTradeLtd/s3x/pkg/hash"
 	jsoniter "github.com/json-iterator/go"
 )
@@ -33,9 +34,14 @@ import (
 const (
 	dataUsageObjName       = "data-usage"
 	dataUsageCrawlInterval = 12 * time.Hour
+	dataUsageCrawlConf     = "MINIO_DISK_USAGE_CRAWL"
 )
 
 func initDataUsageStats() {
+	dataUsageEnabled, err := config.ParseBool(env.Get(dataUsageCrawlConf, config.EnableOn))
+	if err == nil && !dataUsageEnabled {
+		return
+	}
 	go runDataUsageInfoUpdateRoutine()
 }
 
@@ -79,10 +85,12 @@ func timeToCrawl(ctx context.Context, objAPI ObjectLayer) time.Duration {
 	return dataUsageCrawlInterval - waitDuration
 }
 
+var dataUsageLockTimeout = lifecycleLockTimeout
+
 func runDataUsageInfo(ctx context.Context, objAPI ObjectLayer, endCh <-chan struct{}) {
 	locker := objAPI.NewNSLock(ctx, minioMetaBucket, "leader-data-usage-info")
 	for {
-		err := locker.GetLock(newDynamicTimeout(time.Millisecond, time.Millisecond))
+		err := locker.GetLock(dataUsageLockTimeout)
 		if err != nil {
 			time.Sleep(5 * time.Minute)
 			continue
@@ -158,10 +166,7 @@ func updateUsage(basePath string, doneCh <-chan struct{}, waitForLowActiveIO fun
 		ObjectsSizesHistogram: make(map[string]uint64),
 	}
 
-	numWorkers := 4
-	var mutex sync.Mutex // Mutex to update dataUsageInfo
-
-	fastWalk(basePath, numWorkers, doneCh, func(path string, typ os.FileMode) error {
+	fastWalk(basePath, 1, doneCh, func(path string, typ os.FileMode) error {
 		// Wait for I/O to go down.
 		waitForLowActiveIO()
 
@@ -175,15 +180,10 @@ func updateUsage(basePath string, doneCh <-chan struct{}, waitForLowActiveIO fun
 		}
 
 		if entry == "" && typ&os.ModeDir != 0 {
-			mutex.Lock()
 			dataUsageInfo.BucketsCount++
 			dataUsageInfo.BucketsSizes[bucket] = 0
-			mutex.Unlock()
 			return nil
 		}
-
-		mutex.Lock()
-		defer mutex.Unlock()
 
 		if typ&os.ModeDir != 0 {
 			return nil
