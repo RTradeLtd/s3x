@@ -19,7 +19,7 @@ package cmd
 import (
 	"context"
 
-	"github.com/minio/minio/cmd/logger"
+	"github.com/RTradeLtd/s3x/cmd/logger"
 )
 
 // This is not implemented/needed anymore, look for xl-sets.ListBucketHeal()

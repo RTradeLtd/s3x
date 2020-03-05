@@ -20,7 +20,7 @@ import (
 	"os"
 	"time"
 
-	xhttp "github.com/minio/minio/cmd/http"
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 )
 
 // VolInfo - represents volume stat information.
