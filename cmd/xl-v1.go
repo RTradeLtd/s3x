@@ -19,15 +19,13 @@ package cmd
 import (
 	"context"
 	"sort"
-	"strings"
 	"sync"
 
-	"github.com/RTradeLtd/s3x/cmd/logger"
-	"github.com/RTradeLtd/s3x/pkg/bpool"
-	"github.com/RTradeLtd/s3x/pkg/dsync"
-	"github.com/RTradeLtd/s3x/pkg/madmin"
-	xnet "github.com/RTradeLtd/s3x/pkg/net"
-	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
+	"github.com/minio/minio/cmd/logger"
+	"github.com/minio/minio/pkg/bpool"
+	"github.com/minio/minio/pkg/dsync"
+	"github.com/minio/minio/pkg/madmin"
+	"github.com/minio/minio/pkg/sync/errgroup"
 )
 
 // XL constants.
@@ -55,6 +53,8 @@ type xlObjects struct {
 	// getLockers returns list of remote and local lockers.
 	getLockers func() []dsync.NetLocker
 
+	endpoints Endpoints
+
 	// Locker mutex map.
 	nsMutex *nsLockMap
 
@@ -68,15 +68,14 @@ type xlObjects struct {
 }
 
 // NewNSLock - initialize a new namespace RWLocker instance.
-func (xl xlObjects) NewNSLock(ctx context.Context, bucket string, object string) RWLocker {
-	return xl.nsMutex.NewNSLock(ctx, xl.getLockers, bucket, object)
+func (xl xlObjects) NewNSLock(ctx context.Context, bucket string, objects ...string) RWLocker {
+	return xl.nsMutex.NewNSLock(ctx, xl.getLockers, bucket, objects...)
 }
 
 // Shutdown function for object storage interface.
 func (xl xlObjects) Shutdown(ctx context.Context) error {
 	// Add any object layer shutdown activities here.
 	closeStorageDisks(xl.getDisks())
-	closeLockers(xl.getLockers())
 	return nil
 }
 
@@ -90,7 +89,7 @@ func (d byDiskTotal) Less(i, j int) bool {
 }
 
 // getDisksInfo - fetch disks info across all other storage API.
-func getDisksInfo(disks []StorageAPI) (disksInfo []DiskInfo, onlineDisks, offlineDisks madmin.BackendDisks) {
+func getDisksInfo(disks []StorageAPI, endpoints Endpoints) (disksInfo []DiskInfo, onlineDisks, offlineDisks madmin.BackendDisks) {
 	disksInfo = make([]DiskInfo, len(disks))
 
 	g := errgroup.WithNErrs(len(disks))
@@ -115,34 +114,19 @@ func getDisksInfo(disks []StorageAPI) (disksInfo []DiskInfo, onlineDisks, offlin
 		}, index)
 	}
 
-	getPeerAddress := func(diskPath string) (string, error) {
-		hostPort := strings.Split(diskPath, SlashSeparator)[0]
-		// Host will be empty for xl/fs disk paths.
-		if hostPort == "" {
-			return "", nil
-		}
-		thisAddr, err := xnet.ParseHost(hostPort)
-		if err != nil {
-			return "", err
-		}
-		return thisAddr.String(), nil
-	}
-
 	onlineDisks = make(madmin.BackendDisks)
 	offlineDisks = make(madmin.BackendDisks)
+
 	// Wait for the routines.
-	for i, err := range g.Wait() {
-		peerAddr, pErr := getPeerAddress(disksInfo[i].RelativePath)
-		if pErr != nil {
-			continue
-		}
+	for i, diskInfoErr := range g.Wait() {
+		peerAddr := endpoints[i].Host
 		if _, ok := offlineDisks[peerAddr]; !ok {
 			offlineDisks[peerAddr] = 0
 		}
 		if _, ok := onlineDisks[peerAddr]; !ok {
 			onlineDisks[peerAddr] = 0
 		}
-		if err != nil {
+		if disks[i] == nil || diskInfoErr != nil {
 			offlineDisks[peerAddr]++
 			continue
 		}
@@ -154,8 +138,8 @@ func getDisksInfo(disks []StorageAPI) (disksInfo []DiskInfo, onlineDisks, offlin
 }
 
 // Get an aggregated storage info across all disks.
-func getStorageInfo(disks []StorageAPI) StorageInfo {
-	disksInfo, onlineDisks, offlineDisks := getDisksInfo(disks)
+func getStorageInfo(disks []StorageAPI, endpoints Endpoints) StorageInfo {
+	disksInfo, onlineDisks, offlineDisks := getDisksInfo(disks, endpoints)
 
 	// Sort so that the first element is the smallest.
 	sort.Sort(byDiskTotal(disksInfo))
@@ -170,7 +154,7 @@ func getStorageInfo(disks []StorageAPI) StorageInfo {
 		usedList[i] = di.Used
 		totalList[i] = di.Total
 		availableList[i] = di.Free
-		mountPaths[i] = di.RelativePath
+		mountPaths[i] = di.MountPath
 	}
 
 	storageInfo := StorageInfo{
@@ -188,8 +172,21 @@ func getStorageInfo(disks []StorageAPI) StorageInfo {
 }
 
 // StorageInfo - returns underlying storage statistics.
-func (xl xlObjects) StorageInfo(ctx context.Context) StorageInfo {
-	return getStorageInfo(xl.getDisks())
+func (xl xlObjects) StorageInfo(ctx context.Context, local bool) StorageInfo {
+	var endpoints = xl.endpoints
+	var disks []StorageAPI
+
+	if !local {
+		disks = xl.getDisks()
+	} else {
+		for i, d := range xl.getDisks() {
+			if endpoints[i].IsLocal {
+				// Append this local disk since local flag is true
+				disks = append(disks, d)
+			}
+		}
+	}
+	return getStorageInfo(disks, endpoints)
 }
 
 // GetMetrics - is not implemented and shouldn't be called.

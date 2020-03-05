@@ -302,10 +302,16 @@ func newXLSets(endpoints Endpoints, format *formatXLV3, setCount int, drivesPerS
 		s.xlDisks[i] = make([]StorageAPI, drivesPerSet)
 		s.xlLockers[i] = make([]dsync.NetLocker, drivesPerSet)
 
+		var endpoints Endpoints
+		for j := 0; j < drivesPerSet; j++ {
+			endpoints = append(endpoints, s.endpoints[i*s.drivesPerSet+j])
+		}
+
 		// Initialize xl objects for a given set.
 		s.sets[i] = &xlObjects{
 			getDisks:    s.GetDisks(i),
 			getLockers:  s.GetLockers(i),
+			endpoints:   endpoints,
 			nsMutex:     mutex,
 			bp:          bp,
 			mrfUploadCh: make(chan partialUpload, 10000),
@@ -335,12 +341,15 @@ func newXLSets(endpoints Endpoints, format *formatXLV3, setCount int, drivesPerS
 }
 
 // NewNSLock - initialize a new namespace RWLocker instance.
-func (s *xlSets) NewNSLock(ctx context.Context, bucket string, object string) RWLocker {
-	return s.getHashedSet(object).NewNSLock(ctx, bucket, object)
+func (s *xlSets) NewNSLock(ctx context.Context, bucket string, objects ...string) RWLocker {
+	if len(objects) == 1 {
+		return s.getHashedSet(objects[0]).NewNSLock(ctx, bucket, objects...)
+	}
+	return s.getHashedSet("").NewNSLock(ctx, bucket, objects...)
 }
 
 // StorageInfo - combines output of StorageInfo across all erasure coded object sets.
-func (s *xlSets) StorageInfo(ctx context.Context) StorageInfo {
+func (s *xlSets) StorageInfo(ctx context.Context, local bool) StorageInfo {
 	var storageInfo StorageInfo
 
 	storageInfos := make([]StorageInfo, len(s.sets))
@@ -350,7 +359,7 @@ func (s *xlSets) StorageInfo(ctx context.Context) StorageInfo {
 	for index := range s.sets {
 		index := index
 		g.Go(func() error {
-			storageInfos[index] = s.sets[index].StorageInfo(ctx)
+			storageInfos[index] = s.sets[index].StorageInfo(ctx, local)
 			return nil
 		}, index)
 	}
@@ -938,7 +947,7 @@ func isTruncated(entryChs []FileInfoCh, entries []FileInfo, entriesValid []bool)
 }
 
 // Starts a walk channel across all disks and returns a slice.
-func (s *xlSets) startMergeWalks(ctx context.Context, bucket, prefix, marker string, recursive bool, endWalkCh chan struct{}) []FileInfoCh {
+func (s *xlSets) startMergeWalks(ctx context.Context, bucket, prefix, marker string, recursive bool, endWalkCh <-chan struct{}) []FileInfoCh {
 	var entryChs []FileInfoCh
 	for _, set := range s.sets {
 		for _, disk := range set.getDisks() {
@@ -962,8 +971,8 @@ func (s *xlSets) startMergeWalks(ctx context.Context, bucket, prefix, marker str
 func (s *xlSets) listObjectsNonSlash(ctx context.Context, bucket, prefix, marker, delimiter string, maxKeys int) (loi ListObjectsInfo, err error) {
 	endWalkCh := make(chan struct{})
 	defer close(endWalkCh)
-	recursive := true
-	entryChs := s.startMergeWalks(context.Background(), bucket, prefix, "", recursive, endWalkCh)
+
+	entryChs := s.startMergeWalks(context.Background(), bucket, prefix, "", true, endWalkCh)
 
 	var objInfos []ObjectInfo
 	var eof bool
@@ -1067,7 +1076,7 @@ func (s *xlSets) listObjectsNonSlash(ctx context.Context, bucket, prefix, marker
 // the data in lexically sorted order.
 // If partialQuorumOnly is set only objects that does not have full quorum is returned.
 func (s *xlSets) listObjects(ctx context.Context, bucket, prefix, marker, delimiter string, maxKeys int, partialQuorumOnly bool) (loi ListObjectsInfo, err error) {
-	if err = checkListObjsArgs(ctx, bucket, prefix, marker, delimiter, s); err != nil {
+	if err = checkListObjsArgs(ctx, bucket, prefix, marker, s); err != nil {
 		return loi, err
 	}
 
@@ -1126,45 +1135,10 @@ func (s *xlSets) listObjects(ctx context.Context, bucket, prefix, marker, delimi
 	}
 
 	for _, entry := range entries.Files {
-		var objInfo ObjectInfo
-		if HasSuffix(entry.Name, SlashSeparator) {
-			if !recursive {
-				loi.Prefixes = append(loi.Prefixes, entry.Name)
-				continue
-			}
-			objInfo = ObjectInfo{
-				Bucket: bucket,
-				Name:   entry.Name,
-				IsDir:  true,
-			}
-		} else {
-			objInfo = ObjectInfo{
-				IsDir:           false,
-				Bucket:          bucket,
-				Name:            entry.Name,
-				ModTime:         entry.ModTime,
-				Size:            entry.Size,
-				ContentType:     entry.Metadata["content-type"],
-				ContentEncoding: entry.Metadata["content-encoding"],
-			}
-
-			// Extract etag from metadata.
-			objInfo.ETag = extractETag(entry.Metadata)
-
-			// All the parts per object.
-			objInfo.Parts = entry.Parts
-
-			// etag/md5Sum has already been extracted. We need to
-			// remove to avoid it from appearing as part of
-			// response headers. e.g, X-Minio-* or X-Amz-*.
-			objInfo.UserDefined = cleanMetadata(entry.Metadata)
-
-			// Update storage class
-			if sc, ok := entry.Metadata[xhttp.AmzStorageClass]; ok {
-				objInfo.StorageClass = sc
-			} else {
-				objInfo.StorageClass = globalMinioDefaultStorageClass
-			}
+		objInfo := entry.ToObjectInfo()
+		if HasSuffix(objInfo.Name, SlashSeparator) && !recursive {
+			loi.Prefixes = append(loi.Prefixes, entry.Name)
+			continue
 		}
 		loi.Objects = append(loi.Objects, objInfo)
 	}
@@ -1642,14 +1616,50 @@ func (s *xlSets) ListBucketsHeal(ctx context.Context) ([]BucketInfo, error) {
 	return listBuckets, nil
 }
 
+// Walk a bucket, optionally prefix recursively, until we have returned
+// all the content to objectInfo channel, it is callers responsibility
+// to allocate a receive channel for ObjectInfo, upon any unhandled
+// error walker returns error. Optionally if context.Done() is received
+// then Walk() stops the walker.
+func (s *xlSets) Walk(ctx context.Context, bucket, prefix string, results chan<- ObjectInfo) error {
+	if err := checkListObjsArgs(ctx, bucket, prefix, "", s); err != nil {
+		// Upon error close the channel.
+		close(results)
+		return err
+	}
+
+	entryChs := s.startMergeWalks(ctx, bucket, prefix, "", true, ctx.Done())
+
+	entriesValid := make([]bool, len(entryChs))
+	entries := make([]FileInfo, len(entryChs))
+
+	go func() {
+		defer close(results)
+
+		for {
+			entry, quorumCount, ok := leastEntry(entryChs, entries, entriesValid)
+			if !ok {
+				return
+			}
+
+			if quorumCount != s.drivesPerSet {
+				return
+			}
+
+			results <- entry.ToObjectInfo()
+		}
+	}()
+
+	return nil
+}
+
 // HealObjects - Heal all objects recursively at a specified prefix, any
 // dangling objects deleted as well automatically.
 func (s *xlSets) HealObjects(ctx context.Context, bucket, prefix string, healObject healObjectFn) error {
 	endWalkCh := make(chan struct{})
 	defer close(endWalkCh)
 
-	recursive := true
-	entryChs := s.startMergeWalks(ctx, bucket, prefix, "", recursive, endWalkCh)
+	entryChs := s.startMergeWalks(ctx, bucket, prefix, "", true, endWalkCh)
 
 	entriesValid := make([]bool, len(entryChs))
 	entries := make([]FileInfo, len(entryChs))
