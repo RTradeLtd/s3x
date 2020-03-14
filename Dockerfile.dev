@@ -1,6 +1,6 @@
-FROM alpine:3.10
+FROM golang:1.13.8-alpine3.10
 
-LABEL maintainer="MinIO Inc <dev@min.io>"
+LABEL maintainer="RTrade Technologies Ltd <info@rtradetechnologies.com>"
 
 COPY dockerscripts/docker-entrypoint.sh /usr/bin/
 COPY minio /usr/bin/
