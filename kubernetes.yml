@@ -1,32 +1,78 @@
-apiVersion: apps/v1
-kind: Deployment
+kind: PersistentVolumeClaim
+apiVersion: v1
 metadata:
-    name: s3x
+  name: workdir
 spec:
-    selector:
-        matchLabels:
-            app: s3x
-    replicas: 2
-    template:
-        metadata:
-            labels:
-                app: s3x
-        spec:
-            containers:
-                - name: s3x
-                  image: rtradetech/s3x-test
-                  args: ["gateway", "s3x", "--temporalx.endpoint", "localhost:9090", "--temporalx.insecure"]
-                  env:
-                    - name: MINIO_ACCESS_KEY
-                      value: minio
-                    - name: MINIO_SECRET_KEY
-                      value: minio123
-                  ports:
-                    - containerPort: 9000
-                - name: temx
-                  image: temporalx:latest
-                  imagePullPolicy: Never
-                  args: ["server"]
-                  ports:
-                    - containerPort: 9090
-                    - containerPort: 4005
+  accessModes: 
+    - ReadWriteOnce
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 1Gi # make this bigger in production
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: s3x
+  labels:
+    name: s3x
+    app: s3x
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: s3x
+  template:
+    metadata:
+      labels:
+        app: s3x
+        role: gateway
+    spec:
+      volumes:
+        - name: workdir
+          persistentVolumeClaim:
+            claimName: workdir
+      containers:
+        - name: s3x
+          image: rtradetech/s3x-test:latest
+          args: ["gateway", "s3x", "--temporalx.endpoint", "localhost:9090", "--temporalx.insecure"]
+          env:
+            - name: MINIO_ACCESS_KEY
+              value: minio
+            - name: MINIO_SECRET_KEY
+              value: minio123
+          ports:
+            - name: api-s3x
+              containerPort: 9000
+              protocol: TCP
+        - name: temx
+          image: localhost:5000/temporalx:latest
+          args: ["server"]
+          ports:
+            - name: api-temx
+              containerPort: 9090
+              protocol: TCP
+            - name: swarm
+              containerPort: 4005
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: s3x-service
+  labels:
+    app: s3x
+spec:
+  type: LoadBalancer
+  ports:
+    - name: api-s3x
+      targetPort: api-s3x
+      port: 9000
+    - name: api-temx
+      targetPort: api-temx
+      port: 9090
+    - name: swarm
+      containerPort: swarm
+      port: 4005
+  selector:
+    app: s3x
