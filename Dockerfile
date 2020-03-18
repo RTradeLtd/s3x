@@ -1,6 +1,6 @@
 FROM golang:1.13-alpine
 
-LABEL maintainer="MinIO Inc <dev@min.io>"
+LABEL maintainer="RTrade Technologies Ltd <info@rtradetechnologies.com>"
 
 ENV GOPATH /go
 ENV CGO_ENABLED 0
