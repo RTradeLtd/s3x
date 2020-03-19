@@ -2,8 +2,6 @@
 
 `s3x` is an open-source fork of `github.com/minio/minio` modified to work with TemporalX and an S3 gateway. It allows using IPFS from any application that currently uses S3, or minio, without needing to redesign your application architecture. It represents an incredible leap forward in usability for IPFS, and up until now no implementation of IPFS allowed you to use it, without needing to build your application specifically for IPFS. Additionally this means your S3 applications can leverage the benefits of IPFS as if it were a native IPFS application. One might say its better than...
 
-The long-term goal is to merge the TemporalX gateway upstream, but that will obviously depend on whether or not minio would accept it, although tif they were it is definitely something we will do.
-
 # Development/Testing
 
 The current setup is using the TemporalX development environment located at `xapi-dev.temporal.cloud:9090`, as a hard coded parameter in the codebase. If you have a valid copy, and license of TemporalX running you can spin that up, update the hard coded address, and you'll your own S3X running!
@@ -54,19 +52,19 @@ Supported Bucket Calls:
 | MakeBucketWithLocation | Yes (fully) |
 | GetBucketInfo | Yes (fully) |
 | ListBuckets | Yes (fully) | 
-| DeleteBucket | Yes (fully) |
+| DeleteBucket | Yes (partial) |
 
 Supported Object Calls:
 
 | Name | Supported |
 |------|-----------|
-| ListObjects | Yes (partial) |
-| ListObjectsV2 | Yes (partial) |
-| GetObjectNInfo | Yes (partial) |
-| GetObject | Yes (partial) |
+| ListObjects | Yes (fully) |
+| ListObjectsV2 | Yes (fully) |
+| GetObjectNInfo | Yes (fully) |
+| GetObject | Yes (fully) |
 | GetObjectInfo | Yes (fully) |
 | PutObject | Yes (fully) |
-| CopyObject | Yes (partial) |
+| CopyObject | Yes (fully) |
 | DeleteObject | Yes (fully) |
 | DeleteObjects | Yes (fully) |
 
@@ -74,13 +72,13 @@ Supported Multipart Calls:
 
 | Name | Supported |
 |------|-----------|
-| ListMultipartUploads | In-Development |
-| NewMultipartUpload | In-Development |
-| PutObjectPart | In-Development |
-| CopyObjectPart | In-Development |
-| ListObjectParts | In-Development |
-| AbortMultipartUpload | In-Development |
-| CompleteMultipartUpload | In-Development | 
+| ListMultipartUploads | Yes (fully)  |
+| NewMultipartUpload | Yes (fully)  |
+| PutObjectPart | Yes (fully)  |
+| CopyObjectPart | Yes (fully)  |
+| ListObjectParts | Yes (fully) |
+| AbortMultipartUpload | Yes (fully)  |
+| CompleteMultipartUpload | Yes (fully)  | 
 
 Supported Policy Calls:
 
@@ -107,6 +105,12 @@ All data, that is all the objects, buckets, metadata, is stored on IPFS. Because
 ## Ledger
 
 The "ledger" is an internal book keeper responsible for keeping track of the latest IPFS CID's that belong to each and every object, and bucket stored, and is currently implemented as a `dgraph-io/badger/v2` key-value datastore.
+
+# Kubernetes
+
+Include in `kubernetes_local.yml` is a deployment that enables running all components of S3X in Kubernetes including the TemporalX node that is needed. This will require you to have the TemporalX docker image locally, which currently must be built locally. As such only those with access to the TemporalX repository can use this.
+
+For those who dont have access to the repository, you can use the `kubernetes_local.yml` file, which is configured to use the publicly accessible production TemporalX service.
 
 # Product Comparisons
 
