@@ -81,7 +81,7 @@ func init() {
 			cli.StringFlag{
 				Name:  "temporalx.endpoint",
 				Usage: "the endpoint of the temporalx api server",
-				Value: "xapi-dev.temporal.cloud:9090",
+				Value: "xapi.temporal.cloud:9090",
 			},
 			cli.BoolFlag{
 				Name:  "temporalx.insecure",
