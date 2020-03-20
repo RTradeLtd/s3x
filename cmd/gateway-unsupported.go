@@ -48,9 +48,9 @@ func NewGatewayLayerWithLocker(gwLayer ObjectLayer) ObjectLayer {
 type GatewayUnsupported struct{}
 
 // CrawlAndGetDataUsage - crawl is not implemented for gateway
-func (a GatewayUnsupported) CrawlAndGetDataUsage(ctx context.Context, endCh <-chan struct{}) DataUsageInfo {
+func (a GatewayUnsupported) CrawlAndGetDataUsage(ctx context.Context, updates chan<- DataUsageInfo) error {
 	logger.CriticalIf(ctx, errors.New("not implemented"))
-	return DataUsageInfo{}
+	return NotImplemented{}
 }
 
 // NewNSLock is a dummy stub for gateway.
@@ -165,7 +165,7 @@ func (a GatewayUnsupported) ListBucketsHeal(ctx context.Context) (buckets []Buck
 }
 
 // HealObject - Not implemented stub
-func (a GatewayUnsupported) HealObject(ctx context.Context, bucket, object string, dryRun, remove bool, scanMode madmin.HealScanMode) (h madmin.HealResultItem, e error) {
+func (a GatewayUnsupported) HealObject(ctx context.Context, bucket, object string, opts madmin.HealOpts) (h madmin.HealResultItem, e error) {
 	return h, NotImplemented{}
 }
 
@@ -180,7 +180,7 @@ func (a GatewayUnsupported) Walk(ctx context.Context, bucket, prefix string, res
 }
 
 // HealObjects - Not implemented stub
-func (a GatewayUnsupported) HealObjects(ctx context.Context, bucket, prefix string, fn healObjectFn) (e error) {
+func (a GatewayUnsupported) HealObjects(ctx context.Context, bucket, prefix string, opts madmin.HealOpts, fn healObjectFn) (e error) {
 	return NotImplemented{}
 }
 

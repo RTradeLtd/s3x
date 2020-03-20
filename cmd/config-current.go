@@ -304,13 +304,13 @@ func lookupConfigs(s config.Config) {
 		}
 	}
 
-	etcdCfg, err := xetcd.LookupConfig(s[config.EtcdSubSys][config.Default], globalRootCAs)
+	etcdCfg, err := etcd.LookupConfig(s[config.EtcdSubSys][config.Default], globalRootCAs)
 	if err != nil {
 		logger.LogIf(ctx, fmt.Errorf("Unable to initialize etcd config: %w", err))
 	}
 
 	if etcdCfg.Enabled {
-		globalEtcdClient, err = xetcd.New(etcdCfg)
+		globalEtcdClient, err = etcd.New(etcdCfg)
 		if err != nil {
 			logger.LogIf(ctx, fmt.Errorf("Unable to initialize etcd config: %w", err))
 		}
@@ -425,6 +425,10 @@ func lookupConfigs(s config.Config) {
 	}
 
 	globalConfigTargetList, err = notify.GetNotificationTargets(s, GlobalServiceDoneCh, NewCustomHTTPTransport())
+	if err != nil {
+		logger.LogIf(ctx, fmt.Errorf("Unable to initialize notification target(s): %w", err))
+	}
+	globalEnvTargetList, err = notify.GetNotificationTargets(newServerConfig(), GlobalServiceDoneCh, NewCustomHTTPTransport())
 	if err != nil {
 		logger.LogIf(ctx, fmt.Errorf("Unable to initialize notification target(s): %w", err))
 	}

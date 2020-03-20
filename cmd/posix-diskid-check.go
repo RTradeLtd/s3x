@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"context"
 	"io"
 )
 
@@ -38,8 +39,8 @@ func (p *posixDiskIDCheck) IsOnline() bool {
 	return storedDiskID == p.diskID
 }
 
-func (p *posixDiskIDCheck) CrawlAndGetDataUsage(endCh <-chan struct{}) (DataUsageInfo, error) {
-	return p.storage.CrawlAndGetDataUsage(endCh)
+func (p *posixDiskIDCheck) CrawlAndGetDataUsage(ctx context.Context, cache dataUsageCache) (dataUsageCache, error) {
+	return p.storage.CrawlAndGetDataUsage(ctx, cache)
 }
 
 func (p *posixDiskIDCheck) Hostname() string {
@@ -177,6 +178,13 @@ func (p *posixDiskIDCheck) DeleteFileBulk(volume string, paths []string) (errs [
 		return nil, errDiskNotFound
 	}
 	return p.storage.DeleteFileBulk(volume, paths)
+}
+
+func (p *posixDiskIDCheck) DeletePrefixes(volume string, paths []string) (errs []error, err error) {
+	if p.isDiskStale() {
+		return nil, errDiskNotFound
+	}
+	return p.storage.DeletePrefixes(volume, paths)
 }
 
 func (p *posixDiskIDCheck) VerifyFile(volume, path string, size int64, algo BitrotAlgorithm, sum []byte, shardSize int64) error {

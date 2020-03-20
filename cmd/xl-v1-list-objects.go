@@ -25,7 +25,7 @@ import (
 // disks - used for doing disk.ListDir()
 func listDirFactory(ctx context.Context, disks ...StorageAPI) ListDirFunc {
 	// Returns sorted merged entries from all the disks.
-	listDir := func(bucket, prefixDir, prefixEntry string) (mergedEntries []string) {
+	listDir := func(bucket, prefixDir, prefixEntry string) (emptyDir bool, mergedEntries []string) {
 		for _, disk := range disks {
 			if disk == nil {
 				continue
@@ -34,7 +34,7 @@ func listDirFactory(ctx context.Context, disks ...StorageAPI) ListDirFunc {
 			var newEntries []string
 			var err error
 			entries, err = disk.ListDir(bucket, prefixDir, -1, xlMetaJSONFile)
-			if err != nil {
+			if err != nil || len(entries) == 0 {
 				continue
 			}
 
@@ -54,7 +54,12 @@ func listDirFactory(ctx context.Context, disks ...StorageAPI) ListDirFunc {
 				sort.Strings(mergedEntries)
 			}
 		}
-		return filterMatchingPrefix(mergedEntries, prefixEntry)
+
+		if len(mergedEntries) == 0 {
+			return true, nil
+		}
+
+		return false, filterMatchingPrefix(mergedEntries, prefixEntry)
 	}
 	return listDir
 }

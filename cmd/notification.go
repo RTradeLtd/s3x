@@ -324,7 +324,7 @@ func (sys *NotificationSys) DownloadProfilingData(ctx context.Context, writer io
 		for typ, data := range data {
 			// Send profiling data to zip as file
 			header, zerr := zip.FileInfoHeader(dummyFileInfo{
-				name:    fmt.Sprintf("profiling-%s-%s.pprof", client.host.String(), typ),
+				name:    fmt.Sprintf("profile-%s-%s", client.host.String(), typ),
 				size:    int64(len(data)),
 				mode:    0600,
 				modTime: UTCNow(),
@@ -755,8 +755,14 @@ func (sys *NotificationSys) ConfiguredTargetIDs() []event.TargetID {
 			}
 		}
 	}
-
-	return targetIDs
+	// Filter out targets configured via env
+	var tIDs []event.TargetID
+	for _, targetID := range targetIDs {
+		if !globalEnvTargetList.Exists(targetID) {
+			tIDs = append(tIDs, targetID)
+		}
+	}
+	return tIDs
 }
 
 // RemoveNotification - removes all notification configuration for bucket name.

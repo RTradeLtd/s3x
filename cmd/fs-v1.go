@@ -110,7 +110,7 @@ func initMetaVolumeFS(fsPath, fsUUID string) error {
 		return err
 	}
 
-	if err := os.MkdirAll(pathJoin(fsPath, minioMetaBackgroundOpsBucket), 0777); err != nil {
+	if err := os.MkdirAll(pathJoin(fsPath, dataUsageBucket), 0777); err != nil {
 		return err
 	}
 
@@ -233,9 +233,22 @@ func (fs *FSObjects) waitForLowActiveIO() {
 }
 
 // CrawlAndGetDataUsage returns data usage stats of the current FS deployment
-func (fs *FSObjects) CrawlAndGetDataUsage(ctx context.Context, endCh <-chan struct{}) DataUsageInfo {
-	dataUsageInfo := updateUsage(fs.fsPath, endCh, fs.waitForLowActiveIO, func(item Item) (int64, error) {
-		// Get file size, symlinks which cannot bex
+func (fs *FSObjects) CrawlAndGetDataUsage(ctx context.Context, updates chan<- DataUsageInfo) error {
+	// Load bucket totals
+	var oldCache dataUsageCache
+	err := oldCache.load(ctx, fs, dataUsageCacheName)
+	if err != nil {
+		return err
+	}
+	if oldCache.Info.Name == "" {
+		oldCache.Info.Name = dataUsageRoot
+	}
+	buckets, err := fs.ListBuckets(ctx)
+	if err != nil {
+		return err
+	}
+	cache, err := updateUsage(ctx, fs.fsPath, oldCache, fs.waitForLowActiveIO, func(item Item) (int64, error) {
+		// Get file size, symlinks which cannot be
 		// followed are automatically filtered by fastwalk.
 		fi, err := os.Stat(item.Path)
 		if err != nil {
@@ -244,10 +257,13 @@ func (fs *FSObjects) CrawlAndGetDataUsage(ctx context.Context, endCh <-chan stru
 		return fi.Size(), nil
 	})
 
-	dataUsageInfo.LastUpdate = UTCNow()
-	atomic.StoreUint64(&fs.totalUsed, dataUsageInfo.ObjectsTotalSize)
+	// Even if there was an error, the new cache may have better info.
+	if cache.Info.LastUpdate.After(oldCache.Info.LastUpdate) {
+		logger.LogIf(ctx, cache.save(ctx, fs, dataUsageCacheName))
+		updates <- cache.dui(dataUsageRoot, buckets)
+	}
 
-	return dataUsageInfo
+	return err
 }
 
 /// Bucket operations
@@ -1056,15 +1072,18 @@ func (fs *FSObjects) DeleteObject(ctx context.Context, bucket, object string) er
 // is a leaf or non-leaf entry.
 func (fs *FSObjects) listDirFactory() ListDirFunc {
 	// listDir - lists all the entries at a given prefix and given entry in the prefix.
-	listDir := func(bucket, prefixDir, prefixEntry string) (entries []string) {
+	listDir := func(bucket, prefixDir, prefixEntry string) (emptyDir bool, entries []string) {
 		var err error
 		entries, err = readDir(pathJoin(fs.fsPath, bucket, prefixDir))
 		if err != nil && err != errFileNotFound {
 			logger.LogIf(context.Background(), err)
-			return
+			return false, nil
+		}
+		if len(entries) == 0 {
+			return true, nil
 		}
 		sort.Strings(entries)
-		return filterMatchingPrefix(entries, prefixEntry)
+		return false, filterMatchingPrefix(entries, prefixEntry)
 	}
 
 	// Return list factory instance.
@@ -1231,7 +1250,7 @@ func (fs *FSObjects) HealFormat(ctx context.Context, dryRun bool) (madmin.HealRe
 }
 
 // HealObject - no-op for fs. Valid only for XL.
-func (fs *FSObjects) HealObject(ctx context.Context, bucket, object string, dryRun, remove bool, scanMode madmin.HealScanMode) (
+func (fs *FSObjects) HealObject(ctx context.Context, bucket, object string, opts madmin.HealOpts) (
 	res madmin.HealResultItem, err error) {
 	logger.LogIf(ctx, NotImplemented{})
 	return res, NotImplemented{}
@@ -1254,7 +1273,7 @@ func (fs *FSObjects) Walk(ctx context.Context, bucket, prefix string, results ch
 }
 
 // HealObjects - no-op for fs. Valid only for XL.
-func (fs *FSObjects) HealObjects(ctx context.Context, bucket, prefix string, fn healObjectFn) (e error) {
+func (fs *FSObjects) HealObjects(ctx context.Context, bucket, prefix string, opts madmin.HealOpts, fn healObjectFn) (e error) {
 	logger.LogIf(ctx, NotImplemented{})
 	return NotImplemented{}
 }

@@ -122,7 +122,8 @@ const (
 	ErrMissingCredTag
 	ErrCredMalformed
 	ErrInvalidRegion
-	ErrInvalidService
+	ErrInvalidServiceS3
+	ErrInvalidServiceSTS
 	ErrInvalidRequestVersion
 	ErrMissingSignTag
 	ErrMissingSignHeadersTag
@@ -332,6 +333,7 @@ const (
 	ErrAdminProfilerNotEnabled
 	ErrInvalidDecompressedSize
 	ErrAddUserInvalidArgument
+	ErrAddServiceAccountInvalidArgument
 	ErrPostPolicyConditionInvalidFormat
 )
 
@@ -652,9 +654,14 @@ var errorCodes = errorCodeMap{
 	// FIXME: Should contain the invalid param set as seen in https://github.com/RTradeLtd/s3x/issues/2385.
 	// right Description:   "Error parsing the X-Amz-Credential parameter; incorrect service \"s4\". This endpoint belongs to \"s3\".".
 	// Need changes to make sure variable messages can be constructed.
-	ErrInvalidService: {
-		Code:           "AuthorizationQueryParametersError",
-		Description:    "Error parsing the X-Amz-Credential parameter; incorrect service. This endpoint belongs to \"s3\".",
+	ErrInvalidServiceS3: {
+		Code:           "AuthorizationParametersError",
+		Description:    "Error parsing the Credential/X-Amz-Credential parameter; incorrect service. This endpoint belongs to \"s3\".",
+		HTTPStatusCode: http.StatusBadRequest,
+	},
+	ErrInvalidServiceSTS: {
+		Code:           "AuthorizationParametersError",
+		Description:    "Error parsing the Credential parameter; incorrect service. This endpoint belongs to \"sts\".",
 		HTTPStatusCode: http.StatusBadRequest,
 	},
 	// FIXME: Should contain the invalid param set as seen in https://github.com/RTradeLtd/s3x/issues/2385.
@@ -1573,6 +1580,12 @@ var errorCodes = errorCodeMap{
 		Description:    "User is not allowed to be same as admin access key",
 		HTTPStatusCode: http.StatusConflict,
 	},
+	ErrAddServiceAccountInvalidArgument: {
+		Code:           "XMinioInvalidArgument",
+		Description:    "New service accounts for admin access key is not allowed",
+		HTTPStatusCode: http.StatusConflict,
+	},
+
 	ErrPostPolicyConditionInvalidFormat: {
 		Code:           "PostPolicyInvalidKeyName",
 		Description:    "Invalid according to Policy: Policy Condition failed",
@@ -1641,7 +1654,7 @@ func toAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
 		apiErr = ErrKMSNotConfigured
 	case crypto.ErrKMSAuthLogin:
 		apiErr = ErrKMSAuthFailure
-	case errOperationTimedOut, context.Canceled, context.DeadlineExceeded:
+	case context.Canceled, context.DeadlineExceeded:
 		apiErr = ErrOperationTimedOut
 	case errDiskNotFound:
 		apiErr = ErrSlowDown
@@ -1769,6 +1782,8 @@ func toAPIErrorCode(ctx context.Context, err error) (apiErr APIErrorCode) {
 		apiErr = ErrOverlappingFilterNotification
 	case *event.ErrUnsupportedConfiguration:
 		apiErr = ErrUnsupportedNotification
+	case OperationTimedOut:
+		apiErr = ErrOperationTimedOut
 	case BackendDown:
 		apiErr = ErrBackendDown
 	case ObjectNameTooLong:
