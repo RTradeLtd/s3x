@@ -28,8 +28,8 @@ import (
 	"time"
 
 	"github.com/cespare/xxhash/v2"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/hash"
+	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/hash"
 	"github.com/tinylib/msgp/msgp"
 )
 

@@ -24,10 +24,10 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/RTradeLtd/s3x/cmd/logger"
 	color "github.com/RTradeLtd/s3x/pkg/color"
 	xnet "github.com/RTradeLtd/s3x/pkg/net"
 	humanize "github.com/dustin/go-humanize"
-	"github.com/minio/minio/cmd/logger"
 )
 
 // Documentation links, these are part of message printing code.

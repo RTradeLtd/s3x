@@ -28,6 +28,7 @@ import (
 
 	"github.com/RTradeLtd/s3x/cmd/config"
 	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/color"
 	"github.com/RTradeLtd/s3x/pkg/env"
 	"github.com/RTradeLtd/s3x/pkg/hash"
 	jsoniter "github.com/json-iterator/go"

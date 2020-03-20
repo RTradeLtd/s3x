@@ -22,7 +22,7 @@ import (
 
 	"github.com/RTradeLtd/s3x/pkg/s3select/json"
 	"github.com/RTradeLtd/s3x/pkg/s3select/sql"
-	csv "github.com/minio/minio/pkg/csvparser"
+	csv "github.com/RTradeLtd/s3x/pkg/csvparser"
 	"github.com/bcicen/jstream"
 	"github.com/minio/simdjson-go"
 )

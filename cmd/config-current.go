@@ -26,7 +26,6 @@ import (
 	"github.com/RTradeLtd/s3x/cmd/config/cache"
 	"github.com/RTradeLtd/s3x/cmd/config/compress"
 	"github.com/RTradeLtd/s3x/cmd/config/etcd"
-	xetcd "github.com/RTradeLtd/s3x/cmd/config/etcd"
 	"github.com/RTradeLtd/s3x/cmd/config/etcd/dns"
 	xldap "github.com/RTradeLtd/s3x/cmd/config/identity/ldap"
 	"github.com/RTradeLtd/s3x/cmd/config/identity/openid"

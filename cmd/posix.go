@@ -44,7 +44,6 @@ import (
 	humanize "github.com/dustin/go-humanize"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/klauspost/readahead"
-	"github.com/ncw/directio"
 )
 
 const (

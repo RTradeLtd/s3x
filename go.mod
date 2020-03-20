@@ -51,7 +51,6 @@ require (
 	github.com/ipfs/go-ipld-format v0.0.2
 	github.com/ipfs/go-merkledag v0.3.1
 	github.com/ipfs/go-unixfs v0.2.4
-	github.com/jonboulle/clockwork v0.1.0 // indirect
 	github.com/json-iterator/go v1.1.9
 	github.com/klauspost/compress v1.10.3
 	github.com/klauspost/cpuid v1.2.2
@@ -76,8 +75,6 @@ require (
 	github.com/minio/sio v0.2.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mmcloughlin/avo v0.0.0-20200303042253-6df701fe672f // indirect
-	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
-	github.com/modern-go/reflect2 v1.0.1 // indirect
 	github.com/nats-io/gnatsd v1.4.1 // indirect
 	github.com/nats-io/go-nats v1.7.2 // indirect
 	github.com/nats-io/go-nats-streaming v0.4.4 // indirect
@@ -87,11 +84,6 @@ require (
 	github.com/nats-io/nats.go v1.9.1
 	github.com/nats-io/stan.go v0.6.0
 	github.com/ncw/directio v1.0.5
-	github.com/nsqio/go-nsq v1.0.7
-	github.com/philhofer/fwd v1.0.0 // indirect
-	github.com/pkg/errors v0.8.1
-	github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829
-	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90 // indirect
 	github.com/nsqio/go-nsq v1.0.8
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.3.0
@@ -105,7 +97,6 @@ require (
 	github.com/skyrings/skyring-common v0.0.0-20160929130248-d1c0bb1cbd5e
 	github.com/streadway/amqp v0.0.0-20190404075320-75d898a42a94
 	github.com/tinylib/msgp v1.1.1
-	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	github.com/ugorji/go v1.1.5-pre // indirect
 	github.com/valyala/tcplisten v0.0.0-20161114210144-ceec8f93295a
 	go.uber.org/atomic v1.3.2

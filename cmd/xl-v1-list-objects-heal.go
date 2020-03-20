@@ -20,7 +20,7 @@ import (
 	"context"
 
 	"github.com/RTradeLtd/s3x/cmd/logger"
-	"github.com/minio/minio/pkg/madmin"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
 )
 
 // This is not implemented/needed anymore, look for xl-sets.ListBucketHeal()
