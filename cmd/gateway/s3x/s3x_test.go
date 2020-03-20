@@ -56,6 +56,7 @@ func getTestGateway(t *testing.T) *testGateway {
 		GRPCAddr: "localhost:8888",
 		DSPath:   testPath,
 		XAddr:    "xapi.temporal.cloud:9090",
+		Insecure: true,
 	}
 	g, err := temx.NewGatewayLayer(auth.Credentials{})
 	if err != nil {
