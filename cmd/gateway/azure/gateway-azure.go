@@ -36,7 +36,6 @@ import (
 
 	"github.com/Azure/azure-pipeline-go/pipeline"
 	"github.com/Azure/azure-storage-blob-go/azblob"
-	"github.com/RTradeLtd/s3x/cmd"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
@@ -1196,7 +1195,7 @@ func (a *azureObjects) CompleteMultipartUpload(ctx context.Context, bucket, obje
 	if err != nil {
 		return objInfo, azureToObjectError(err, bucket, object)
 	}
-	objMetadata["md5sum"] = cmd.ComputeCompleteMultipartMD5(uploadedParts)
+	objMetadata["md5sum"] = minio.ComputeCompleteMultipartMD5(uploadedParts)
 
 	_, err = objBlob.CommitBlockList(ctx, allBlocks, objProperties, objMetadata, azblob.BlobAccessConditions{})
 	if err != nil {

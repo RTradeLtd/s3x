@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"context"
 	"io"
 )
 
@@ -32,7 +33,7 @@ type StorageAPI interface {
 	SetDiskID(id string)
 
 	DiskInfo() (info DiskInfo, err error)
-	CrawlAndGetDataUsage(endCh <-chan struct{}) (DataUsageInfo, error)
+	CrawlAndGetDataUsage(ctx context.Context, cache dataUsageCache) (dataUsageCache, error)
 
 	// Volume operations.
 	MakeVol(volume string) (err error)
@@ -55,6 +56,7 @@ type StorageAPI interface {
 	StatFile(volume string, path string) (file FileInfo, err error)
 	DeleteFile(volume string, path string) (err error)
 	DeleteFileBulk(volume string, paths []string) (errs []error, err error)
+	DeletePrefixes(volume string, paths []string) (errs []error, err error)
 	VerifyFile(volume, path string, size int64, algo BitrotAlgorithm, sum []byte, shardSize int64) error
 
 	// Write all data, syncs the data to disk.

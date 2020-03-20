@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"context"
 	"io"
 	"sync"
 )
@@ -80,8 +81,8 @@ func (d *naughtyDisk) calcError() (err error) {
 func (d *naughtyDisk) SetDiskID(id string) {
 }
 
-func (d *naughtyDisk) CrawlAndGetDataUsage(endCh <-chan struct{}) (info DataUsageInfo, err error) {
-	return d.disk.CrawlAndGetDataUsage(endCh)
+func (d *naughtyDisk) CrawlAndGetDataUsage(ctx context.Context, cache dataUsageCache) (info dataUsageCache, err error) {
+	return d.disk.CrawlAndGetDataUsage(ctx, cache)
 }
 
 func (d *naughtyDisk) DiskInfo() (info DiskInfo, err error) {
@@ -194,6 +195,13 @@ func (d *naughtyDisk) DeleteFileBulk(volume string, paths []string) ([]error, er
 		errs[idx] = d.disk.DeleteFile(volume, path)
 	}
 	return errs, nil
+}
+
+func (d *naughtyDisk) DeletePrefixes(volume string, paths []string) ([]error, error) {
+	if err := d.calcError(); err != nil {
+		return nil, err
+	}
+	return d.disk.DeletePrefixes(volume, paths)
 }
 
 func (d *naughtyDisk) WriteAll(volume string, path string, reader io.Reader) (err error) {

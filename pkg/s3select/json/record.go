@@ -17,7 +17,6 @@
 package json
 
 import (
-	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -28,6 +27,7 @@ import (
 
 	"github.com/RTradeLtd/s3x/pkg/s3select/sql"
 	"github.com/bcicen/jstream"
+	csv "github.com/RTradeLtd/s3x/pkg/csvparser"
 )
 
 // RawJSON is a byte-slice that contains valid JSON
@@ -108,7 +108,7 @@ func (r *Record) Set(name string, value *sql.Value) (sql.Record, error) {
 }
 
 // WriteCSV - encodes to CSV data.
-func (r *Record) WriteCSV(writer io.Writer, fieldDelimiter rune) error {
+func (r *Record) WriteCSV(writer io.Writer, fieldDelimiter rune, quote rune, alwaysQuote bool) error {
 	var csvRecord []string
 	for _, kv := range r.KVS {
 		var columnValue string
@@ -137,6 +137,8 @@ func (r *Record) WriteCSV(writer io.Writer, fieldDelimiter rune) error {
 
 	w := csv.NewWriter(writer)
 	w.Comma = fieldDelimiter
+	w.Quote = quote
+	w.AlwaysQuote = alwaysQuote
 	if err := w.Write(csvRecord); err != nil {
 		return err
 	}

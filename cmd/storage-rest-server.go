@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os/user"
 	"path"
@@ -138,16 +139,28 @@ func (s *storageRESTServer) CrawlAndGetDataUsageHandler(w http.ResponseWriter, r
 	}
 
 	w.Header().Set(xhttp.ContentType, "text/event-stream")
-	doneCh := sendWhiteSpaceToHTTPResponse(w)
-	usageInfo, err := s.storage.CrawlAndGetDataUsage(GlobalServiceDoneCh)
-	<-doneCh
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		s.writeErrorResponse(w, err)
+		return
+	}
+	var cache dataUsageCache
+	err = cache.deserialize(b)
+	if err != nil {
+		logger.LogIf(r.Context(), err)
+		s.writeErrorResponse(w, err)
+		return
+	}
+
+	done := keepHTTPResponseAlive(w)
+	usageInfo, err := s.storage.CrawlAndGetDataUsage(r.Context(), cache)
+	done()
 
 	if err != nil {
 		s.writeErrorResponse(w, err)
 		return
 	}
-
-	gob.NewEncoder(w).Encode(usageInfo)
+	w.Write(usageInfo.serialize())
 	w.(http.Flusher).Flush()
 }
 
@@ -508,20 +521,69 @@ func (s *storageRESTServer) DeleteFileBulkHandler(w http.ResponseWriter, r *http
 		return
 	}
 
+	w.Header().Set(xhttp.ContentType, "text/event-stream")
+	encoder := gob.NewEncoder(w)
+	done := keepHTTPResponseAlive(w)
 	errs, err := s.storage.DeleteFileBulk(volume, filePaths)
+	done()
 	if err != nil {
 		s.writeErrorResponse(w, err)
 		return
 	}
 
-	derrsResp := &DeleteFileBulkErrsResp{Errs: make([]error, len(errs))}
+	dErrsResp := &DeleteFileBulkErrsResp{Errs: make([]error, len(errs))}
 	for idx, err := range errs {
 		if err != nil {
-			derrsResp.Errs[idx] = StorageErr(err.Error())
+			dErrsResp.Errs[idx] = StorageErr(err.Error())
 		}
 	}
 
-	gob.NewEncoder(w).Encode(derrsResp)
+	encoder.Encode(dErrsResp)
+	w.(http.Flusher).Flush()
+}
+
+// DeletePrefixesErrsResp - collection of delete errors
+// for bulk prefixes deletes
+type DeletePrefixesErrsResp struct {
+	Errs []error
+}
+
+// DeletePrefixesHandler - delete a set of a prefixes.
+func (s *storageRESTServer) DeletePrefixesHandler(w http.ResponseWriter, r *http.Request) {
+	if !s.IsValid(w, r) {
+		return
+	}
+	vars := r.URL.Query()
+	volume := vars.Get(storageRESTVolume)
+
+	bio := bufio.NewScanner(r.Body)
+	var prefixes []string
+	for bio.Scan() {
+		prefixes = append(prefixes, bio.Text())
+	}
+
+	if err := bio.Err(); err != nil {
+		s.writeErrorResponse(w, err)
+		return
+	}
+
+	w.Header().Set(xhttp.ContentType, "text/event-stream")
+	encoder := gob.NewEncoder(w)
+	done := keepHTTPResponseAlive(w)
+	errs, err := s.storage.DeletePrefixes(volume, prefixes)
+	done()
+	if err != nil {
+		s.writeErrorResponse(w, err)
+		return
+	}
+
+	dErrsResp := &DeletePrefixesErrsResp{Errs: make([]error, len(errs))}
+	for idx, err := range errs {
+		if err != nil {
+			dErrsResp.Errs[idx] = StorageErr(err.Error())
+		}
+	}
+	encoder.Encode(dErrsResp)
 	w.(http.Flusher).Flush()
 }
 
@@ -541,11 +603,15 @@ func (s *storageRESTServer) RenameFileHandler(w http.ResponseWriter, r *http.Req
 	}
 }
 
-// Send whitespace to the client to avoid timeouts with long storage
+// keepHTTPResponseAlive can be used to avoid timeouts with long storage
 // operations, such as bitrot verification or data usage crawling.
-func sendWhiteSpaceToHTTPResponse(w http.ResponseWriter) <-chan struct{} {
+// Every 10 seconds a space character is sent.
+// The returned function should always be called to release resources.
+// waitForHTTPResponse should be used to the receiving side.
+func keepHTTPResponseAlive(w http.ResponseWriter) func() {
 	doneCh := make(chan struct{})
 	go func() {
+		defer close(doneCh)
 		ticker := time.NewTicker(time.Second * 10)
 		for {
 			select {
@@ -553,13 +619,38 @@ func sendWhiteSpaceToHTTPResponse(w http.ResponseWriter) <-chan struct{} {
 				w.Write([]byte(" "))
 				w.(http.Flusher).Flush()
 			case doneCh <- struct{}{}:
+				w.Write([]byte{0})
 				ticker.Stop()
 				return
 			}
 		}
-
 	}()
-	return doneCh
+	return func() {
+		// Indicate we are ready to write.
+		<-doneCh
+		// Wait for channel to be closed so we don't race on writes.
+		<-doneCh
+	}
+}
+
+// waitForHTTPResponse will wait for responses where keepHTTPResponseAlive
+// has been used.
+// The returned reader contains the payload.
+func waitForHTTPResponse(respBody io.Reader) (io.Reader, error) {
+	reader := bufio.NewReader(respBody)
+	for {
+		b, err := reader.ReadByte()
+		if err != nil {
+			return nil, err
+		}
+		if b != ' ' {
+			if b != 0 {
+				reader.UnreadByte()
+			}
+			break
+		}
+	}
+	return reader, nil
 }
 
 // VerifyFileResp - VerifyFile()'s response.
@@ -601,9 +692,9 @@ func (s *storageRESTServer) VerifyFile(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set(xhttp.ContentType, "text/event-stream")
 	encoder := gob.NewEncoder(w)
-	doneCh := sendWhiteSpaceToHTTPResponse(w)
+	done := keepHTTPResponseAlive(w)
 	err = s.storage.VerifyFile(volume, filePath, size, BitrotAlgorithmFromString(algoStr), hash, int64(shardSize))
-	<-doneCh
+	done()
 	vresp := &VerifyFileResp{}
 	if err != nil {
 		vresp.Err = StorageErr(err.Error())
@@ -665,6 +756,8 @@ func registerStorageRESTHandlers(router *mux.Router, endpointZones EndpointZones
 				Queries(restQueries(storageRESTVolume, storageRESTDirPath, storageRESTCount, storageRESTLeafFile)...)
 			subrouter.Methods(http.MethodPost).Path(storageRESTVersionPrefix + storageRESTMethodWalk).HandlerFunc(httpTraceHdrs(server.WalkHandler)).
 				Queries(restQueries(storageRESTVolume, storageRESTDirPath, storageRESTMarkerPath, storageRESTRecursive, storageRESTLeafFile)...)
+			subrouter.Methods(http.MethodPost).Path(storageRESTVersionPrefix + storageRESTMethodDeletePrefixes).HandlerFunc(httpTraceHdrs(server.DeletePrefixesHandler)).
+				Queries(restQueries(storageRESTVolume)...)
 			subrouter.Methods(http.MethodPost).Path(storageRESTVersionPrefix + storageRESTMethodDeleteFile).HandlerFunc(httpTraceHdrs(server.DeleteFileHandler)).
 				Queries(restQueries(storageRESTVolume, storageRESTFilePath)...)
 			subrouter.Methods(http.MethodPost).Path(storageRESTVersionPrefix + storageRESTMethodDeleteFileBulk).HandlerFunc(httpTraceHdrs(server.DeleteFileBulkHandler)).
