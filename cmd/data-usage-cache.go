@@ -27,9 +27,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cespare/xxhash/v2"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/hash"
+	"github.com/cespare/xxhash/v2"
 	"github.com/tinylib/msgp/msgp"
 )
 

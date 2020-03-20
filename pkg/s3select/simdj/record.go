@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"io"
 
+	csv "github.com/RTradeLtd/s3x/pkg/csvparser"
 	"github.com/RTradeLtd/s3x/pkg/s3select/json"
 	"github.com/RTradeLtd/s3x/pkg/s3select/sql"
-	csv "github.com/RTradeLtd/s3x/pkg/csvparser"
 	"github.com/bcicen/jstream"
 	"github.com/minio/simdjson-go"
 )

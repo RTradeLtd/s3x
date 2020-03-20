@@ -25,9 +25,9 @@ import (
 	"strconv"
 	"strings"
 
+	csv "github.com/RTradeLtd/s3x/pkg/csvparser"
 	"github.com/RTradeLtd/s3x/pkg/s3select/sql"
 	"github.com/bcicen/jstream"
-	csv "github.com/RTradeLtd/s3x/pkg/csvparser"
 )
 
 // RawJSON is a byte-slice that contains valid JSON

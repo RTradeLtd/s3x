@@ -101,3 +101,9 @@ clean:
 	@rm -rvf minio
 	@rm -rvf build
 	@rm -rvf release
+
+# run standard go tooling for better readability
+.PHONY: tidy
+tidy: 
+	find . -type f -name '*.go' -exec goimports -w {} \;
+	find . -type f -name '*.go' -exec gofmt -s -w {} \;

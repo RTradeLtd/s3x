@@ -17,8 +17,9 @@
 package target
 
 import (
-	xnet "github.com/RTradeLtd/s3x/pkg/net"
 	"testing"
+
+	xnet "github.com/RTradeLtd/s3x/pkg/net"
 )
 
 func TestNSQArgs_Validate(t *testing.T) {
