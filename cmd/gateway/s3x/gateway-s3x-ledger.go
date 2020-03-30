@@ -20,6 +20,9 @@ The reason for this is so that we can enable easy reuse of internal code.
 // Close shuts down the ledger datastore
 func (ls *ledgerStore) Close() error {
 	//todo: clean up caches
+	for _, f := range ls.cleanup {
+		f()
+	}
 	return ls.ds.Close()
 }
 
