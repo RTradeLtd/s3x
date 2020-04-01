@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go v0.41.0
 	github.com/Azure/azure-pipeline-go v0.2.1
 	github.com/Azure/azure-storage-blob-go v0.8.0
-	github.com/RTradeLtd/TxPB/v3 v3.0.0
+	github.com/RTradeLtd/TxPB/v3 v3.2.2
 	github.com/RTradeLtd/go-ds-badger/v2 v2.1.0
 	github.com/Shopify/sarama v1.24.1
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
