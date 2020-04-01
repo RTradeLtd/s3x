@@ -48,7 +48,7 @@ require (
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf
 	github.com/ipfs/go-cid v0.0.5
 	github.com/ipfs/go-datastore v0.3.1
-	github.com/ipfs/go-ipld-format v0.0.2
+	github.com/ipfs/go-ipld-format v0.1.0
 	github.com/ipfs/go-merkledag v0.3.1
 	github.com/ipfs/go-unixfs v0.2.4
 	github.com/json-iterator/go v1.1.9
