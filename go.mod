@@ -103,7 +103,7 @@ require (
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
 	golang.org/x/sys v0.0.0-20191220142924-d4481acd189f
 	golang.org/x/tools v0.0.0-20200216192241-b320d3a0f5a2 // indirect
-	google.golang.org/api v0.15.0
+	google.golang.org/api v0.20.0
 	google.golang.org/genproto v0.0.0-20200212174721-66ed5ce911ce
 	google.golang.org/grpc v1.27.0
 	gopkg.in/cheggaaa/pb.v1 v1.0.28 // indirect
