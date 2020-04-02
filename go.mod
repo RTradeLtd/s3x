@@ -92,7 +92,7 @@ require (
 	github.com/rs/cors v1.6.0
 	github.com/secure-io/sio-go v0.3.0
 	github.com/segmentio/ksuid v1.0.2
-	github.com/shirou/gopsutil v2.18.12+incompatible
+	github.com/shirou/gopsutil v2.20.2+incompatible
 	github.com/sirupsen/logrus v1.4.2
 	github.com/skyrings/skyring-common v0.0.0-20160929130248-d1c0bb1cbd5e
 	github.com/streadway/amqp v0.0.0-20190404075320-75d898a42a94
