@@ -56,9 +56,10 @@ type infoAPIServer struct {
 // xObjects bridges S3 -> TemporalX (IPFS)
 type xObjects struct {
 	minio.GatewayUnsupported
-	dagClient  pb.NodeAPIClient
-	fileClient pb.FileAPIClient
-	ctx        context.Context
+	ctx          context.Context
+	dagClient    pb.NodeAPIClient
+	fileClient   pb.FileAPIClient
+	pubsubClient pb.PubSubAPIClient
 
 	// ledgerStore is responsible for updating our internal ledger state
 	ledgerStore *ledgerStore
@@ -150,14 +151,14 @@ func (g *TEMX) newBadgerLedgerStore(dag pb.NodeAPIClient) (*ledgerStore, error) 
 
 // newCrdtLedgerStore returns an instance of ledgerStore that uses crdt and backed by badgerv2
 //
-func (g *TEMX) newCrdtLedgerStore(ctx context.Context, dag pb.NodeAPIClient) (*ledgerStore, error) {
+func (g *TEMX) newCrdtLedgerStore(ctx context.Context, dag pb.NodeAPIClient, pub pb.PubSubAPIClient) (*ledgerStore, error) {
 	store, err := badger.NewDatastore(g.DSPath, &badger.DefaultOptions)
 	if err != nil {
 		return nil, err
 	}
 	//from the doc: The broadcaster can be shut down by cancelling the given context. This must be done before Closing the crdt.Datastore, otherwise things may hang.
 	ctx, cancle := context.WithCancel(ctx)
-	pubsubBC, err := crdt.NewPubSubBroadcaster(ctx, dag, g.CrdtTopic)
+	pubsubBC, err := newCrdtBroadcaster(ctx, pub, g.CrdtTopic)
 	if err != nil {
 		return nil, err
 	}
@@ -208,10 +209,11 @@ func (g *TEMX) getXObjects(creds auth.Credentials) (*xObjects, error) {
 	// instantiate initial xObjects type
 	// responsible for bridging S3 -> TemporalX (IPFS)
 	xobj := &xObjects{
-		dagClient:   dag,
-		fileClient:  pb.NewFileAPIClient(conn),
-		ctx:         ctx,
-		ledgerStore: ledger,
+		ctx:          ctx,
+		dagClient:    dag,
+		fileClient:   pb.NewFileAPIClient(conn),
+		pubsubClient: pb.NewPubSubAPIClient(conn),
+		ledgerStore:  ledger,
 		infoAPI: &infoAPIServer{
 			httpMux:    runtime.NewServeMux(),
 			grpcServer: grpc.NewServer(),
