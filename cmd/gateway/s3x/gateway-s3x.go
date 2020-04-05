@@ -25,11 +25,14 @@ const (
 	temxBackend = "s3x"
 )
 
-type DSType string //DSType is a type of data store that s3x supports
+//DSType is a type of datastore that s3x supports, please remove all existing data before changing the datastore
+type DSType string
 
 const (
+	//DSTypeBadger is a badger(v2) backed datastore
 	DSTypeBadger = DSType("badger")
-	DSTypeCrdt   = DSType("crdt")
+	//DSTypeCrdt is a crdt backed backed datastore
+	DSTypeCrdt = DSType("crdt")
 )
 
 // TEMX implements a MinIO gateway on top of TemporalX
