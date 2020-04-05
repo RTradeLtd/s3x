@@ -34,7 +34,8 @@ func (d *crdtDAGSyncer) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
 	if block.Cid() != c {
 		return nil, errors.New("unexpected data received from node server")
 	}
-	return ipld.Decode(block)
+	n, err := ipld.Decode(block)
+	return n, d.setBlock(c, err)
 }
 
 // GetMany returns a channel of NodeOptions given a set of CIDs.
@@ -79,13 +80,16 @@ func (d *crdtDAGSyncer) AddMany(ctx context.Context, ns []ipld.Node) error {
 			Hash:        n.Cid().String(),
 			Links:       links,
 		})
-		if err != nil {
+		if err := d.setBlock(n.Cid(), err); err != nil {
 			return err
 		}
 		cs = append(cs, n.Cid().String())
 	}
 	_, err := d.client.Persist(ctx, &pb.PersistRequest{Cids: cs}) //Question: should persist be requested before add?
-	return err
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Remove removes a node from this DAG.
