@@ -45,6 +45,7 @@ require (
 	github.com/hashicorp/raft v1.1.1-0.20190703171940-f639636d18e0 // indirect
 	github.com/hashicorp/vault/api v1.0.4
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf
+	github.com/ipfs/go-block-format v0.0.2
 	github.com/ipfs/go-cid v0.0.5
 	github.com/ipfs/go-datastore v0.4.4
 	github.com/ipfs/go-ds-crdt v0.1.8-0.20200310091849-1dca473cbff6
@@ -100,6 +101,7 @@ require (
 	github.com/ugorji/go v1.1.5-pre // indirect
 	github.com/valyala/tcplisten v0.0.0-20161114210144-ceec8f93295a
 	go.uber.org/atomic v1.6.0
+	go.uber.org/multierr v1.5.0
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
 	golang.org/x/sys v0.0.0-20191220142924-d4481acd189f
 	golang.org/x/tools v0.0.0-20200216192241-b320d3a0f5a2 // indirect

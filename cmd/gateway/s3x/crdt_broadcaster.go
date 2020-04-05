@@ -20,6 +20,12 @@ func newCrdtBroadcaster(ctx context.Context, api pb.PubSubAPIClient, topic strin
 	if err != nil {
 		return nil, err
 	}
+	if err := client.Send(&pb.PubSubRequest{
+		RequestType: pb.PSREQTYPE_PS_SUBSCRIBE,
+		Topics:      []string{topic},
+	}); err != nil {
+		return nil, err
+	}
 	next := make(chan []byte)
 	b := &crdtBroadcaster{
 		topic:  topic,
@@ -27,10 +33,6 @@ func newCrdtBroadcaster(ctx context.Context, api pb.PubSubAPIClient, topic strin
 		next:   next,
 	}
 	go func() {
-		b.client.Send(&pb.PubSubRequest{
-			RequestType: pb.PSREQTYPE_PS_SUBSCRIBE,
-			Topics:      []string{b.topic},
-		})
 		for {
 			resp, err := b.client.Recv()
 			if err != nil {

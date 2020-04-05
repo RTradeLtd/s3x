@@ -54,6 +54,7 @@ func getTestGateway(t *testing.T) *testGateway {
 	temx := &TEMX{
 		HTTPAddr: "localhost:8889",
 		GRPCAddr: "localhost:8888",
+		DSType:   DSTypeCrdt,
 		DSPath:   testPath,
 		XAddr:    "xapi.temporal.cloud:9090",
 		Insecure: true,

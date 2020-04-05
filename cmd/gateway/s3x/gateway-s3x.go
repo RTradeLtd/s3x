@@ -56,10 +56,9 @@ type infoAPIServer struct {
 // xObjects bridges S3 -> TemporalX (IPFS)
 type xObjects struct {
 	minio.GatewayUnsupported
-	ctx          context.Context
-	dagClient    pb.NodeAPIClient
-	fileClient   pb.FileAPIClient
-	pubsubClient pb.PubSubAPIClient
+	ctx        context.Context
+	dagClient  pb.NodeAPIClient
+	fileClient pb.FileAPIClient
 
 	// ledgerStore is responsible for updating our internal ledger state
 	ledgerStore *ledgerStore
@@ -129,12 +128,12 @@ func temxGatewayMain(ctx *cli.Context) {
 }
 
 // newLedgerStore returns an instance of ledgerStore
-func (g *TEMX) newLedgerStore(ctx context.Context, dag pb.NodeAPIClient) (*ledgerStore, error) {
+func (g *TEMX) newLedgerStore(ctx context.Context, dag pb.NodeAPIClient, pub pb.PubSubAPIClient) (*ledgerStore, error) {
 	switch g.DSType {
 	case DSTypeBadger:
 		return g.newBadgerLedgerStore(dag)
 	case DSTypeCrdt:
-		return g.newCrdtLedgerStore(ctx, dag)
+		return g.newCrdtLedgerStore(ctx, dag, pub)
 	}
 	return nil, fmt.Errorf(`data store type "%v" not supported`, g.DSType)
 }
@@ -150,20 +149,28 @@ func (g *TEMX) newBadgerLedgerStore(dag pb.NodeAPIClient) (*ledgerStore, error) 
 }
 
 // newCrdtLedgerStore returns an instance of ledgerStore that uses crdt and backed by badgerv2
-//
 func (g *TEMX) newCrdtLedgerStore(ctx context.Context, dag pb.NodeAPIClient, pub pb.PubSubAPIClient) (*ledgerStore, error) {
 	store, err := badger.NewDatastore(g.DSPath, &badger.DefaultOptions)
 	if err != nil {
 		return nil, err
 	}
 	//from the doc: The broadcaster can be shut down by cancelling the given context. This must be done before Closing the crdt.Datastore, otherwise things may hang.
-	ctx, cancle := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	defer func() {
+		if cancel != nil {
+			cancel()
+		}
+	}()
+	dagSyncer := &crdtDAGSyncer{
+		client: dag,
+		ds:     store,
+	}
 	pubsubBC, err := newCrdtBroadcaster(ctx, pub, g.CrdtTopic)
 	if err != nil {
 		return nil, err
 	}
 	opts := crdt.DefaultOptions()
-	crdtds, err := crdt.New(store, datastore.NewKey("crdt"), dag, pubsubBC, opts)
+	crdtds, err := crdt.New(store, datastore.NewKey("crdt"), dagSyncer, pubsubBC, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +178,8 @@ func (g *TEMX) newCrdtLedgerStore(ctx context.Context, dag pb.NodeAPIClient, pub
 	if err != nil {
 		return nil, err
 	}
-	ls.cleanup = append(ls.cleanup, cancle)
+	ls.cleanup = append(ls.cleanup, cancel)
+	cancel = nil //disable defer cancel
 	return ls, nil
 }
 
@@ -196,8 +204,9 @@ func (g *TEMX) getXObjects(creds auth.Credentials) (*xObjects, error) {
 		return nil, err
 	}
 	dag := pb.NewNodeAPIClient(conn)
+	pub := pb.NewPubSubAPIClient(conn)
 	// instantiate our internal ledger
-	ledger, err := g.newLedgerStore(ctx, dag)
+	ledger, err := g.newLedgerStore(ctx, dag, pub)
 	if err != nil {
 		return nil, err
 	}
@@ -209,11 +218,10 @@ func (g *TEMX) getXObjects(creds auth.Credentials) (*xObjects, error) {
 	// instantiate initial xObjects type
 	// responsible for bridging S3 -> TemporalX (IPFS)
 	xobj := &xObjects{
-		ctx:          ctx,
-		dagClient:    dag,
-		fileClient:   pb.NewFileAPIClient(conn),
-		pubsubClient: pb.NewPubSubAPIClient(conn),
-		ledgerStore:  ledger,
+		ctx:         ctx,
+		dagClient:   dag,
+		fileClient:  pb.NewFileAPIClient(conn),
+		ledgerStore: ledger,
 		infoAPI: &infoAPIServer{
 			httpMux:    runtime.NewServeMux(),
 			grpcServer: grpc.NewServer(),
