@@ -157,7 +157,7 @@ func (g *TEMX) newCrdtLedgerStore(ctx context.Context, dag pb.NodeAPIClient, pub
 	if err != nil {
 		return nil, err
 	}
-	//from the doc: The broadcaster can be shut down by cancelling the given context. This must be done before Closing the crdt.Datastore, otherwise things may hang.
+	//from the doc: The broadcaster can be shut down by canceling the given context. This must be done before Closing the crdt.Datastore, otherwise things may hang.
 	ctx, cancel := context.WithCancel(ctx)
 	defer func() {
 		if cancel != nil {
