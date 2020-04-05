@@ -4,9 +4,9 @@ go 1.13
 
 require (
 	cloud.google.com/go v0.41.0
-	github.com/Azure/azure-pipeline-go v0.2.1
+	github.com/Azure/azure-pipeline-go v0.2.2
 	github.com/Azure/azure-storage-blob-go v0.8.0
-	github.com/RTradeLtd/TxPB/v3 v3.0.0
+	github.com/RTradeLtd/TxPB/v3 v3.2.2
 	github.com/RTradeLtd/go-ds-badger/v2 v2.1.0
 	github.com/Shopify/sarama v1.24.1
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
@@ -87,13 +87,13 @@ require (
 	github.com/ncw/directio v1.0.5
 	github.com/nsqio/go-nsq v1.0.8
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.3.0
+	github.com/prometheus/client_golang v1.5.1
 	github.com/rcrowley/go-metrics v0.0.0-20190704165056-9c2d0518ed81 // indirect
 	github.com/rjeczalik/notify v0.9.2
 	github.com/rs/cors v1.6.0
 	github.com/secure-io/sio-go v0.3.0
 	github.com/segmentio/ksuid v1.0.2
-	github.com/shirou/gopsutil v2.18.12+incompatible
+	github.com/shirou/gopsutil v2.20.2+incompatible
 	github.com/sirupsen/logrus v1.4.2
 	github.com/skyrings/skyring-common v0.0.0-20160929130248-d1c0bb1cbd5e
 	github.com/streadway/amqp v0.0.0-20190404075320-75d898a42a94
@@ -102,12 +102,12 @@ require (
 	github.com/valyala/tcplisten v0.0.0-20161114210144-ceec8f93295a
 	go.uber.org/atomic v1.6.0
 	go.uber.org/multierr v1.5.0
-	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
-	golang.org/x/sys v0.0.0-20191220142924-d4481acd189f
+	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4
+	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527
 	golang.org/x/tools v0.0.0-20200216192241-b320d3a0f5a2 // indirect
-	google.golang.org/api v0.15.0
-	google.golang.org/genproto v0.0.0-20200212174721-66ed5ce911ce
-	google.golang.org/grpc v1.27.0
+	google.golang.org/api v0.20.0
+	google.golang.org/genproto v0.0.0-20200312145019-da6875a35672
+	google.golang.org/grpc v1.28.0
 	gopkg.in/cheggaaa/pb.v1 v1.0.28 // indirect
 	gopkg.in/ini.v1 v1.48.0 // indirect
 	gopkg.in/ldap.v3 v3.0.3
