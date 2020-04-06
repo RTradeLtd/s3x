@@ -45,8 +45,8 @@ var _ minio.ObjectLayer = &testGateway{}
 
 // getTestGateway returns a testGateway that implements minio.ObjectLayer.
 // testGateway also removes all data save on disk when shutdown
-func getTestGateway(t *testing.T) *testGateway {
-	testPath, err := ioutil.TempDir("", "s3x-test")
+func getTestGateway(t *testing.T, dsType DSType) *testGateway {
+	testPath, err := ioutil.TempDir("", "s3x-test-"+string(dsType))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func getTestGateway(t *testing.T) *testGateway {
 	temx := &TEMX{
 		HTTPAddr: "localhost:8889",
 		GRPCAddr: "localhost:8888",
-		DSType:   DSTypeCrdt,
+		DSType:   dsType,
 		DSPath:   testPath,
 		XAddr:    "xapi.temporal.cloud:9090",
 		Insecure: true,
