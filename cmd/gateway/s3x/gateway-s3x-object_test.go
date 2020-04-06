@@ -70,12 +70,12 @@ func testGetObject(t *testing.T, g *testGateway) {
 }
 
 func TestS3XG_Object_Badger(t *testing.T) {
-	testS3XG_Object(t, DSTypeBadger)
+	testS3XGObject(t, DSTypeBadger)
 }
 func TestS3XG_Object_Crdt(t *testing.T) {
-	testS3XG_Object(t, DSTypeCrdt)
+	testS3XGObject(t, DSTypeCrdt)
 }
-func testS3XG_Object(t *testing.T, dsType DSType) {
+func testS3XGObject(t *testing.T, dsType DSType) {
 	ctx := context.Background()
 	gateway := getTestGateway(t, dsType)
 	defer func() {

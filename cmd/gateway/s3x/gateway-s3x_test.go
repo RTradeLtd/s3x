@@ -7,12 +7,12 @@ import (
 )
 
 func TestS3X_xObjects_GetHash_Badger(t *testing.T) {
-	testS3X_xObjects_GetHash(t, DSTypeBadger)
+	testS3XxObjectsGetHash(t, DSTypeBadger)
 }
 func TestS3X_xObjects_GetHash_Crdt(t *testing.T) {
-	testS3X_xObjects_GetHash(t, DSTypeCrdt)
+	testS3XxObjectsGetHash(t, DSTypeCrdt)
 }
-func testS3X_xObjects_GetHash(t *testing.T, dsType DSType) {
+func testS3XxObjectsGetHash(t *testing.T, dsType DSType) {
 	tests := []struct {
 		name    string
 		req     *InfoRequest

@@ -10,12 +10,12 @@ import (
 )
 
 func TestS3X_LedgerStore_Badger(t *testing.T) {
-	testS3X_LedgerStore(t, DSTypeBadger)
+	testS3XLedgerStore(t, DSTypeBadger)
 }
 func TestS3X_LedgerStore_Crdt(t *testing.T) {
-	testS3X_LedgerStore(t, DSTypeCrdt)
+	testS3XLedgerStore(t, DSTypeCrdt)
 }
-func testS3X_LedgerStore(t *testing.T, dsType DSType) {
+func testS3XLedgerStore(t *testing.T, dsType DSType) {
 	ctx := context.Background()
 	gateway := getTestGateway(t, dsType)
 	defer func() {

@@ -9,12 +9,12 @@ import (
 )
 
 func TestS3X_Multipart_Badger(t *testing.T) {
-	testS3X_Multipart(t, DSTypeBadger)
+	testS3XMultipart(t, DSTypeBadger)
 }
 func TestS3X_Multipart_Crdt(t *testing.T) {
-	testS3X_Multipart(t, DSTypeCrdt)
+	testS3XMultipart(t, DSTypeCrdt)
 }
-func testS3X_Multipart(t *testing.T, dsType DSType) {
+func testS3XMultipart(t *testing.T, dsType DSType) {
 	bucket := "my multipart bucket"
 	object := "my multipart object"
 	objectETag := "bafybeibzfoslocl3zs4fngsqminlpikibos7u664circ6mw7kjwkwa6y54"
