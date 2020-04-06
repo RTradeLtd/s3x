@@ -96,14 +96,19 @@ func (d *crdtDAGSyncer) AddMany(ctx context.Context, ns []ipld.Node) error {
 //
 // Remove returns no error if the requested node is not present in this DAG.
 func (d *crdtDAGSyncer) Remove(ctx context.Context, c cid.Cid) error {
-	return nil //TODO
+	return d.RemoveMany(ctx, []cid.Cid{c})
 }
 
 // RemoveMany removes many nodes from this DAG.
 //
 // It returns success even if the nodes were not present in the DAG.
 func (d *crdtDAGSyncer) RemoveMany(ctx context.Context, cs []cid.Cid) error {
-	return nil //TODO
+	for _, c := range cs {
+		if err := d.ds.Delete(datastore.NewKey(c.KeyString())); err != nil {
+			return err
+		}
+	}
+	return nil //TODO: remove from d.client
 }
 
 // HasBlock returns true if the block is locally available (therefore, it
