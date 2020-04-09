@@ -80,7 +80,16 @@ func (d *crdtDAGSyncer) AddMany(ctx context.Context, ns []ipld.Node) error {
 			Hash:        n.Cid().String(),
 			Links:       links,
 		})
-		if err := d.setBlock(n.Cid(), err); err != nil {
+		if err != nil {
+			return err
+		}
+		if len(r.Hashes) != 1 {
+			return errors.New("unexpected number of hashes returned")
+		}
+		if r.Hashes[0] != n.Cid().String() {
+			return errors.New("unexpected Cid returned")
+		}
+		if err := d.setBlock(n.Cid()); err != nil {
 			return err
 		}
 		cs = append(cs, n.Cid().String())
