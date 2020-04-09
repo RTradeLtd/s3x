@@ -74,7 +74,7 @@ func (d *crdtDAGSyncer) AddMany(ctx context.Context, ns []ipld.Node) error {
 			}
 			links[name] = l.Cid.String()
 		}
-		_, err := d.client.Dag(ctx, &pb.DagRequest{
+		r, err := d.client.Dag(ctx, &pb.DagRequest{
 			RequestType: pb.DAGREQTYPE_DAG_NEW_NODE,
 			Data:        n.RawData(),
 			Hash:        n.Cid().String(),
