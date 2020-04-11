@@ -2,13 +2,13 @@ package s3x
 
 import (
 	"context"
-	"fmt"
 
 	pb "github.com/RTradeLtd/TxPB/v3/go"
 	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	ipld "github.com/ipfs/go-ipld-format"
+	"github.com/ipfs/go-merkledag"
 	"github.com/pkg/errors"
 	"go.uber.org/multierr"
 )
@@ -66,19 +66,19 @@ func (d *crdtDAGSyncer) Add(ctx context.Context, n ipld.Node) error {
 func (d *crdtDAGSyncer) AddMany(ctx context.Context, ns []ipld.Node) error {
 	cs := make([]string, 0, len(ns))
 	for _, n := range ns {
-		links := make(map[string]string, len(n.Links()))
-		for i, l := range n.Links() {
-			name := l.Name
-			if name == "" { // a work around if links don't have names
-				name = fmt.Sprint(i)
-			}
-			links[name] = l.Cid.String()
+		var format string
+		var data []byte
+		switch typed := n.(type) {
+		default:
+			return errors.Errorf("Can not add type: %T using dag client", n)
+		case *merkledag.ProtoNode:
+			format = "protobuf"
+			data = typed.RawData()
 		}
 		r, err := d.client.Dag(ctx, &pb.DagRequest{
-			RequestType: pb.DAGREQTYPE_DAG_NEW_NODE,
-			Data:        n.RawData(),
-			Hash:        n.Cid().String(),
-			Links:       links,
+			RequestType:         pb.DAGREQTYPE_DAG_PUT,
+			Data:                data,
+			SerializationFormat: format,
 		})
 		if err != nil {
 			return err
@@ -87,7 +87,12 @@ func (d *crdtDAGSyncer) AddMany(ctx context.Context, ns []ipld.Node) error {
 			return errors.New("unexpected number of hashes returned")
 		}
 		if r.Hashes[0] != n.Cid().String() {
-			return errors.New("unexpected Cid returned")
+			hcid, err := cid.Decode(r.Hashes[0])
+			if err != nil {
+				return errors.WithMessage(err, "error decoding returned cid")
+			}
+			return errors.Errorf("unexpected Cid returned, got %s, prefix %v; want %s, prefix %v",
+				r.Hashes[0], hcid.Prefix(), n.Cid().String(), n.Cid().Prefix())
 		}
 		if err := d.setBlock(n.Cid()); err != nil {
 			return err

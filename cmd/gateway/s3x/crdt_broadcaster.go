@@ -34,7 +34,7 @@ func newCrdtBroadcaster(ctx context.Context, api pb.PubSubAPIClient, topic strin
 	}
 	go func() {
 		for {
-			resp, err := b.client.Recv()
+			resp, err := client.Recv()
 			if err != nil {
 				b.err = err
 				close(next)
