@@ -66,33 +66,14 @@ func (d *crdtDAGSyncer) Add(ctx context.Context, n ipld.Node) error {
 func (d *crdtDAGSyncer) AddMany(ctx context.Context, ns []ipld.Node) error {
 	cs := make([]string, 0, len(ns))
 	for _, n := range ns {
-		var format string
-		var data []byte
 		switch typed := n.(type) {
 		default:
 			return errors.Errorf("Can not add type: %T using dag client", n)
 		case *merkledag.ProtoNode:
-			format = "protobuf"
-			data = typed.RawData()
-		}
-		r, err := d.client.Dag(ctx, &pb.DagRequest{
-			RequestType:         pb.DAGREQTYPE_DAG_PUT,
-			Data:                data,
-			SerializationFormat: format,
-		})
-		if err != nil {
-			return err
-		}
-		if len(r.Hashes) != 1 {
-			return errors.New("unexpected number of hashes returned")
-		}
-		if r.Hashes[0] != n.Cid().String() {
-			hcid, err := cid.Decode(r.Hashes[0])
+			_, err := ipfsSaveProtoNode(ctx, d.client, typed)
 			if err != nil {
 				return errors.WithMessage(err, "error decoding returned cid")
 			}
-			return errors.Errorf("unexpected Cid returned, got %s, prefix %v; want %s, prefix %v",
-				r.Hashes[0], hcid.Prefix(), n.Cid().String(), n.Cid().Prefix())
 		}
 		if err := d.setBlock(n.Cid()); err != nil {
 			return err

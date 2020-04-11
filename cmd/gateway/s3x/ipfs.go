@@ -8,6 +8,7 @@ import (
 	pb "github.com/RTradeLtd/TxPB/v3/go"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-merkledag"
+	"github.com/pkg/errors"
 )
 
 type unmarshaller interface {
@@ -69,7 +70,7 @@ func ipfsSaveBytes(ctx context.Context, dag pb.NodeAPIClient, data []byte) (stri
 		Data:        data,
 	})
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "dag client error in ipfsSaveBytes")
 	}
 	return resp.GetHashes()[0], nil
 }
@@ -86,7 +87,10 @@ func ipfsSaveProtoNode(ctx context.Context, dag pb.NodeAPIClient, node *merkleda
 		SerializationFormat: "protobuf",
 	})
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "dag client error in ipfsSaveProtoNode")
+	}
+	if len(resp.GetHashes()) != 1 {
+		return "", errors.New("unexpected number of hashes returned")
 	}
 	return resp.GetHashes()[0], nil
 }
