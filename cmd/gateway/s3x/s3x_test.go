@@ -20,6 +20,7 @@ type testGateway struct {
 	testPath string
 }
 
+//restart restarts the gateway to simulate restarting the server during testing
 func (g *testGateway) restart(t *testing.T) {
 	err := g.xObjects.Shutdown(context.Background())
 	if err != nil {

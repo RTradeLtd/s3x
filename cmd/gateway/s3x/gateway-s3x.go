@@ -159,9 +159,13 @@ func (g *TEMX) newCrdtLedgerStore(ctx context.Context, dag pb.NodeAPIClient, pub
 	}
 	//from the doc: The broadcaster can be shut down by canceling the given context. This must be done before Closing the crdt.Datastore, otherwise things may hang.
 	ctx, cancel := context.WithCancel(ctx)
+	cleanup := func() {
+		cancel()
+		_ = store.Close()
+	}
 	defer func() {
-		if cancel != nil {
-			cancel()
+		if cleanup != nil {
+			cleanup()
 		}
 	}()
 	dagSyncer := &crdtDAGSyncer{
@@ -181,8 +185,8 @@ func (g *TEMX) newCrdtLedgerStore(ctx context.Context, dag pb.NodeAPIClient, pub
 	if err != nil {
 		return nil, err
 	}
-	ls.cleanup = append(ls.cleanup, cancel)
-	cancel = nil //disable defer cancel
+	ls.cleanup = append(ls.cleanup, cleanup)
+	cleanup = nil //disable defer cleanup
 	return ls, nil
 }
 
