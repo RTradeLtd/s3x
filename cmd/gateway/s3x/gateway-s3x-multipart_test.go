@@ -19,7 +19,7 @@ func testS3XMultipart(t *testing.T, dsType DSType) {
 	object := "my multipart object"
 	objectETag := "bafybeibzfoslocl3zs4fngsqminlpikibos7u664circ6mw7kjwkwa6y54"
 	ctx := context.Background()
-	gateway := getTestGateway(t, dsType)
+	gateway := newTestGateway(t, dsType)
 	defer func() {
 		if err := gateway.Shutdown(ctx); err != nil {
 			t.Fatal(err)

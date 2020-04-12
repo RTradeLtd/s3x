@@ -20,7 +20,7 @@ func TestS3X_Bucket_Crdt(t *testing.T) {
 }
 func testS3XBucket(t *testing.T, dsType DSType) {
 	ctx := context.Background()
-	gateway := getTestGateway(t, dsType)
+	gateway := newTestGateway(t, dsType)
 	defer func() {
 		if err := gateway.Shutdown(ctx); err != nil {
 			t.Fatal(err)

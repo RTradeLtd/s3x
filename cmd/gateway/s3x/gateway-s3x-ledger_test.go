@@ -17,7 +17,7 @@ func TestS3X_LedgerStore_Crdt(t *testing.T) {
 }
 func testS3XLedgerStore(t *testing.T, dsType DSType) {
 	ctx := context.Background()
-	gateway := getTestGateway(t, dsType)
+	gateway := newTestGateway(t, dsType)
 	defer func() {
 		if err := gateway.Shutdown(ctx); err != nil {
 			t.Fatal(err)
