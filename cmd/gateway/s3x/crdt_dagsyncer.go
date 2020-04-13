@@ -64,7 +64,6 @@ func (d *crdtDAGSyncer) Add(ctx context.Context, n ipld.Node) error {
 // Consider using the Batch NodeAdder (`NewBatch`) if you make
 // extensive use of this function.
 func (d *crdtDAGSyncer) AddMany(ctx context.Context, ns []ipld.Node) error {
-	cs := make([]string, 0, len(ns))
 	for _, n := range ns {
 		switch typed := n.(type) {
 		default:
@@ -78,11 +77,6 @@ func (d *crdtDAGSyncer) AddMany(ctx context.Context, ns []ipld.Node) error {
 		if err := d.setBlock(n.Cid()); err != nil {
 			return err
 		}
-		cs = append(cs, n.Cid().String())
-	}
-	_, err := d.client.Persist(ctx, &pb.PersistRequest{Cids: cs}) //Question: should persist be requested before add?
-	if err != nil {
-		return err
 	}
 	return nil
 }
