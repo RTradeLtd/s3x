@@ -39,7 +39,7 @@ type ledgerStore struct {
 	mapLocker  sync.Mutex   //a lock to protect the l.Buckets map from concurrent access
 	pmapLocker sync.Mutex   //a lock to protect the l.MultipartUploads map from concurrent access
 
-	cleanup []func() //a list of functions to call before we close the backing database.
+	cleanup []func() error //a list of functions to call before we close the backing database.
 }
 
 func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient) (*ledgerStore, error) {

@@ -44,11 +44,12 @@ func (g *testGateway) Shutdown(ctx context.Context) error {
 	return os.RemoveAll(g.testPath)
 }
 
-var _ minio.ObjectLayer = &testGateway{}
-
-var pathOnce sync.Once
-var testPath string
-var testPathErr error
+var (
+	_           minio.ObjectLayer = &testGateway{}
+	pathOnce    sync.Once
+	testPath    string
+	testPathErr error
+)
 
 // newTestGateway returns a testGateway that implements minio.ObjectLayer.
 // testGateway also removes all data save on disk when shutdown
