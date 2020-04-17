@@ -168,16 +168,12 @@ func (g *TEMX) newCrdtLedgerStore(ctx context.Context, dag pb.NodeAPIClient, pub
 			_ = cleanup() //this condition can only be triggered after an error, so this error is ignored
 		}
 	}()
-	dagSyncer := &crdtDAGSyncer{
-		client: dag,
-		ds:     store,
-	}
 	pubsubBC, err := newCrdtBroadcaster(ctx, pub, g.CrdtTopic)
 	if err != nil {
 		return nil, err
 	}
 	opts := crdt.DefaultOptions()
-	crdtds, err := crdt.New(store, datastore.NewKey("crdt"), dagSyncer, pubsubBC, opts)
+	crdtds, err := crdt.New(store, datastore.NewKey("crdt"), newCrdtDAGSyncer(dag, store), pubsubBC, opts)
 	if err != nil {
 		return nil, err
 	}

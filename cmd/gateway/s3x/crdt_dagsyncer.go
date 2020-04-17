@@ -4,37 +4,31 @@ import (
 	"context"
 
 	pb "github.com/RTradeLtd/TxPB/v3/go"
-	blocks "github.com/ipfs/go-block-format"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	ipld "github.com/ipfs/go-ipld-format"
-	"github.com/ipfs/go-merkledag"
-	"github.com/pkg/errors"
 	"go.uber.org/multierr"
 )
 
-//crdtDAGSyncer implements crdt.DAGSyncer using a pb.NodeAPIClient and a datastore
+//crdtDAGSyncer implements crdt.DAGSyncer using a remote DAGService and a local datastore to account for HasBlock
 type crdtDAGSyncer struct {
-	client pb.NodeAPIClient
-	ds     datastore.Batching
+	dag ipld.DAGService
+	ds  datastore.Batching
+}
+
+//newCrdtDAGSyncer creates a crdt.DAGSyncer using a NodeAPIClient and local datastore
+func newCrdtDAGSyncer(client pb.NodeAPIClient, ds datastore.Batching) *crdtDAGSyncer {
+	return &crdtDAGSyncer{
+		dag: pb.NewDAGService(client),
+		ds:  ds,
+	}
 }
 
 // Get retrieves nodes by CID. Depending on the NodeGetter
 // implementation, this may involve fetching the Node from a remote
 // machine; consider setting a deadline in the context.
 func (d *crdtDAGSyncer) Get(ctx context.Context, c cid.Cid) (ipld.Node, error) {
-	resp, err := d.client.Dag(ctx, &pb.DagRequest{
-		RequestType: pb.DAGREQTYPE_DAG_GET,
-		Hash:        c.String(),
-	})
-	if err != nil {
-		return nil, err
-	}
-	block := blocks.NewBlock(resp.RawData)
-	if block.Cid() != c {
-		return nil, errors.New("unexpected data received from node server")
-	}
-	n, err := ipld.Decode(block)
+	n, err := d.dag.Get(ctx, c)
 	return n, d.setBlock(c, err)
 }
 
@@ -64,16 +58,10 @@ func (d *crdtDAGSyncer) Add(ctx context.Context, n ipld.Node) error {
 // Consider using the Batch NodeAdder (`NewBatch`) if you make
 // extensive use of this function.
 func (d *crdtDAGSyncer) AddMany(ctx context.Context, ns []ipld.Node) error {
+	if err := d.dag.AddMany(ctx, ns); err != nil {
+		return err
+	}
 	for _, n := range ns {
-		switch typed := n.(type) {
-		default:
-			return errors.Errorf("Can not add type: %T using dag client", n)
-		case *merkledag.ProtoNode:
-			_, err := ipfsSaveProtoNode(ctx, d.client, typed)
-			if err != nil {
-				return errors.WithMessage(err, "error decoding returned cid")
-			}
-		}
 		if err := d.setBlock(n.Cid()); err != nil {
 			return err
 		}
@@ -97,7 +85,7 @@ func (d *crdtDAGSyncer) RemoveMany(ctx context.Context, cs []cid.Cid) error {
 			return err
 		}
 	}
-	return nil //TODO: remove from d.client
+	return d.dag.RemoveMany(ctx, cs)
 }
 
 // HasBlock returns true if the block is locally available (therefore, it
