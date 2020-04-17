@@ -95,7 +95,7 @@ func ipfsSaveProtoNode(ctx context.Context, dag pb.NodeAPIClient, node *merkleda
 	return resp.GetHashes()[0], nil
 }
 
-const chunkSize = 4194294 //10 less than 4MB
+const chunkSize = 4*1024*1024 - 1024 //1KB less than 4MB for a good safety buffer
 
 func ipfsFileUpload(ctx context.Context, fileClient pb.FileAPIClient, r io.Reader) (string, int, error) {
 	stream, err := fileClient.UploadFile(ctx)
@@ -138,7 +138,7 @@ func ipfsFileDownload(ctx context.Context, fileClient pb.FileAPIClient, w io.Wri
 	//TODO: put startOffset and length in DownloadRequest to improve performance
 	stream, err := fileClient.DownloadFile(ctx, &pb.DownloadRequest{
 		Hash:      hash,
-		ChunkSize: chunkSize,
+		ChunkSize: chunkSize, //TODO: determine an optimal size
 	})
 	var n int64
 	if err != nil {
