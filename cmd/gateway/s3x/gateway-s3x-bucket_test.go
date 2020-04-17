@@ -12,9 +12,15 @@ const (
 	testBucket1, testBucket2 = "bucket1", "testbucket2"
 )
 
-func TestS3XGateway_Bucket(t *testing.T) {
+func TestS3X_Bucket_Badger(t *testing.T) {
+	testS3XBucket(t, DSTypeBadger)
+}
+func TestS3X_Bucket_Crdt(t *testing.T) {
+	testS3XBucket(t, DSTypeCrdt)
+}
+func testS3XBucket(t *testing.T, dsType DSType) {
 	ctx := context.Background()
-	gateway := getTestGateway(t)
+	gateway := newTestGateway(t, dsType)
 	defer func() {
 		if err := gateway.Shutdown(ctx); err != nil {
 			t.Fatal(err)

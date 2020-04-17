@@ -6,7 +6,13 @@ import (
 	"testing"
 )
 
-func Test_xObjects_GetHash(t *testing.T) {
+func TestS3X_xObjects_GetHash_Badger(t *testing.T) {
+	testS3XxObjectsGetHash(t, DSTypeBadger)
+}
+func TestS3X_xObjects_GetHash_Crdt(t *testing.T) {
+	testS3XxObjectsGetHash(t, DSTypeCrdt)
+}
+func testS3XxObjectsGetHash(t *testing.T, dsType DSType) {
 	tests := []struct {
 		name    string
 		req     *InfoRequest
@@ -20,7 +26,7 @@ func Test_xObjects_GetHash(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	gateway := getTestGateway(t)
+	gateway := newTestGateway(t, dsType)
 	defer func() {
 		if err := gateway.Shutdown(ctx); err != nil {
 			t.Fatal(err)

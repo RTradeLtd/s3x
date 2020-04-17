@@ -3,6 +3,7 @@ package s3x
 import (
 	"context"
 	"crypto/tls"
+	"fmt"
 	"net"
 	"net/http"
 
@@ -11,6 +12,8 @@ import (
 	minio "github.com/RTradeLtd/s3x/cmd"
 	"github.com/RTradeLtd/s3x/pkg/auth"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
+	"github.com/ipfs/go-datastore"
+	crdt "github.com/ipfs/go-ds-crdt"
 	"github.com/minio/cli"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -22,13 +25,25 @@ const (
 	temxBackend = "s3x"
 )
 
+//DSType is a type of datastore that s3x supports, please remove all existing data before changing the datastore
+type DSType string
+
+const (
+	//DSTypeBadger is a badger(v2) backed datastore
+	DSTypeBadger = DSType("badger")
+	//DSTypeCrdt is a crdt backed backed datastore
+	DSTypeCrdt = DSType("crdt")
+)
+
 // TEMX implements a MinIO gateway on top of TemporalX
 type TEMX struct {
-	HTTPAddr string
-	GRPCAddr string
-	DSPath   string
-	XAddr    string
-	Insecure bool // whether or not we have an insecure connection to TemporalX
+	HTTPAddr  string
+	GRPCAddr  string
+	DSType    DSType
+	DSPath    string
+	CrdtTopic string
+	XAddr     string
+	Insecure  bool // whether or not we have an insecure connection to TemporalX
 }
 
 // infoAPIServer provides access to the InfoAPI
@@ -44,9 +59,9 @@ type infoAPIServer struct {
 // xObjects bridges S3 -> TemporalX (IPFS)
 type xObjects struct {
 	minio.GatewayUnsupported
+	ctx        context.Context
 	dagClient  pb.NodeAPIClient
 	fileClient pb.FileAPIClient
-	ctx        context.Context
 
 	// ledgerStore is responsible for updating our internal ledger state
 	ledgerStore *ledgerStore
@@ -79,6 +94,16 @@ func init() {
 				Value: "s3xstore",
 			},
 			cli.StringFlag{
+				Name:  "ds.type",
+				Usage: "the type backend to store ledger data in, supported values are [badger, crdt]",
+				Value: "badger",
+			},
+			cli.StringFlag{
+				Name:  "ds.topic",
+				Usage: "the topic used for crdt pubsub",
+				Value: "s3x-ledger",
+			},
+			cli.StringFlag{
 				Name:  "temporalx.endpoint",
 				Usage: "the endpoint of the temporalx api server",
 				Value: "xapi.temporal.cloud:9090",
@@ -95,26 +120,75 @@ func init() {
 
 func temxGatewayMain(ctx *cli.Context) {
 	minio.StartGateway(ctx, &TEMX{
-		HTTPAddr: ctx.String("info.http.endpoint"),
-		GRPCAddr: ctx.String("info.grpc.endpoint"),
-		DSPath:   ctx.String("ds.path"),
-		XAddr:    ctx.String("temporalx.endpoint"),
-		Insecure: ctx.Bool("temporalx.insecure"),
+		HTTPAddr:  ctx.String("info.http.endpoint"),
+		GRPCAddr:  ctx.String("info.grpc.endpoint"),
+		DSPath:    ctx.String("ds.path"),
+		DSType:    DSType(ctx.String("ds.type")),
+		CrdtTopic: ctx.String("ds.topic"),
+		XAddr:     ctx.String("temporalx.endpoint"),
+		Insecure:  ctx.Bool("temporalx.insecure"),
 	})
 }
 
-// newLedgerStore returns an instance of ledgerStore that uses badgerv2
-func (g *TEMX) newLedgerStore(dsPath string, dag pb.NodeAPIClient) (*ledgerStore, error) {
+// newLedgerStore returns an instance of ledgerStore
+func (g *TEMX) newLedgerStore(ctx context.Context, dag pb.NodeAPIClient, pub pb.PubSubAPIClient) (*ledgerStore, error) {
+	switch g.DSType {
+	case DSTypeBadger:
+		return g.newBadgerLedgerStore(dag)
+	case DSTypeCrdt:
+		return g.newCrdtLedgerStore(ctx, dag, pub)
+	}
+	return nil, fmt.Errorf(`data store type "%v" not supported`, g.DSType)
+}
+
+// newBadgerLedgerStore returns an instance of ledgerStore that uses badgerv2
+func (g *TEMX) newBadgerLedgerStore(dag pb.NodeAPIClient) (*ledgerStore, error) {
 	opts := badger.DefaultOptions
-	ds, err := badger.NewDatastore(dsPath, &opts)
+	ds, err := badger.NewDatastore(g.DSPath, &opts)
 	if err != nil {
 		return nil, err
 	}
 	return newLedgerStore(ds, dag)
 }
 
+// newCrdtLedgerStore returns an instance of ledgerStore that uses crdt and backed by badgerv2
+func (g *TEMX) newCrdtLedgerStore(ctx context.Context, dag pb.NodeAPIClient, pub pb.PubSubAPIClient) (*ledgerStore, error) {
+	store, err := badger.NewDatastore(g.DSPath, &badger.DefaultOptions)
+	if err != nil {
+		return nil, err
+	}
+	//from the doc: The broadcaster can be shut down by canceling the given context. This must be done before Closing the crdt.Datastore, otherwise things may hang.
+	ctx, cancel := context.WithCancel(ctx)
+	cleanup := func() error {
+		cancel()
+		return store.Close()
+	}
+	defer func() {
+		if cleanup != nil {
+			_ = cleanup() //this condition can only be triggered after an error, so this error is ignored
+		}
+	}()
+	pubsubBC, err := newCrdtBroadcaster(ctx, pub, g.CrdtTopic)
+	if err != nil {
+		return nil, err
+	}
+	opts := crdt.DefaultOptions()
+	crdtds, err := crdt.New(store, datastore.NewKey("crdt"), newCrdtDAGSyncer(dag, store), pubsubBC, opts)
+	if err != nil {
+		return nil, err
+	}
+	ls, err := newLedgerStore(crdtds, dag)
+	if err != nil {
+		return nil, err
+	}
+	ls.cleanup = append(ls.cleanup, cleanup)
+	cleanup = nil //disable defer cleanup
+	return ls, nil
+}
+
 // returns an instance of xObjects
 func (g *TEMX) getXObjects(creds auth.Credentials) (*xObjects, error) {
+	ctx := context.TODO()
 	var dialOpts []grpc.DialOption
 	if g.Insecure {
 		dialOpts = append(dialOpts, grpc.WithInsecure())
@@ -133,8 +207,9 @@ func (g *TEMX) getXObjects(creds auth.Credentials) (*xObjects, error) {
 		return nil, err
 	}
 	dag := pb.NewNodeAPIClient(conn)
+	pub := pb.NewPubSubAPIClient(conn)
 	// instantiate our internal ledger
-	ledger, err := g.newLedgerStore(g.DSPath, dag)
+	ledger, err := g.newLedgerStore(ctx, dag, pub)
 	if err != nil {
 		return nil, err
 	}
@@ -146,9 +221,9 @@ func (g *TEMX) getXObjects(creds auth.Credentials) (*xObjects, error) {
 	// instantiate initial xObjects type
 	// responsible for bridging S3 -> TemporalX (IPFS)
 	xobj := &xObjects{
+		ctx:         ctx,
 		dagClient:   dag,
 		fileClient:  pb.NewFileAPIClient(conn),
-		ctx:         context.Background(),
 		ledgerStore: ledger,
 		infoAPI: &infoAPIServer{
 			httpMux:    runtime.NewServeMux(),

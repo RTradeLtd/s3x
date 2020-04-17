@@ -8,12 +8,18 @@ import (
 	minio "github.com/RTradeLtd/s3x/cmd"
 )
 
-func TestS3XGateway_Multipart(t *testing.T) {
+func TestS3X_Multipart_Badger(t *testing.T) {
+	testS3XMultipart(t, DSTypeBadger)
+}
+func TestS3X_Multipart_Crdt(t *testing.T) {
+	testS3XMultipart(t, DSTypeCrdt)
+}
+func testS3XMultipart(t *testing.T, dsType DSType) {
 	bucket := "my multipart bucket"
 	object := "my multipart object"
 	objectETag := "bafybeibzfoslocl3zs4fngsqminlpikibos7u664circ6mw7kjwkwa6y54"
 	ctx := context.Background()
-	gateway := getTestGateway(t)
+	gateway := newTestGateway(t, dsType)
 	defer func() {
 		if err := gateway.Shutdown(ctx); err != nil {
 			t.Fatal(err)

@@ -9,9 +9,15 @@ import (
 	dssync "github.com/ipfs/go-datastore/sync"
 )
 
-func TestS3XLedgerStore(t *testing.T) {
+func TestS3X_LedgerStore_Badger(t *testing.T) {
+	testS3XLedgerStore(t, DSTypeBadger)
+}
+func TestS3X_LedgerStore_Crdt(t *testing.T) {
+	testS3XLedgerStore(t, DSTypeCrdt)
+}
+func testS3XLedgerStore(t *testing.T, dsType DSType) {
 	ctx := context.Background()
-	gateway := getTestGateway(t)
+	gateway := newTestGateway(t, dsType)
 	defer func() {
 		if err := gateway.Shutdown(ctx); err != nil {
 			t.Fatal(err)

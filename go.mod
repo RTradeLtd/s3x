@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go v0.41.0
 	github.com/Azure/azure-pipeline-go v0.2.2
 	github.com/Azure/azure-storage-blob-go v0.8.0
-	github.com/RTradeLtd/TxPB/v3 v3.2.2
+	github.com/RTradeLtd/TxPB/v3 v3.2.3
 	github.com/RTradeLtd/go-ds-badger/v2 v2.1.0
 	github.com/Shopify/sarama v1.24.1
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
@@ -34,8 +34,7 @@ require (
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/gogo/protobuf v1.3.1
-	github.com/golang/groupcache v0.0.0-20190702054246-869f871628b6 // indirect
-	github.com/golang/protobuf v1.3.3
+	github.com/golang/protobuf v1.3.5
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.3
@@ -47,8 +46,9 @@ require (
 	github.com/hashicorp/vault/api v1.0.4
 	github.com/inconshreveable/go-update v0.0.0-20160112193335-8152e7eb6ccf
 	github.com/ipfs/go-cid v0.0.5
-	github.com/ipfs/go-datastore v0.3.1
-	github.com/ipfs/go-ipld-format v0.0.2
+	github.com/ipfs/go-datastore v0.4.4
+	github.com/ipfs/go-ds-crdt v0.1.8-0.20200310091849-1dca473cbff6
+	github.com/ipfs/go-ipld-format v0.2.0
 	github.com/ipfs/go-merkledag v0.3.1
 	github.com/ipfs/go-unixfs v0.2.4
 	github.com/json-iterator/go v1.1.9
@@ -99,13 +99,13 @@ require (
 	github.com/tinylib/msgp v1.1.1
 	github.com/ugorji/go v1.1.5-pre // indirect
 	github.com/valyala/tcplisten v0.0.0-20161114210144-ceec8f93295a
-	go.uber.org/atomic v1.3.2
-	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413
-	golang.org/x/sys v0.0.0-20191220142924-d4481acd189f
-	golang.org/x/tools v0.0.0-20200216192241-b320d3a0f5a2 // indirect
+	go.uber.org/atomic v1.6.0
+	go.uber.org/multierr v1.5.0
+	golang.org/x/crypto v0.0.0-20200406173513-056763e48d71
+	golang.org/x/sys v0.0.0-20200409092240-59c9f1ba88fa
 	google.golang.org/api v0.20.0
-	google.golang.org/genproto v0.0.0-20200212174721-66ed5ce911ce
-	google.golang.org/grpc v1.27.0
+	google.golang.org/genproto v0.0.0-20200413115906-b5235f65be36
+	google.golang.org/grpc v1.28.1
 	gopkg.in/cheggaaa/pb.v1 v1.0.28 // indirect
 	gopkg.in/ini.v1 v1.48.0 // indirect
 	gopkg.in/ldap.v3 v3.0.3

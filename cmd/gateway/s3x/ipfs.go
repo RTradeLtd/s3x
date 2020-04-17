@@ -8,6 +8,7 @@ import (
 	pb "github.com/RTradeLtd/TxPB/v3/go"
 	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-merkledag"
+	"github.com/pkg/errors"
 )
 
 type unmarshaller interface {
@@ -69,7 +70,7 @@ func ipfsSaveBytes(ctx context.Context, dag pb.NodeAPIClient, data []byte) (stri
 		Data:        data,
 	})
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "dag client error in ipfsSaveBytes")
 	}
 	return resp.GetHashes()[0], nil
 }
@@ -86,12 +87,15 @@ func ipfsSaveProtoNode(ctx context.Context, dag pb.NodeAPIClient, node *merkleda
 		SerializationFormat: "protobuf",
 	})
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "dag client error in ipfsSaveProtoNode")
+	}
+	if len(resp.GetHashes()) != 1 {
+		return "", errors.New("unexpected number of hashes returned")
 	}
 	return resp.GetHashes()[0], nil
 }
 
-const chunkSize = 4194294 //10 less than 4MB
+const chunkSize = 4*1024*1024 - 1024 //1KB less than 4MB for a good safety buffer
 
 func ipfsFileUpload(ctx context.Context, fileClient pb.FileAPIClient, r io.Reader) (string, int, error) {
 	stream, err := fileClient.UploadFile(ctx)
@@ -134,7 +138,7 @@ func ipfsFileDownload(ctx context.Context, fileClient pb.FileAPIClient, w io.Wri
 	//TODO: put startOffset and length in DownloadRequest to improve performance
 	stream, err := fileClient.DownloadFile(ctx, &pb.DownloadRequest{
 		Hash:      hash,
-		ChunkSize: chunkSize,
+		ChunkSize: chunkSize, //TODO: determine an optimal size
 	})
 	var n int64
 	if err != nil {

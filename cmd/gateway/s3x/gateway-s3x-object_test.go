@@ -69,9 +69,15 @@ func testGetObject(t *testing.T, g *testGateway) {
 	}
 }
 
-func TestS3XGateway_Object(t *testing.T) {
+func TestS3XG_Object_Badger(t *testing.T) {
+	testS3XGObject(t, DSTypeBadger)
+}
+func TestS3XG_Object_Crdt(t *testing.T) {
+	testS3XGObject(t, DSTypeCrdt)
+}
+func testS3XGObject(t *testing.T, dsType DSType) {
 	ctx := context.Background()
-	gateway := getTestGateway(t)
+	gateway := newTestGateway(t, dsType)
 	defer func() {
 		if err := gateway.Shutdown(ctx); err != nil {
 			t.Fatal(err)

@@ -7,6 +7,7 @@ import (
 
 	"github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/query"
+	"go.uber.org/multierr"
 )
 
 /* Design Notes
@@ -19,8 +20,11 @@ The reason for this is so that we can enable easy reuse of internal code.
 
 // Close shuts down the ledger datastore
 func (ls *ledgerStore) Close() error {
-	//todo: clean up caches
-	return ls.ds.Close()
+	var err error
+	for _, f := range ls.cleanup {
+		err = multierr.Append(err, f())
+	}
+	return multierr.Append(err, ls.ds.Close())
 }
 
 /////////////////////
