@@ -7,7 +7,7 @@ Whenever there is a security update you just need to upgrade to the latest versi
 
 ## Reporting a Vulnerability
 
-All security bugs in [minio/minio](https://github,com/minio/minio) (or other minio/* repositories)
+All security bugs in [RTradeLtd/s3x](https://github,com/RTradeLtd/s3x) (or other minio/* repositories)
 should be reported by email to security@min.io. Your email will be acknowledged within 48 hours,
 and you'll receive a more detailed response to your email within 72 hours indicating the next steps
 in handling your report.
