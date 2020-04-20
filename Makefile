@@ -6,7 +6,7 @@ GOARCH := $(shell go env GOARCH)
 GOOS := $(shell go env GOOS)
 
 VERSION ?= $(shell git describe --tags)
-TAG ?= "minio/minio:$(VERSION)"
+TAG ?= "rtradetech/s3x:$(VERSION)"
 
 BUILD_LDFLAGS := '$(LDFLAGS)'
 

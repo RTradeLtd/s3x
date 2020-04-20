@@ -1,6 +1,6 @@
 %define         tag     RELEASE.2017-04-25T01-27-49Z
 %define         subver  %(echo %{tag} | sed -e 's/[^0-9]//g')
-# git fetch https://github.com/minio/minio.git refs/tags/RELEASE.2017-02-16T01-47-30Z
+# git fetch https://github.com/RTradeLtd/s3x.git refs/tags/RELEASE.2017-02-16T01-47-30Z
 # git rev-list -n 1 FETCH_HEAD
 %define         commitid        83abb310b4ce3a0dfc6d7faf78e33cb6f9132cfe
 Summary:        Cloud Storage Server.
@@ -21,7 +21,7 @@ BuildRoot:      %{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 ## Go related tags.
 %define         gobuild(o:) go build -ldflags "${LDFLAGS:-}" %{?**};
 %define         gopath          %{_libdir}/golang
-%define         import_path     github.com/minio/minio
+%define         import_path     github.com/RTradeLtd/s3x
 
 %description
 MinIO is an object storage server released under Apache License v2.0.

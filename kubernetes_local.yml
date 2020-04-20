@@ -34,7 +34,7 @@ spec:
             claimName: workdir
       containers:
         - name: s3x
-          image: rtradetech/s3x-test:latest
+          image: rtradetech/s3x:latest
           args: ["gateway", "s3x", "--temporalx.endpoint", "localhost:9090", "--temporalx.insecure"]
           env:
             - name: MINIO_ACCESS_KEY

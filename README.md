@@ -104,13 +104,19 @@ In order to enable the speed needed by S3 applications we used TemporalX to prov
 * Compared to go-ipfs and existing IPFS implementations it is **[fast](https://medium.com/temporal-cloud/temporalx-vs-go-ipfs-official-node-benchmarks-8457037a77cf)**
 * Built in data replication
 
+The default setting of s3x is to use a publicly available TemporalX server, however this is only sufficient for demo/trial purposes and in production you'll want to be running a TemporalX server yourself. To reduce network delays, and latency decreasing performance of s3x, it is recommended that you run TemporalX on the same box as you are running s3x, however this is only recommendation and it is totally fine to use a remote TemporalX node.
+
 ## Storage
 
 All data, that is all the objects, buckets, metadata, is stored on IPFS. Because IPFS uses hashes, and S3 uses arbitrary names for the buckets and objects, we perform bookkeeping with a "ledger". The actual "on-ipfs" structure of the objects, and buckets themselves is defined via protocol buffers, saved as an IPLD "raw" object type. They contain the data if there, as well as object and bucket metadata.
 
-## Ledger
+## Ledger Store
 
-The "ledger" is an internal book keeper responsible for keeping track of the latest IPFS CID's that belong to each and every object, and bucket stored, and is currently implemented as a `dgraph-io/badger/v2` key-value datastore.
+The "ledger store" is an internal book keeper responsible for keeping a map of bucket and objects names, as well as the latest version of their IPFS CID. The ledger is what bridges TemporalX/IPFS to S3/MinIO, and is solely responsible for this `name->hash` map. All object/bucket data is stored on IPFS, with the only "off-IPFS" being this `name->hash` map, sometimes called "ledger store metadata".  The default implementation is done using a badger v2 datastore using `dgraph-io/badger` sufficient for running single s3x node installations.
+
+There is a second available option for this ledger store that enables highly available s3x setupts with multiple nodes. By using a CRDT datastore ontop of a badger datastore, updates to the ledger state can be broadcasted between any s3x instance configured to listen to the same topic. One thing to note is that the performance of this will be slightly worse than the pure badger ledger store. 
+
+Please note that this doesn't give high availability for the actual bucket/object data. For this you would want to use TemporalX's built-in replication system.
 
 # Kubernetes
 
