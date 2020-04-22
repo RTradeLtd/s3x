@@ -68,7 +68,7 @@ func (x *xObjects) ListBuckets(ctx context.Context) ([]minio.BucketInfo, error) 
 }
 
 // DeleteBucket deletes a bucket on S3
-func (x *xObjects) DeleteBucket(ctx context.Context, name string) error {
+func (x *xObjects) DeleteBucket(ctx context.Context, name string, forceDelete bool) error {
 	// TODO(bonedaddy): implement removal call from TemporalX
 	return x.toMinioErr(x.ledgerStore.DeleteBucket(name), name, "", "")
 }
