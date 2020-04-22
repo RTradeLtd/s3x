@@ -172,6 +172,10 @@ func (client *storageRESTClient) CrawlAndGetDataUsage(ctx context.Context, cache
 	return newCache, newCache.deserialize(b)
 }
 
+func (client *storageRESTClient) GetDiskID() (string, error) {
+	return client.diskID, nil
+}
+
 func (client *storageRESTClient) SetDiskID(id string) {
 	client.diskID = id
 }
@@ -230,9 +234,12 @@ func (client *storageRESTClient) StatVol(volume string) (volInfo VolInfo, err er
 }
 
 // DeleteVol - Deletes a volume over the network.
-func (client *storageRESTClient) DeleteVol(volume string) (err error) {
+func (client *storageRESTClient) DeleteVol(volume string, forceDelete bool) (err error) {
 	values := make(url.Values)
 	values.Set(storageRESTVolume, volume)
+	if forceDelete {
+		values.Set(storageRESTForceDelete, "true")
+	}
 	respBody, err := client.call(storageRESTMethodDeleteVol, values, nil, -1)
 	defer http.DrainBody(respBody)
 	return err
@@ -331,6 +338,40 @@ func (client *storageRESTClient) ReadFile(volume, path string, offset int64, buf
 	defer http.DrainBody(respBody)
 	n, err := io.ReadFull(respBody, buffer)
 	return int64(n), err
+}
+
+func (client *storageRESTClient) WalkSplunk(volume, dirPath, marker string, endWalkCh <-chan struct{}) (chan FileInfo, error) {
+	values := make(url.Values)
+	values.Set(storageRESTVolume, volume)
+	values.Set(storageRESTDirPath, dirPath)
+	values.Set(storageRESTMarkerPath, marker)
+	respBody, err := client.call(storageRESTMethodWalkSplunk, values, nil, -1)
+	if err != nil {
+		return nil, err
+	}
+
+	ch := make(chan FileInfo)
+	go func() {
+		defer close(ch)
+		defer http.DrainBody(respBody)
+
+		decoder := gob.NewDecoder(respBody)
+		for {
+			var fi FileInfo
+			if gerr := decoder.Decode(&fi); gerr != nil {
+				// Upon error return
+				return
+			}
+			select {
+			case ch <- fi:
+			case <-endWalkCh:
+				return
+			}
+
+		}
+	}()
+
+	return ch, nil
 }
 
 func (client *storageRESTClient) Walk(volume, dirPath, marker string, recursive bool, leafFile string,
@@ -531,10 +572,10 @@ func newStorageRESTClient(endpoint Endpoint) *storageRESTClient {
 		}
 	}
 
-	trFn := newCustomHTTPTransport(tlsConfig, rest.DefaultRESTTimeout, rest.DefaultRESTTimeout)
+	trFn := newCustomHTTPTransport(tlsConfig, rest.DefaultRESTTimeout)
 	restClient, err := rest.NewClient(serverURL, trFn, newAuthToken)
 	if err != nil {
-		logger.LogIf(context.Background(), err)
+		logger.LogIf(GlobalContext, err)
 		return &storageRESTClient{endpoint: endpoint, restClient: restClient, connected: 0}
 	}
 	return &storageRESTClient{endpoint: endpoint, restClient: restClient, connected: 1}

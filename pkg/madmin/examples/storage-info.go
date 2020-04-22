@@ -20,6 +20,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/RTradeLtd/s3x/pkg/madmin"
@@ -36,7 +37,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	st, err := madmClnt.StorageInfo()
+	st, err := madmClnt.StorageInfo(context.Background())
 	if err != nil {
 		log.Fatalln(err)
 	}

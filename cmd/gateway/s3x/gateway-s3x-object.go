@@ -76,7 +76,7 @@ func (x *xObjects) GetObjectNInfo(
 	// Setup cleanup function to cause the above go-routine to
 	// exit in case of partial read
 	pipeCloser := func() { pr.Close() }
-	return minio.NewGetObjectReaderFromReader(pr, objinfo, opts.CheckCopyPrecondFn, pipeCloser)
+	return minio.NewGetObjectReaderFromReader(pr, objinfo, opts, pipeCloser)
 }
 
 // GetObject reads an object from TemporalX. Supports additional

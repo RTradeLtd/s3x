@@ -121,7 +121,7 @@ func initMetaVolumeFS(fsPath, fsUUID string) error {
 
 // NewFSObjectLayer - initialize new fs object layer.
 func NewFSObjectLayer(fsPath string) (ObjectLayer, error) {
-	ctx := context.Background()
+	ctx := GlobalContext
 	if fsPath == "" {
 		return nil, errInvalidArgument
 	}
@@ -179,7 +179,7 @@ func NewFSObjectLayer(fsPath string) (ObjectLayer, error) {
 	// or cause changes on backend format.
 	fs.fsFormatRlk = rlk
 
-	go fs.cleanupStaleMultipartUploads(ctx, GlobalMultipartCleanupInterval, GlobalMultipartExpiry, GlobalServiceDoneCh)
+	go fs.cleanupStaleMultipartUploads(ctx, GlobalMultipartCleanupInterval, GlobalMultipartExpiry)
 
 	// Return successfully initialized object layer.
 	return fs, nil
@@ -397,13 +397,15 @@ func (fs *FSObjects) ListBuckets(ctx context.Context) ([]BucketInfo, error) {
 
 // DeleteBucket - delete a bucket and all the metadata associated
 // with the bucket including pending multipart, object metadata.
-func (fs *FSObjects) DeleteBucket(ctx context.Context, bucket string) error {
-	bucketLock := fs.NewNSLock(ctx, bucket, "")
-	if err := bucketLock.GetLock(globalObjectTimeout); err != nil {
-		logger.LogIf(ctx, err)
-		return err
+func (fs *FSObjects) DeleteBucket(ctx context.Context, bucket string, forceDelete bool) error {
+	if !forceDelete {
+		bucketLock := fs.NewNSLock(ctx, bucket, "")
+		if err := bucketLock.GetLock(globalObjectTimeout); err != nil {
+			logger.LogIf(ctx, err)
+			return err
+		}
+		defer bucketLock.Unlock()
 	}
-	defer bucketLock.Unlock()
 
 	atomic.AddInt64(&fs.activeIOCount, 1)
 	defer func() {
@@ -415,9 +417,20 @@ func (fs *FSObjects) DeleteBucket(ctx context.Context, bucket string) error {
 		return toObjectErr(err, bucket)
 	}
 
-	// Attempt to delete regular bucket.
-	if err = fsRemoveDir(ctx, bucketDir); err != nil {
-		return toObjectErr(err, bucket)
+	if !forceDelete {
+		// Attempt to delete regular bucket.
+		if err = fsRemoveDir(ctx, bucketDir); err != nil {
+			return toObjectErr(err, bucket)
+		}
+	} else {
+		tmpBucketPath := pathJoin(fs.fsPath, minioMetaTmpBucket, bucket+"."+mustGetUUID())
+		if err = fsSimpleRenameFile(ctx, bucketDir, tmpBucketPath); err != nil {
+			return toObjectErr(err, bucket)
+		}
+
+		go func() {
+			fsRemoveAll(ctx, tmpBucketPath) // ignore returned error if any.
+		}()
 	}
 
 	// Cleanup all the bucket metadata.
@@ -548,7 +561,7 @@ func (fs *FSObjects) GetObjectNInfo(ctx context.Context, bucket, object string, 
 	if HasSuffix(object, SlashSeparator) {
 		// The lock taken above is released when
 		// objReader.Close() is called by the caller.
-		return NewGetObjectReaderFromReader(bytes.NewBuffer(nil), objInfo, opts.CheckCopyPrecondFn, nsUnlocker)
+		return NewGetObjectReaderFromReader(bytes.NewBuffer(nil), objInfo, opts, nsUnlocker)
 	}
 	// Take a rwPool lock for NFS gateway type deployment
 	rwPoolUnlocker := func() {}
@@ -565,7 +578,7 @@ func (fs *FSObjects) GetObjectNInfo(ctx context.Context, bucket, object string, 
 		rwPoolUnlocker = func() { fs.rwPool.Close(fsMetaPath) }
 	}
 
-	objReaderFn, off, length, rErr := NewGetObjectReader(rs, objInfo, opts.CheckCopyPrecondFn, nsUnlocker, rwPoolUnlocker)
+	objReaderFn, off, length, rErr := NewGetObjectReader(rs, objInfo, opts, nsUnlocker, rwPoolUnlocker)
 	if rErr != nil {
 		return nil, rErr
 	}
@@ -1076,7 +1089,7 @@ func (fs *FSObjects) listDirFactory() ListDirFunc {
 		var err error
 		entries, err = readDir(pathJoin(fs.fsPath, bucket, prefixDir))
 		if err != nil && err != errFileNotFound {
-			logger.LogIf(context.Background(), err)
+			logger.LogIf(GlobalContext, err)
 			return false, nil
 		}
 		if len(entries) == 0 {
@@ -1379,6 +1392,13 @@ func (fs *FSObjects) IsCompressionSupported() bool {
 
 // IsReady - Check if the backend disk is ready to accept traffic.
 func (fs *FSObjects) IsReady(_ context.Context) bool {
-	_, err := os.Stat(fs.fsPath)
-	return err == nil
+	if _, err := os.Stat(fs.fsPath); err != nil {
+		return false
+	}
+
+	globalObjLayerMutex.RLock()
+	res := globalObjectAPI != nil && !globalSafeMode
+	globalObjLayerMutex.RUnlock()
+
+	return res
 }

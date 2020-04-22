@@ -49,6 +49,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const (
+	slashSeparator = "/"
+)
+
 // IsErrIgnored returns whether given error is ignored or not.
 func IsErrIgnored(err error, ignoredErrs ...error) bool {
 	return IsErr(err, ignoredErrs...)
@@ -67,7 +71,7 @@ func IsErr(err error, errs ...error) bool {
 func request2BucketObjectName(r *http.Request) (bucketName, objectName string) {
 	path, err := getResource(r.URL.Path, r.Host, globalDomainNames)
 	if err != nil {
-		logger.CriticalIf(context.Background(), err)
+		logger.CriticalIf(GlobalContext, err)
 	}
 
 	return path2BucketObject(path)
@@ -87,6 +91,22 @@ func path2BucketObjectWithBasePath(basePath, path string) (bucket, prefix string
 
 func path2BucketObject(s string) (bucket, prefix string) {
 	return path2BucketObjectWithBasePath("", s)
+}
+
+func getDefaultParityBlocks(drive int) int {
+	return drive / 2
+}
+
+func getDefaultDataBlocks(drive int) int {
+	return drive - getDefaultParityBlocks(drive)
+}
+
+func getReadQuorum(drive int) int {
+	return getDefaultDataBlocks(drive)
+}
+
+func getWriteQuorum(drive int) int {
+	return getDefaultDataBlocks(drive) + 1
 }
 
 // URI scheme constants.
@@ -151,10 +171,8 @@ const (
 	// (Acceptable values range from 1 to 10000 inclusive)
 	globalMaxPartID = 10000
 
-	// Default values used while communicating for
-	// internode communication.
-	defaultDialTimeout   = 15 * time.Second
-	defaultDialKeepAlive = 20 * time.Second
+	// Default values used while communicating for internode communication.
+	defaultDialTimeout = 5 * time.Second
 )
 
 // isMaxObjectSize - verify if max object size
@@ -445,14 +463,16 @@ func newCustomDialContext(dialTimeout, dialKeepAlive time.Duration) dialContext 
 	}
 }
 
-func newCustomHTTPTransport(tlsConfig *tls.Config, dialTimeout, dialKeepAlive time.Duration) func() *http.Transport {
+func newCustomHTTPTransport(tlsConfig *tls.Config, dialTimeout time.Duration) func() *http.Transport {
 	// For more details about various values used here refer
 	// https://golang.org/pkg/net/http/#Transport documentation
 	tr := &http.Transport{
 		Proxy:                 http.ProxyFromEnvironment,
-		DialContext:           newCustomDialContext(dialTimeout, dialKeepAlive),
-		MaxIdleConnsPerHost:   256,
-		IdleConnTimeout:       60 * time.Second,
+		DialContext:           newCustomDialContext(dialTimeout, 15*time.Second),
+		MaxIdleConnsPerHost:   16,
+		MaxIdleConns:          16,
+		IdleConnTimeout:       1 * time.Minute,
+		ResponseHeaderTimeout: 3 * time.Minute, // Set conservative timeouts for MinIO internode.
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 10 * time.Second,
 		TLSClientConfig:       tlsConfig,
@@ -466,14 +486,22 @@ func newCustomHTTPTransport(tlsConfig *tls.Config, dialTimeout, dialKeepAlive ti
 	}
 }
 
-// NewCustomHTTPTransport returns a new http configuration
+// NewGatewayHTTPTransport returns a new http configuration
 // used while communicating with the cloud backends.
 // This sets the value for MaxIdleConnsPerHost from 2 (go default)
 // to 256.
-func NewCustomHTTPTransport() *http.Transport {
-	return newCustomHTTPTransport(&tls.Config{
+func NewGatewayHTTPTransport() *http.Transport {
+	tr := newCustomHTTPTransport(&tls.Config{
 		RootCAs: globalRootCAs,
-	}, defaultDialTimeout, defaultDialKeepAlive)()
+	}, defaultDialTimeout)()
+	// Set aggressive timeouts for gateway
+	tr.ResponseHeaderTimeout = 1 * time.Minute
+
+	// Allow more requests to be in flight.
+	tr.MaxConnsPerHost = 256
+	tr.MaxIdleConnsPerHost = 16
+	tr.MaxIdleConns = 256
+	return tr
 }
 
 // Load the json (typically from disk file).
@@ -617,8 +645,12 @@ func getMinioMode() string {
 	return mode
 }
 
-func iamPolicyClaimName() string {
+func iamPolicyClaimNameOpenID() string {
 	return globalOpenIDConfig.ClaimPrefix + globalOpenIDConfig.ClaimName
+}
+
+func iamPolicyClaimNameSA() string {
+	return "sa-policy"
 }
 
 func isWORMEnabled(bucket string) bool {

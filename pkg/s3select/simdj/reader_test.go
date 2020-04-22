@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/RTradeLtd/s3x/pkg/s3select/json"
+	"github.com/RTradeLtd/s3x/pkg/s3select/sql"
 	"github.com/klauspost/compress/zstd"
 	"github.com/minio/simdjson-go"
 )
@@ -131,11 +132,17 @@ func TestNDJSON(t *testing.T) {
 					t.Error(err)
 				}
 				var gotB, wantB bytes.Buffer
-				err = rec.WriteCSV(&gotB, ',', '"', false)
+				opts := sql.WriteCSVOpts{
+					FieldDelimiter: ',',
+					Quote:          '"',
+					QuoteEscape:    '"',
+					AlwaysQuote:    false,
+				}
+				err = rec.WriteCSV(&gotB, opts)
 				if err != nil {
 					t.Error(err)
 				}
-				err = want.WriteCSV(&wantB, ',', '"', false)
+				err = want.WriteCSV(&wantB, opts)
 				if err != nil {
 					t.Error(err)
 				}

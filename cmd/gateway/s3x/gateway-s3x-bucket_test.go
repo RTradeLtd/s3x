@@ -123,7 +123,7 @@ func testS3XBucket(t *testing.T, dsType DSType) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				err := gateway.DeleteBucket(ctx, tt.args.bucketName)
+				err := gateway.DeleteBucket(ctx, tt.args.bucketName, false)
 				if (err != nil) != tt.wantErr {
 					t.Fatalf("DeleteBucket() err %v, wantErr %v", err, tt.wantErr)
 				}

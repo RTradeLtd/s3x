@@ -108,7 +108,7 @@ func getDisksInfo(disks []StorageAPI, endpoints Endpoints) (disksInfo []DiskInfo
 					return err
 				}
 				reqInfo := (&logger.ReqInfo{}).AppendTags("disk", disks[index].String())
-				ctx := logger.SetReqInfo(context.Background(), reqInfo)
+				ctx := logger.SetReqInfo(GlobalContext, reqInfo)
 				logger.LogIf(ctx, err)
 			}
 			disksInfo[index] = info
@@ -182,7 +182,7 @@ func (xl xlObjects) StorageInfo(ctx context.Context, local bool) StorageInfo {
 		disks = xl.getDisks()
 	} else {
 		for i, d := range xl.getDisks() {
-			if endpoints[i].IsLocal {
+			if endpoints[i].IsLocal && d.Hostname() == "" {
 				// Append this local disk since local flag is true
 				disks = append(disks, d)
 			}

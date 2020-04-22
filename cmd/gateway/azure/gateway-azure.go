@@ -1,5 +1,5 @@
 /*
- * MinIO Cloud Storage, (C) 2017, 2018 MinIO, Inc.
+ * MinIO Cloud Storage, (C) 2017-2020 MinIO, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,7 +150,7 @@ func (g *Azure) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, erro
 	metrics := minio.NewMetrics()
 
 	t := &minio.MetricsTransport{
-		Transport: minio.NewCustomHTTPTransport(),
+		Transport: minio.NewGatewayHTTPTransport(),
 		Metrics:   metrics,
 	}
 
@@ -264,7 +264,6 @@ func s3MetaToAzureProperties(ctx context.Context, s3Metadata map[string]string) 
 			// handle it for storage.
 			k = strings.Replace(k, "X-Amz-Meta-", "", 1)
 			blobMeta[encodeKey(k)] = v
-
 		// All cases below, extract common metadata that is
 		// accepted by S3 into BlobProperties for setting on
 		// Azure - see
@@ -304,6 +303,28 @@ func newPartMetaV1(uploadID string, partID int) (partMeta *partMetadataV1) {
 	p := &partMetadataV1{}
 	p.Version = partMetaVersionV1
 	return p
+}
+
+func s3StorageClassToAzureTier(sc string) azblob.AccessTierType {
+	switch sc {
+	case "REDUCED_REDUNDANCY":
+		return azblob.AccessTierCool
+	case "STANDARD":
+		return azblob.AccessTierHot
+	}
+	return azblob.AccessTierHot
+}
+
+func azureTierToS3StorageClass(tierType string) string {
+	switch azblob.AccessTierType(tierType) {
+	case azblob.AccessTierCool:
+		return "REDUCED_REDUNDANCY"
+	case azblob.AccessTierHot:
+		return "STANDARD"
+	default:
+		return "STANDARD"
+	}
+
 }
 
 // azurePropertiesToS3Meta converts Azure metadata/properties to S3
@@ -408,6 +429,8 @@ func azureCodesToObjectError(err error, serviceCode string, statusCode int, buck
 		err = minio.PartTooBig{}
 	case "InvalidMetadata":
 		err = minio.UnsupportedMetadata{}
+	case "BlobAccessTierNotSupportedForAccountType":
+		err = minio.NotImplemented{}
 	default:
 		switch statusCode {
 		case http.StatusNotFound:
@@ -559,7 +582,7 @@ func (a *azureObjects) ListBuckets(ctx context.Context) (buckets []minio.BucketI
 }
 
 // DeleteBucket - delete a container on azure, uses Azure equivalent `ContainerURL.Delete`.
-func (a *azureObjects) DeleteBucket(ctx context.Context, bucket string) error {
+func (a *azureObjects) DeleteBucket(ctx context.Context, bucket string, forceDelete bool) error {
 	containerURL := a.client.NewContainerURL(bucket)
 	_, err := containerURL.Delete(ctx, azblob.ContainerAccessConditions{})
 	return azureToObjectError(err, bucket)
@@ -639,6 +662,7 @@ func (a *azureObjects) ListObjects(ctx context.Context, bucket, prefix, marker, 
 				ETag:            etag,
 				ContentType:     *blob.Properties.ContentType,
 				ContentEncoding: *blob.Properties.ContentEncoding,
+				UserDefined:     blob.Metadata,
 			})
 		}
 
@@ -718,7 +742,7 @@ func (a *azureObjects) GetObjectNInfo(ctx context.Context, bucket, object string
 	// Setup cleanup function to cause the above go-routine to
 	// exit in case of partial read
 	pipeCloser := func() { pr.Close() }
-	return minio.NewGetObjectReaderFromReader(pr, objInfo, opts.CheckCopyPrecondFn, pipeCloser)
+	return minio.NewGetObjectReaderFromReader(pr, objInfo, opts, pipeCloser)
 }
 
 // GetObject - reads an object from azure. Supports additional
@@ -786,6 +810,7 @@ func (a *azureObjects) GetObjectInfo(ctx context.Context, bucket, object string,
 		Size:            blob.ContentLength(),
 		ContentType:     blob.ContentType(),
 		ContentEncoding: blob.ContentEncoding(),
+		StorageClass:    azureTierToS3StorageClass(blob.AccessTier()),
 	}, nil
 }
 
@@ -855,7 +880,7 @@ func (a *azureObjects) CopyObject(ctx context.Context, srcBucket, srcObject, des
 	// To handle the case where the source object should be copied without its metadata,
 	// the metadata must be removed from the dest. object after the copy completes
 	if len(azureMeta) == 0 {
-		_, err := destBlob.SetMetadata(ctx, azureMeta, azblob.BlobAccessConditions{})
+		_, err = destBlob.SetMetadata(ctx, azureMeta, azblob.BlobAccessConditions{})
 		if err != nil {
 			return objInfo, azureToObjectError(err, srcBucket, srcObject)
 		}
@@ -865,6 +890,15 @@ func (a *azureObjects) CopyObject(ctx context.Context, srcBucket, srcObject, des
 	if err != nil {
 		return objInfo, azureToObjectError(err, srcBucket, srcObject)
 	}
+
+	if _, ok := srcInfo.UserDefined["x-amz-storage-class"]; ok {
+		_, err = destBlob.SetTier(ctx, s3StorageClassToAzureTier(srcInfo.UserDefined["x-amz-storage-class"]),
+			azblob.LeaseAccessConditions{})
+		if err != nil {
+			return objInfo, azureToObjectError(err, srcBucket, srcObject)
+		}
+	}
+
 	return a.GetObjectInfo(ctx, destBucket, destObject, dstOpts)
 }
 

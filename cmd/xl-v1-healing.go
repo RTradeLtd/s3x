@@ -46,7 +46,7 @@ func (xl xlObjects) HealBucket(ctx context.Context, bucket string, dryRun, remov
 	storageDisks := xl.getDisks()
 
 	// get write quorum for an object
-	writeQuorum := len(storageDisks)/2 + 1
+	writeQuorum := getWriteQuorum(len(storageDisks))
 
 	// Heal bucket.
 	return healBucket(ctx, storageDisks, bucket, writeQuorum, dryRun)
@@ -122,11 +122,6 @@ func healBucket(ctx context.Context, storageDisks []StorageAPI, bucket string, w
 				Endpoint: drive,
 				State:    beforeState[i],
 			})
-			res.After.Drives = append(res.After.Drives, madmin.HealDriveInfo{
-				UUID:     "",
-				Endpoint: drive,
-				State:    afterState[i],
-			})
 		}
 	}
 
@@ -151,12 +146,26 @@ func healBucket(ctx context.Context, storageDisks []StorageAPI, bucket string, w
 	errs = g.Wait()
 
 	reducedErr = reduceWriteQuorumErrs(ctx, errs, bucketOpIgnoredErrs, writeQuorum)
-	if reducedErr == errXLWriteQuorum {
-		// Purge successfully created buckets if we don't have writeQuorum.
-		undoMakeBucket(storageDisks, bucket)
+	if reducedErr != nil {
+		if reducedErr == errXLWriteQuorum {
+			// Purge successfully created buckets if we don't have writeQuorum.
+			undoMakeBucket(storageDisks, bucket)
+		}
+		return res, reducedErr
 	}
 
-	return res, reducedErr
+	for i := range afterState {
+		if storageDisks[i] != nil {
+			drive := storageDisks[i].String()
+			res.After.Drives = append(res.After.Drives, madmin.HealDriveInfo{
+				UUID:     "",
+				Endpoint: drive,
+				State:    afterState[i],
+			})
+		}
+	}
+
+	return res, nil
 }
 
 // listAllBuckets lists all buckets from all disks. It also
@@ -314,7 +323,7 @@ func (xl xlObjects) healObject(ctx context.Context, bucket string, object string
 		if m, ok := isObjectDangling(partsMetadata, errs, dataErrs); ok {
 			writeQuorum := m.Erasure.DataBlocks + 1
 			if m.Erasure.DataBlocks == 0 {
-				writeQuorum = len(storageDisks)/2 + 1
+				writeQuorum = getWriteQuorum(len(storageDisks))
 			}
 			if !dryRun && remove {
 				err = xl.deleteObject(ctx, bucket, object, writeQuorum, false)
@@ -483,7 +492,7 @@ func (xl xlObjects) healObject(ctx context.Context, bucket string, object string
 
 // healObjectDir - heals object directory specifically, this special call
 // is needed since we do not have a special backend format for directories.
-func (xl xlObjects) healObjectDir(ctx context.Context, bucket, object string, dryRun bool) (hr madmin.HealResultItem, err error) {
+func (xl xlObjects) healObjectDir(ctx context.Context, bucket, object string, dryRun bool, remove bool) (hr madmin.HealResultItem, err error) {
 	storageDisks := xl.getDisks()
 
 	// Initialize heal result object
@@ -492,8 +501,8 @@ func (xl xlObjects) healObjectDir(ctx context.Context, bucket, object string, dr
 		Bucket:       bucket,
 		Object:       object,
 		DiskCount:    len(storageDisks),
-		ParityBlocks: len(storageDisks) / 2,
-		DataBlocks:   len(storageDisks) / 2,
+		ParityBlocks: getDefaultParityBlocks(len(storageDisks)),
+		DataBlocks:   getDefaultDataBlocks(len(storageDisks)),
 		ObjectSize:   0,
 	}
 
@@ -501,11 +510,10 @@ func (xl xlObjects) healObjectDir(ctx context.Context, bucket, object string, dr
 	hr.After.Drives = make([]madmin.HealDriveInfo, len(storageDisks))
 
 	errs := statAllDirs(ctx, storageDisks, bucket, object)
-	if isObjectDirDangling(errs) {
-		for i, err := range errs {
-			if err == nil {
-				storageDisks[i].DeleteFile(bucket, object)
-			}
+	danglingObject := isObjectDirDangling(errs)
+	if danglingObject {
+		if !dryRun && remove {
+			xl.deleteObject(ctx, bucket, object, hr.DataBlocks+1, true)
 		}
 	}
 
@@ -517,8 +525,8 @@ func (xl xlObjects) healObjectDir(ctx context.Context, bucket, object string, dr
 		}
 		switch err {
 		case nil:
-			hr.Before.Drives[i] = madmin.HealDriveInfo{State: madmin.DriveStateOk}
-			hr.After.Drives[i] = madmin.HealDriveInfo{State: madmin.DriveStateOk}
+			hr.Before.Drives[i] = madmin.HealDriveInfo{Endpoint: drive, State: madmin.DriveStateOk}
+			hr.After.Drives[i] = madmin.HealDriveInfo{Endpoint: drive, State: madmin.DriveStateOk}
 		case errDiskNotFound:
 			hr.Before.Drives[i] = madmin.HealDriveInfo{State: madmin.DriveStateOffline}
 			hr.After.Drives[i] = madmin.HealDriveInfo{State: madmin.DriveStateOffline}
@@ -531,12 +539,11 @@ func (xl xlObjects) healObjectDir(ctx context.Context, bucket, object string, dr
 			hr.After.Drives[i] = madmin.HealDriveInfo{Endpoint: drive, State: madmin.DriveStateCorrupt}
 		}
 	}
-	if dryRun {
+	if dryRun || danglingObject {
 		return hr, nil
 	}
 	for i, err := range errs {
-		switch err {
-		case errVolumeNotFound, errFileNotFound:
+		if err == errVolumeNotFound || err == errFileNotFound {
 			// Bucket or prefix/directory not found
 			merr := storageDisks[i].MakeVol(pathJoin(bucket, object))
 			switch merr {
@@ -603,8 +610,8 @@ func defaultHealResult(latestXLMeta xlMetaV1, storageDisks []StorageAPI, errs []
 
 	if !latestXLMeta.IsValid() {
 		// Default to most common configuration for erasure blocks.
-		result.ParityBlocks = len(storageDisks) / 2
-		result.DataBlocks = len(storageDisks) / 2
+		result.ParityBlocks = getDefaultParityBlocks(len(storageDisks))
+		result.DataBlocks = getDefaultDataBlocks(len(storageDisks))
 	} else {
 		result.ParityBlocks = latestXLMeta.Erasure.ParityBlocks
 		result.DataBlocks = latestXLMeta.Erasure.DataBlocks
@@ -640,13 +647,22 @@ func statAllDirs(ctx context.Context, storageDisks []StorageAPI, bucket, prefix 
 // if total disks - a combination of corrupted and missing
 // files is lesser than N/2+1 number of disks.
 func isObjectDirDangling(errs []error) (ok bool) {
-	var notFoundDir int
+	var found int
+	var notFound int
+	var foundNotEmpty int
+	var otherFound int
 	for _, readErr := range errs {
-		if readErr == errFileNotFound {
-			notFoundDir++
+		if readErr == nil {
+			found++
+		} else if readErr == errFileNotFound || readErr == errVolumeNotFound {
+			notFound++
+		} else if readErr == errVolumeNotEmpty {
+			foundNotEmpty++
+		} else {
+			otherFound++
 		}
 	}
-	return notFoundDir > len(errs)/2
+	return found+foundNotEmpty+otherFound < notFound
 }
 
 // Object is considered dangling/corrupted if any only
@@ -705,11 +721,11 @@ func (xl xlObjects) HealObject(ctx context.Context, bucket, object string, opts 
 	} else {
 		newReqInfo = logger.NewReqInfo("", "", globalDeploymentID, "", "Heal", bucket, object)
 	}
-	healCtx := logger.SetReqInfo(context.Background(), newReqInfo)
+	healCtx := logger.SetReqInfo(GlobalContext, newReqInfo)
 
 	// Healing directories handle it separately.
 	if HasSuffix(object, SlashSeparator) {
-		return xl.healObjectDir(healCtx, bucket, object, opts.DryRun)
+		return xl.healObjectDir(healCtx, bucket, object, opts.DryRun, opts.Remove)
 	}
 
 	storageDisks := xl.getDisks()
@@ -722,7 +738,7 @@ func (xl xlObjects) HealObject(ctx context.Context, bucket, object string, opts 
 	if m, ok := isObjectDangling(partsMetadata, errs, []error{}); ok {
 		writeQuorum := m.Erasure.DataBlocks + 1
 		if m.Erasure.DataBlocks == 0 {
-			writeQuorum = len(xl.getDisks())/2 + 1
+			writeQuorum = getWriteQuorum(len(storageDisks))
 		}
 		if !opts.DryRun && opts.Remove {
 			xl.deleteObject(healCtx, bucket, object, writeQuorum, false)
@@ -751,7 +767,7 @@ func (xl xlObjects) HealObject(ctx context.Context, bucket, object string, opts 
 			if m, ok := isObjectDangling(partsMetadata, errs, []error{}); ok {
 				writeQuorum := m.Erasure.DataBlocks + 1
 				if m.Erasure.DataBlocks == 0 {
-					writeQuorum = len(storageDisks)/2 + 1
+					writeQuorum = getWriteQuorum(len(storageDisks))
 				}
 				if !opts.DryRun && opts.Remove {
 					xl.deleteObject(ctx, bucket, object, writeQuorum, false)

@@ -20,9 +20,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy/condition"
+	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
 	"github.com/RTradeLtd/s3x/pkg/madmin"
 )
 
@@ -40,10 +44,18 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	// Create policy
-	policy := `{"Version": "2012-10-17","Statement": [{"Action": ["s3:GetObject"],"Effect": "Allow","Resource": ["arn:aws:s3:::testbucket/*"],"Sid": ""}]}`
+	p := iampolicy.Policy{
+		Version: iampolicy.DefaultVersion,
+		Statements: []Statement{
+			iampolicy.NewStatement(
+				policy.Allow,
+				iampolicy.NewActionSet(iampolicy.GetObjectAction),
+				iampolicy.NewResourceSet(iampolicy.NewResource("testbucket/*", "")),
+				condition.NewFunctions(),
+			)},
+	}
 
-	creds, err := madmClnt.AddServiceAccount("parentuser", policy)
+	creds, err := madmClnt.AddServiceAccount(context.Background(), "parentuser", &p)
 	if err != nil {
 		log.Fatalln(err)
 	}

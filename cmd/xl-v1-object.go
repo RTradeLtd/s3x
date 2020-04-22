@@ -137,16 +137,16 @@ func (xl xlObjects) GetObjectNInfo(ctx context.Context, bucket, object string, r
 		if objInfo, err = xl.getObjectInfoDir(ctx, bucket, object); err != nil {
 			return nil, toObjectErr(err, bucket, object)
 		}
-		return NewGetObjectReaderFromReader(bytes.NewBuffer(nil), objInfo, opts.CheckCopyPrecondFn)
+		return NewGetObjectReaderFromReader(bytes.NewBuffer(nil), objInfo, opts)
 	}
 
 	var objInfo ObjectInfo
-	objInfo, err = xl.getObjectInfo(ctx, bucket, object)
+	objInfo, err = xl.getObjectInfo(ctx, bucket, object, opts)
 	if err != nil {
 		return nil, toObjectErr(err, bucket, object)
 	}
 
-	fn, off, length, nErr := NewGetObjectReader(rs, objInfo, opts.CheckCopyPrecondFn)
+	fn, off, length, nErr := NewGetObjectReader(rs, objInfo, opts)
 	if nErr != nil {
 		return nil, nErr
 	}
@@ -156,6 +156,7 @@ func (xl xlObjects) GetObjectNInfo(ctx context.Context, bucket, object string, r
 		err := xl.getObject(ctx, bucket, object, off, length, pw, "", opts)
 		pw.CloseWithError(err)
 	}()
+
 	// Cleanup function to cause the go routine above to exit, in
 	// case of incomplete read.
 	pipeCloser := func() { pr.Close() }
@@ -295,7 +296,13 @@ func (xl xlObjects) getObject(ctx context.Context, bucket, object string, startO
 		// we return from this function.
 		closeBitrotReaders(readers)
 		if err != nil {
-			return toObjectErr(err, bucket, object)
+			if decodeHealErr, ok := err.(*errDecodeHealRequired); ok {
+				go deepHealObject(pathJoin(bucket, object))
+				err = decodeHealErr.err
+			}
+			if err != nil {
+				return toObjectErr(err, bucket, object)
+			}
 		}
 		for i, r := range readers {
 			if r == nil {
@@ -340,7 +347,7 @@ func (xl xlObjects) getObjectInfoDir(ctx context.Context, bucket, object string)
 		}, index)
 	}
 
-	readQuorum := len(storageDisks) / 2
+	readQuorum := getReadQuorum(len(storageDisks))
 	err := reduceReadQuorumErrs(ctx, g.Wait(), objectOpIgnoredErrs, readQuorum)
 	return dirObjectInfo(bucket, object, 0, map[string]string{}), err
 }
@@ -359,7 +366,7 @@ func (xl xlObjects) GetObjectInfo(ctx context.Context, bucket, object string, op
 		return info, nil
 	}
 
-	info, err := xl.getObjectInfo(ctx, bucket, object)
+	info, err := xl.getObjectInfo(ctx, bucket, object, opts)
 	if err != nil {
 		return oi, toObjectErr(err, bucket, object)
 	}
@@ -368,7 +375,7 @@ func (xl xlObjects) GetObjectInfo(ctx context.Context, bucket, object string, op
 }
 
 // getObjectInfo - wrapper for reading object metadata and constructs ObjectInfo.
-func (xl xlObjects) getObjectInfo(ctx context.Context, bucket, object string) (objInfo ObjectInfo, err error) {
+func (xl xlObjects) getObjectInfo(ctx context.Context, bucket, object string, opt ObjectOptions) (objInfo ObjectInfo, err error) {
 	disks := xl.getDisks()
 
 	// Read metadata associated with the object from all disks.
@@ -488,7 +495,7 @@ func (xl xlObjects) putObject(ctx context.Context, bucket string, object string,
 	// Get parity and data drive count based on storage class metadata
 	parityDrives := globalStorageClass.GetParityForSC(opts.UserDefined[xhttp.AmzStorageClass])
 	if parityDrives == 0 {
-		parityDrives = len(storageDisks) / 2
+		parityDrives = getDefaultParityBlocks(len(storageDisks))
 	}
 	dataDrives := len(storageDisks) - parityDrives
 
@@ -623,7 +630,7 @@ func (xl xlObjects) putObject(ctx context.Context, bucket string, object string,
 	if xl.isObject(bucket, object) {
 		// Deny if WORM is enabled
 		if isWORMEnabled(bucket) {
-			if _, err := xl.getObjectInfo(ctx, bucket, object); err == nil {
+			if _, err := xl.getObjectInfo(ctx, bucket, object, ObjectOptions{}); err == nil {
 				return ObjectInfo{}, ObjectAlreadyExists{Bucket: bucket, Object: object}
 			}
 		}
@@ -842,11 +849,13 @@ func (xl xlObjects) deleteObjects(ctx context.Context, bucket string, objects []
 		isObjectDirs[i] = HasSuffix(object, SlashSeparator)
 	}
 
+	storageDisks := xl.getDisks()
+
 	for i, object := range objects {
 		if isObjectDirs[i] {
 			_, err := xl.getObjectInfoDir(ctx, bucket, object)
 			if err == errXLReadQuorum {
-				if isObjectDirDangling(statAllDirs(ctx, xl.getDisks(), bucket, object)) {
+				if isObjectDirDangling(statAllDirs(ctx, storageDisks, bucket, object)) {
 					// If object is indeed dangling, purge it.
 					errs[i] = nil
 				}
@@ -868,7 +877,7 @@ func (xl xlObjects) deleteObjects(ctx context.Context, bucket string, objects []
 		// class for objects which have reduced quorum
 		// storage class only needs to be honored for
 		// Read() requests alone which we already do.
-		writeQuorums[i] = len(xl.getDisks())/2 + 1
+		writeQuorums[i] = getWriteQuorum(len(storageDisks))
 	}
 
 	return xl.doDeleteObjects(ctx, bucket, objects, errs, writeQuorums, isObjectDirs)
@@ -934,10 +943,12 @@ func (xl xlObjects) DeleteObject(ctx context.Context, bucket, object string) (er
 	var writeQuorum int
 	var isObjectDir = HasSuffix(object, SlashSeparator)
 
+	storageDisks := xl.getDisks()
+
 	if isObjectDir {
 		_, err = xl.getObjectInfoDir(ctx, bucket, object)
 		if err == errXLReadQuorum {
-			if isObjectDirDangling(statAllDirs(ctx, xl.getDisks(), bucket, object)) {
+			if isObjectDirDangling(statAllDirs(ctx, storageDisks, bucket, object)) {
 				// If object is indeed dangling, purge it.
 				err = nil
 			}
@@ -948,10 +959,10 @@ func (xl xlObjects) DeleteObject(ctx context.Context, bucket, object string) (er
 	}
 
 	if isObjectDir {
-		writeQuorum = len(xl.getDisks())/2 + 1
+		writeQuorum = getWriteQuorum(len(storageDisks))
 	} else {
 		// Read metadata associated with the object from all disks.
-		partsMetadata, errs := readAllXLMetadata(ctx, xl.getDisks(), bucket, object)
+		partsMetadata, errs := readAllXLMetadata(ctx, storageDisks, bucket, object)
 		// get Quorum for this object
 		_, writeQuorum, err = objectQuorumFromMeta(ctx, xl, partsMetadata, errs)
 		if err != nil {

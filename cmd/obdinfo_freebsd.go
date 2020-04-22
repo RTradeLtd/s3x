@@ -1,7 +1,5 @@
-// +build ignore
-
 /*
- * MinIO Cloud Storage, (C) 2018 MinIO, Inc.
+ * MinIO Cloud Storage, (C) 2020 MinIO, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,28 +15,24 @@
  *
  */
 
-package main
+package cmd
 
 import (
-	"log"
+	"context"
 
 	"github.com/RTradeLtd/s3x/pkg/madmin"
 )
 
-func main() {
-	// Note: YOUR-ACCESSKEYID, YOUR-SECRETACCESSKEY and my-bucketname are
-	// dummy values, please replace them with original values.
-
-	// API requests are secure (HTTPS) if secure=true and insecure (HTTP) otherwise.
-	// New returns an MinIO Admin client object.
-	madmClnt, err := madmin.New("your-minio.example.com:9000", "YOUR-ACCESSKEYID", "YOUR-SECRETACCESSKEY", true)
-	if err != nil {
-		log.Fatalln(err)
+func getLocalDiskHwOBD(ctx context.Context) madmin.ServerDiskHwOBDInfo {
+	addr := ""
+	if globalIsDistXL {
+		addr = GetLocalPeer(globalEndpoints)
+	} else {
+		addr = "minio"
 	}
 
-	st, err := madmClnt.ServerDrivesPerfInfo(madmin.DefaultDrivePerfSize)
-	if err != nil {
-		log.Fatalln(err)
+	return madmin.ServerDiskHwOBDInfo{
+		Addr:  addr,
+		Error: "unsupported platform",
 	}
-	log.Println(st)
 }

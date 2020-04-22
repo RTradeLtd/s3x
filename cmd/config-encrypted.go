@@ -21,7 +21,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"unicode/utf8"
 
 	"github.com/RTradeLtd/s3x/cmd/config"
@@ -48,12 +47,17 @@ func handleEncryptedConfigBackend(objAPI ObjectLayer, server bool) error {
 	//    of the object layer.
 	retryTimerCh := newRetryTimerSimple(doneCh)
 	var stop bool
+
+	rquorum := InsufficientReadQuorum{}
+	wquorum := InsufficientWriteQuorum{}
+
 	for !stop {
 		select {
 		case <-retryTimerCh:
 			if encrypted, err = checkBackendEncrypted(objAPI); err != nil {
-				if err == errDiskNotFound ||
-					strings.Contains(err.Error(), InsufficientReadQuorum{}.Error()) {
+				if errors.Is(err, errDiskNotFound) ||
+					errors.As(err, &rquorum) ||
+					isErrBucketNotFound(err) {
 					logger.Info("Waiting for config backend to be encrypted..")
 					continue
 				}
@@ -100,9 +104,10 @@ func handleEncryptedConfigBackend(objAPI ObjectLayer, server bool) error {
 		case <-retryTimerCh:
 			// Migrate IAM configuration
 			if err = migrateConfigPrefixToEncrypted(objAPI, globalOldCred, encrypted); err != nil {
-				if err == errDiskNotFound ||
-					strings.Contains(err.Error(), InsufficientReadQuorum{}.Error()) ||
-					strings.Contains(err.Error(), InsufficientWriteQuorum{}.Error()) {
+				if errors.Is(err, errDiskNotFound) ||
+					errors.As(err, &rquorum) ||
+					errors.As(err, &wquorum) ||
+					isErrBucketNotFound(err) {
 					logger.Info("Waiting for config backend to be encrypted..")
 					continue
 				}
@@ -133,7 +138,7 @@ func checkBackendEtcdEncrypted(ctx context.Context, client *etcd.Client) (bool, 
 }
 
 func checkBackendEncrypted(objAPI ObjectLayer) (bool, error) {
-	data, err := readConfig(context.Background(), objAPI, backendEncryptedFile)
+	data, err := readConfig(GlobalContext, objAPI, backendEncryptedFile)
 	if err != nil && err != errConfigNotFound {
 		return false, err
 	}
@@ -157,8 +162,8 @@ func decryptData(edata []byte, creds ...auth.Credentials) ([]byte, error) {
 	return data, err
 }
 
-func migrateIAMConfigsEtcdToEncrypted(client *etcd.Client) error {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultContextTimeout)
+func migrateIAMConfigsEtcdToEncrypted(ctx context.Context, client *etcd.Client) error {
+	ctx, cancel := context.WithTimeout(ctx, defaultContextTimeout)
 	defer cancel()
 
 	encrypted, err := checkBackendEtcdEncrypted(ctx, client)
@@ -282,14 +287,14 @@ func migrateConfigPrefixToEncrypted(objAPI ObjectLayer, activeCredOld auth.Crede
 		logger.Info("Attempting encryption of all config, IAM users and policies on MinIO backend")
 	}
 
-	err := saveConfig(context.Background(), objAPI, backendEncryptedFile, backendEncryptedMigrationIncomplete)
+	err := saveConfig(GlobalContext, objAPI, backendEncryptedFile, backendEncryptedMigrationIncomplete)
 	if err != nil {
 		return err
 	}
 
 	var marker string
 	for {
-		res, err := objAPI.ListObjects(context.Background(), minioMetaBucket,
+		res, err := objAPI.ListObjects(GlobalContext, minioMetaBucket,
 			minioConfigPrefix, marker, "", maxObjectList)
 		if err != nil {
 			return err
@@ -300,7 +305,7 @@ func migrateConfigPrefixToEncrypted(objAPI ObjectLayer, activeCredOld auth.Crede
 				cencdata []byte
 			)
 
-			cdata, err = readConfig(context.Background(), objAPI, obj.Name)
+			cdata, err = readConfig(GlobalContext, objAPI, obj.Name)
 			if err != nil {
 				return err
 			}
@@ -333,7 +338,7 @@ func migrateConfigPrefixToEncrypted(objAPI ObjectLayer, activeCredOld auth.Crede
 				return err
 			}
 
-			if err = saveConfig(context.Background(), objAPI, obj.Name, cencdata); err != nil {
+			if err = saveConfig(GlobalContext, objAPI, obj.Name, cencdata); err != nil {
 				return err
 			}
 		}
@@ -349,5 +354,5 @@ func migrateConfigPrefixToEncrypted(objAPI ObjectLayer, activeCredOld auth.Crede
 		logger.Info("Rotation complete, please make sure to unset MINIO_ACCESS_KEY_OLD and MINIO_SECRET_KEY_OLD envs")
 	}
 
-	return saveConfig(context.Background(), objAPI, backendEncryptedFile, backendEncryptedMigrationComplete)
+	return saveConfig(GlobalContext, objAPI, backendEncryptedFile, backendEncryptedMigrationComplete)
 }
