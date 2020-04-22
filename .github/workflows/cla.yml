@@ -19,7 +19,7 @@ jobs:
           path-to-signatures: 'signatures/version1/cla.json'
           path-To-cladocument: 'https://gist.github.com/bonedaddy/5f55781361f0d5c85099ebc25e44f129#file-my_cla-md'
           # branch should not be protected
-          branch: 'master'
+          branch: 'sig-branch'
           whitelist: dependabot-preview[bot],bonedaddy,xiegeo
           empty-commit-flag: false
           blockchain-storage-flag: false
