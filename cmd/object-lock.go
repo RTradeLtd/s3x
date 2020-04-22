@@ -25,9 +25,9 @@ import (
 	"path"
 
 	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/RTradeLtd/s3x/pkg/auth"
 	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
-	"github.com/minio/minio/pkg/auth"
-	"github.com/minio/minio/pkg/bucket/policy"
+	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 )
 
 // Similar to enforceRetentionBypassForDelete but for WebUI

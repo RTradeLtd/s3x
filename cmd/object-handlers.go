@@ -48,7 +48,6 @@ import (
 	"github.com/gorilla/mux"
 	miniogo "github.com/minio/minio-go/v6"
 	"github.com/minio/minio-go/v6/pkg/encrypt"
-	sha256 "github.com/minio/sha256-simd"
 	"github.com/minio/sio"
 )
 

@@ -23,7 +23,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/minio/minio/pkg/madmin"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
 	diskhw "github.com/shirou/gopsutil/disk"
 )
 

@@ -24,7 +24,6 @@ import (
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/cmd/logger/message/log"
 	"github.com/RTradeLtd/s3x/cmd/logger/target/console"
-	"github.com/RTradeLtd/s3x/pkg/madmin"
 	xnet "github.com/RTradeLtd/s3x/pkg/net"
 	"github.com/RTradeLtd/s3x/pkg/pubsub"
 )

@@ -34,6 +34,7 @@ import (
 	xjwt "github.com/RTradeLtd/s3x/cmd/jwt"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/auth"
+	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
 	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 	"github.com/RTradeLtd/s3x/pkg/hash"
 	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"

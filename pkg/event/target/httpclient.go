@@ -25,7 +25,7 @@ import (
 
 	"github.com/RTradeLtd/s3x/pkg/event"
 	xnet "github.com/RTradeLtd/s3x/pkg/net"
-	"github.com/skyrings/skyring-common/tools/uuid"
+	"github.com/google/uuid"
 )
 
 // HTTPClientTarget - HTTP client target.

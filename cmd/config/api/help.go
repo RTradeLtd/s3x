@@ -16,7 +16,7 @@
 
 package api
 
-import "github.com/minio/minio/cmd/config"
+import "github.com/RTradeLtd/s3x/cmd/config"
 
 // Help template for storageclass feature.
 var (

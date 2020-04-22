@@ -41,6 +41,7 @@ import (
 	xnet "github.com/RTradeLtd/s3x/pkg/net"
 	"github.com/RTradeLtd/s3x/pkg/sync/errgroup"
 	"github.com/klauspost/compress/zip"
+	"github.com/minio/minio-go/v6/pkg/set"
 )
 
 // NotificationSys - notification system.

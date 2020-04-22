@@ -20,7 +20,7 @@ package cmd
 import (
 	"context"
 
-	"github.com/minio/minio/pkg/madmin"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
 )
 
 func getLocalDiskHwOBD(ctx context.Context) madmin.ServerDiskHwOBDInfo {

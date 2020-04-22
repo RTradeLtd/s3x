@@ -22,6 +22,7 @@ import (
 	"sync"
 
 	"github.com/RTradeLtd/s3x/cmd/config"
+	"github.com/RTradeLtd/s3x/cmd/config/api"
 	"github.com/RTradeLtd/s3x/cmd/config/cache"
 	"github.com/RTradeLtd/s3x/cmd/config/compress"
 	"github.com/RTradeLtd/s3x/cmd/config/etcd"

@@ -24,8 +24,8 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/minio/minio/pkg/disk"
-	"github.com/minio/minio/pkg/madmin"
+	"github.com/RTradeLtd/s3x/pkg/disk"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
 	cpuhw "github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/host"
 	memhw "github.com/shirou/gopsutil/mem"

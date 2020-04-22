@@ -20,7 +20,7 @@ MinIO supports two different KMS concepts:
    Further if the MinIO server machine is ever compromised, then the master key must also be treated as compromised.
 
 **Important:**
-If multiple MinIO servers are configured as [gateways](https://github.com/minio/minio/blob/master/docs/gateway/README.md) pointing to the *same* backend - for example the same NAS storage - then the KMS configuration **must** be the same for all gateways. Otherwise one gateway may not be able to decrypt objects created by another gateway. It is the operator responsibility to ensure consistency.
+If multiple MinIO servers are configured as [gateways](https://github.com/RTradeLtd/s3x/blob/master/docs/gateway/README.md) pointing to the *same* backend - for example the same NAS storage - then the KMS configuration **must** be the same for all gateways. Otherwise one gateway may not be able to decrypt objects created by another gateway. It is the operator responsibility to ensure consistency.
 
 ## Get started
 

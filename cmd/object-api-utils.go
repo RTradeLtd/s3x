@@ -45,16 +45,6 @@ import (
 	"github.com/klauspost/compress/s2"
 	"github.com/klauspost/readahead"
 	"github.com/minio/minio-go/v6/pkg/s3utils"
-	"github.com/minio/minio/cmd/config/compress"
-	"github.com/minio/minio/cmd/config/etcd/dns"
-	"github.com/minio/minio/cmd/config/storageclass"
-	"github.com/minio/minio/cmd/crypto"
-	xhttp "github.com/minio/minio/cmd/http"
-	"github.com/minio/minio/cmd/logger"
-	"github.com/minio/minio/pkg/hash"
-	"github.com/minio/minio/pkg/ioutil"
-	"github.com/minio/minio/pkg/wildcard"
-	"github.com/skyrings/skyring-common/tools/uuid"
 )
 
 const (

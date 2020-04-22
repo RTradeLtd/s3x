@@ -22,9 +22,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
-
-	"github.com/RTradeLtd/s3x/cmd/logger/message/log"
 )
 
 // LogInfo holds console log messages

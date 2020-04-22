@@ -25,7 +25,7 @@ import (
 	"net/url"
 
 	"github.com/RTradeLtd/s3x/pkg/auth"
-	iampolicy "github.com/minio/minio/pkg/iam/policy"
+	iampolicy "github.com/RTradeLtd/s3x/pkg/iam/policy"
 )
 
 // AccountStatus - account status.

@@ -28,9 +28,9 @@ import (
 	"sync"
 	"time"
 
+	xhttp "github.com/RTradeLtd/s3x/cmd/http"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
-	"github.com/RTradeLtd/s3x/pkg/event"
 	"github.com/RTradeLtd/s3x/pkg/handlers"
 	jsoniter "github.com/json-iterator/go"
 	miniogopolicy "github.com/minio/minio-go/v6/pkg/policy"

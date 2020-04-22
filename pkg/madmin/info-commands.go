@@ -24,11 +24,6 @@ import (
 	"math"
 	"net/http"
 	"time"
-
-	"github.com/RTradeLtd/s3x/pkg/cpu"
-	"github.com/RTradeLtd/s3x/pkg/disk"
-	"github.com/RTradeLtd/s3x/pkg/mem"
-	humanize "github.com/dustin/go-humanize"
 )
 
 // BackendType - represents different backend types.

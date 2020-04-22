@@ -19,10 +19,9 @@ package cmd
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/RTradeLtd/s3x/cmd/logger"
+	"github.com/google/uuid"
 	"github.com/minio/minio-go/v6/pkg/s3utils"
-	"github.com/skyrings/skyring-common/tools/uuid"
 )
 
 // Checks on GetObject arguments, bucket and object.

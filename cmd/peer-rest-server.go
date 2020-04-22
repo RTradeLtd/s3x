@@ -35,6 +35,7 @@ import (
 	objectlock "github.com/RTradeLtd/s3x/pkg/bucket/object/lock"
 	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
 	"github.com/RTradeLtd/s3x/pkg/event"
+	"github.com/RTradeLtd/s3x/pkg/madmin"
 	trace "github.com/RTradeLtd/s3x/pkg/trace"
 	"github.com/gorilla/mux"
 )
