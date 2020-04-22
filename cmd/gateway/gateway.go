@@ -22,7 +22,6 @@ import (
 	_ "github.com/RTradeLtd/s3x/cmd/gateway/gcs"
 	_ "github.com/RTradeLtd/s3x/cmd/gateway/hdfs"
 	_ "github.com/RTradeLtd/s3x/cmd/gateway/nas"
-	_ "github.com/RTradeLtd/s3x/cmd/gateway/oss"
 	_ "github.com/RTradeLtd/s3x/cmd/gateway/s3"
 	_ "github.com/RTradeLtd/s3x/cmd/gateway/s3x"
 

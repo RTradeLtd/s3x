@@ -274,7 +274,7 @@ func hdfsIsValidBucketName(bucket string) bool {
 	return s3utils.CheckValidBucketNameStrict(bucket) == nil
 }
 
-func (n *hdfsObjects) DeleteBucket(ctx context.Context, bucket string) error {
+func (n *hdfsObjects) DeleteBucket(ctx context.Context, bucket string, forceDelete bool) error {
 	if !hdfsIsValidBucketName(bucket) {
 		return minio.BucketNameInvalid{Bucket: bucket}
 	}
@@ -332,13 +332,13 @@ func (n *hdfsObjects) listDirFactory() minio.ListDirFunc {
 			if os.IsNotExist(err) {
 				err = nil
 			}
-			logger.LogIf(context.Background(), err)
+			logger.LogIf(minio.GlobalContext, err)
 			return
 		}
 		defer f.Close()
 		fis, err := f.Readdir(0)
 		if err != nil {
-			logger.LogIf(context.Background(), err)
+			logger.LogIf(minio.GlobalContext, err)
 			return
 		}
 		if len(fis) == 0 {
@@ -466,7 +466,7 @@ func (n *hdfsObjects) GetObjectNInfo(ctx context.Context, bucket, object string,
 	// Setup cleanup function to cause the above go-routine to
 	// exit in case of partial read
 	pipeCloser := func() { pr.Close() }
-	return minio.NewGetObjectReaderFromReader(pr, objInfo, opts.CheckCopyPrecondFn, pipeCloser)
+	return minio.NewGetObjectReaderFromReader(pr, objInfo, opts, pipeCloser)
 
 }
 

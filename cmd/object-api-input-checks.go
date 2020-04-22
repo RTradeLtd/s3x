@@ -19,6 +19,7 @@ package cmd
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/RTradeLtd/s3x/cmd/logger"
 	"github.com/minio/minio-go/v6/pkg/s3utils"
 	"github.com/skyrings/skyring-common/tools/uuid"
@@ -105,16 +106,8 @@ func checkListMultipartArgs(ctx context.Context, bucket, prefix, keyMarker, uplo
 				KeyMarker:      keyMarker,
 			}
 		}
-		id, err := uuid.Parse(uploadIDMarker)
-		if err != nil {
+		if _, err := uuid.Parse(uploadIDMarker); err != nil {
 			logger.LogIf(ctx, err)
-			return err
-		}
-		if id.IsZero() {
-			logger.LogIf(ctx, MalformedUploadID{
-				UploadID: uploadIDMarker,
-			})
-
 			return MalformedUploadID{
 				UploadID: uploadIDMarker,
 			}

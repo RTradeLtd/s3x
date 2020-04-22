@@ -55,17 +55,18 @@ func (z *xlZones) quickHealBuckets(ctx context.Context) {
 }
 
 // Initialize new zone of erasure sets.
-func newXLZones(endpointZones EndpointZones) (ObjectLayer, error) {
+func newXLZones(ctx context.Context, endpointZones EndpointZones) (ObjectLayer, error) {
 	var (
 		deploymentID string
 		err          error
 
-		formats = make([]*formatXLV3, len(endpointZones))
-		z       = &xlZones{zones: make([]*xlSets, len(endpointZones))}
+		formats      = make([]*formatXLV3, len(endpointZones))
+		storageDisks = make([][]StorageAPI, len(endpointZones))
+		z            = &xlZones{zones: make([]*xlSets, len(endpointZones))}
 	)
 	local := endpointZones.FirstLocal()
 	for i, ep := range endpointZones {
-		formats[i], err = waitForFormatXL(local, ep.Endpoints, i+1,
+		storageDisks[i], formats[i], err = waitForFormatXL(local, ep.Endpoints, i+1,
 			ep.SetCount, ep.DrivesPerSet, deploymentID)
 		if err != nil {
 			return nil, err
@@ -73,13 +74,13 @@ func newXLZones(endpointZones EndpointZones) (ObjectLayer, error) {
 		if deploymentID == "" {
 			deploymentID = formats[i].ID
 		}
-		z.zones[i], err = newXLSets(ep.Endpoints, formats[i], ep.SetCount, ep.DrivesPerSet)
+		z.zones[i], err = newXLSets(ctx, ep.Endpoints, storageDisks[i], formats[i], ep.SetCount, ep.DrivesPerSet)
 		if err != nil {
 			return nil, err
 		}
 	}
 	if !z.SingleZone() {
-		z.quickHealBuckets(context.Background())
+		z.quickHealBuckets(ctx)
 	}
 	return z, nil
 }
@@ -325,7 +326,7 @@ func undoMakeBucketZones(bucket string, zones []*xlSets, errs []error) {
 		index := index
 		g.Go(func() error {
 			if errs[index] == nil {
-				return zones[index].DeleteBucket(context.Background(), bucket)
+				return zones[index].DeleteBucket(GlobalContext, bucket, false)
 			}
 			return nil
 		}, index)
@@ -592,19 +593,15 @@ func (z *xlZones) listObjectsNonSlash(ctx context.Context, bucket, prefix, marke
 	endWalkCh := make(chan struct{})
 	defer close(endWalkCh)
 
+	const ndisks = 3
 	for _, zone := range z.zones {
 		zonesEntryChs = append(zonesEntryChs,
-			zone.startMergeWalks(ctx, bucket, prefix, "", true, endWalkCh))
+			zone.startMergeWalksN(ctx, bucket, prefix, "", true, endWalkCh, ndisks))
 	}
 
 	var objInfos []ObjectInfo
 	var eof bool
 	var prevPrefix string
-
-	var zoneDrivesPerSet []int
-	for _, zone := range z.zones {
-		zoneDrivesPerSet = append(zoneDrivesPerSet, zone.drivesPerSet)
-	}
 
 	var zonesEntriesInfos [][]FileInfo
 	var zonesEntriesValid [][]bool
@@ -617,18 +614,15 @@ func (z *xlZones) listObjectsNonSlash(ctx context.Context, bucket, prefix, marke
 		if len(objInfos) == maxKeys {
 			break
 		}
-		result, quorumCount, zoneIndex, ok := leastEntryZone(zonesEntryChs, zonesEntriesInfos, zonesEntriesValid)
+
+		result, quorumCount, _, ok := leastEntryZone(zonesEntryChs, zonesEntriesInfos, zonesEntriesValid)
 		if !ok {
 			eof = true
 			break
 		}
-		rquorum := result.Quorum
-		// Quorum is zero for all directories.
-		if rquorum == 0 {
-			// Choose N/2 quorum for directory entries.
-			rquorum = zoneDrivesPerSet[zoneIndex] / 2
-		}
-		if quorumCount < rquorum {
+
+		if quorumCount < ndisks-1 {
+			// Skip entries which are not found on upto ndisks.
 			continue
 		}
 
@@ -704,7 +698,59 @@ func (z *xlZones) listObjectsNonSlash(ctx context.Context, bucket, prefix, marke
 	return result, nil
 }
 
-func (z *xlZones) listObjects(ctx context.Context, bucket, prefix, marker, delimiter string, maxKeys int, heal bool) (ListObjectsInfo, error) {
+func (z *xlZones) listObjectsSplunk(ctx context.Context, bucket, prefix, marker string, maxKeys int) (loi ListObjectsInfo, err error) {
+	if strings.Contains(prefix, guidSplunk) {
+		logger.LogIf(ctx, NotImplemented{})
+		return loi, NotImplemented{}
+	}
+
+	recursive := true
+
+	var zonesEntryChs [][]FileInfoCh
+	var zonesEndWalkCh []chan struct{}
+
+	const ndisks = 3
+	for _, zone := range z.zones {
+		entryChs, endWalkCh := zone.poolSplunk.Release(listParams{bucket, recursive, marker, prefix})
+		if entryChs == nil {
+			endWalkCh = make(chan struct{})
+			entryChs = zone.startSplunkMergeWalksN(ctx, bucket, prefix, marker, endWalkCh, ndisks)
+		}
+		zonesEntryChs = append(zonesEntryChs, entryChs)
+		zonesEndWalkCh = append(zonesEndWalkCh, endWalkCh)
+	}
+
+	entries := mergeZonesEntriesCh(zonesEntryChs, maxKeys, ndisks)
+	if len(entries.Files) == 0 {
+		return loi, nil
+	}
+
+	loi.IsTruncated = entries.IsTruncated
+	if loi.IsTruncated {
+		loi.NextMarker = entries.Files[len(entries.Files)-1].Name
+	}
+
+	for _, entry := range entries.Files {
+		objInfo := entry.ToObjectInfo()
+		splits := strings.Split(objInfo.Name, guidSplunk)
+		if len(splits) == 0 {
+			loi.Objects = append(loi.Objects, objInfo)
+			continue
+		}
+
+		loi.Prefixes = append(loi.Prefixes, splits[0]+guidSplunk)
+	}
+
+	if loi.IsTruncated {
+		for i, zone := range z.zones {
+			zone.poolSplunk.Set(listParams{bucket, recursive, loi.NextMarker, prefix}, zonesEntryChs[i],
+				zonesEndWalkCh[i])
+		}
+	}
+	return loi, nil
+}
+
+func (z *xlZones) listObjects(ctx context.Context, bucket, prefix, marker, delimiter string, maxKeys int) (ListObjectsInfo, error) {
 	loi := ListObjectsInfo{}
 
 	if err := checkListObjsArgs(ctx, bucket, prefix, marker, z); err != nil {
@@ -739,7 +785,9 @@ func (z *xlZones) listObjects(ctx context.Context, bucket, prefix, marker, delim
 	}
 
 	if delimiter != SlashSeparator && delimiter != "" {
-		// "heal" option passed can be ignored as the heal-listing does not send non-standard delimiter.
+		if delimiter == guidSplunk {
+			return z.listObjectsSplunk(ctx, bucket, prefix, marker, maxKeys)
+		}
 		return z.listObjectsNonSlash(ctx, bucket, prefix, marker, delimiter, maxKeys)
 	}
 
@@ -752,22 +800,18 @@ func (z *xlZones) listObjects(ctx context.Context, bucket, prefix, marker, delim
 	var zonesEntryChs [][]FileInfoCh
 	var zonesEndWalkCh []chan struct{}
 
+	const ndisks = 3
 	for _, zone := range z.zones {
 		entryChs, endWalkCh := zone.pool.Release(listParams{bucket, recursive, marker, prefix})
 		if entryChs == nil {
 			endWalkCh = make(chan struct{})
-			entryChs = zone.startMergeWalks(ctx, bucket, prefix, marker, recursive, endWalkCh)
+			entryChs = zone.startMergeWalksN(ctx, bucket, prefix, marker, recursive, endWalkCh, ndisks)
 		}
 		zonesEntryChs = append(zonesEntryChs, entryChs)
 		zonesEndWalkCh = append(zonesEndWalkCh, endWalkCh)
 	}
 
-	var zoneDrivesPerSet []int
-	for _, zone := range z.zones {
-		zoneDrivesPerSet = append(zoneDrivesPerSet, zone.drivesPerSet)
-	}
-
-	entries := mergeZonesEntriesCh(zonesEntryChs, maxKeys, zoneDrivesPerSet, heal)
+	entries := mergeZonesEntriesCh(zonesEntryChs, maxKeys, ndisks)
 	if len(entries.Files) == 0 {
 		return loi, nil
 	}
@@ -873,7 +917,7 @@ func leastEntryZone(zoneEntryChs [][]FileInfoCh, zoneEntries [][]FileInfo, zoneE
 }
 
 // mergeZonesEntriesCh - merges FileInfo channel to entries upto maxKeys.
-func mergeZonesEntriesCh(zonesEntryChs [][]FileInfoCh, maxKeys int, zoneDrives []int, heal bool) (entries FilesInfo) {
+func mergeZonesEntriesCh(zonesEntryChs [][]FileInfoCh, maxKeys int, ndisks int) (entries FilesInfo) {
 	var i = 0
 	var zonesEntriesInfos [][]FileInfo
 	var zonesEntriesValid [][]bool
@@ -882,32 +926,17 @@ func mergeZonesEntriesCh(zonesEntryChs [][]FileInfoCh, maxKeys int, zoneDrives [
 		zonesEntriesValid = append(zonesEntriesValid, make([]bool, len(entryChs)))
 	}
 	for {
-		fi, quorumCount, zoneIndex, valid := leastEntryZone(zonesEntryChs, zonesEntriesInfos, zonesEntriesValid)
-		if !valid {
+		fi, quorumCount, _, ok := leastEntryZone(zonesEntryChs, zonesEntriesInfos, zonesEntriesValid)
+		if !ok {
 			// We have reached EOF across all entryChs, break the loop.
 			break
 		}
-		rquorum := fi.Quorum
-		// Quorum is zero for all directories.
-		if rquorum == 0 {
-			// Choose N/2 quoroum for directory entries.
-			rquorum = zoneDrives[zoneIndex] / 2
+
+		if quorumCount < ndisks-1 {
+			// Skip entries which are not found on upto ndisks.
+			continue
 		}
 
-		if heal {
-			// When healing is enabled, we should
-			// list only objects which need healing.
-			if quorumCount == zoneDrives[zoneIndex] {
-				// Skip good entries.
-				continue
-			}
-		} else {
-			// Regular listing, we skip entries not in quorum.
-			if quorumCount < rquorum {
-				// Skip entries which do not have quorum.
-				continue
-			}
-		}
 		entries.Files = append(entries.Files, fi)
 		i++
 		if i == maxKeys {
@@ -953,7 +982,7 @@ func (z *xlZones) ListObjects(ctx context.Context, bucket, prefix, marker, delim
 		return z.zones[0].ListObjects(ctx, bucket, prefix, marker, delimiter, maxKeys)
 	}
 
-	return z.listObjects(ctx, bucket, prefix, marker, delimiter, maxKeys, false)
+	return z.listObjects(ctx, bucket, prefix, marker, delimiter, maxKeys)
 }
 
 func (z *xlZones) ListMultipartUploads(ctx context.Context, bucket, prefix, keyMarker, uploadIDMarker, delimiter string, maxUploads int) (ListMultipartsInfo, error) {
@@ -1203,9 +1232,9 @@ func (z *xlZones) IsCompressionSupported() bool {
 // DeleteBucket - deletes a bucket on all zones simultaneously,
 // even if one of the zones fail to delete buckets, we proceed to
 // undo a successful operation.
-func (z *xlZones) DeleteBucket(ctx context.Context, bucket string) error {
+func (z *xlZones) DeleteBucket(ctx context.Context, bucket string, forceDelete bool) error {
 	if z.SingleZone() {
-		return z.zones[0].DeleteBucket(ctx, bucket)
+		return z.zones[0].DeleteBucket(ctx, bucket, forceDelete)
 	}
 	g := errgroup.WithNErrs(len(z.zones))
 
@@ -1213,11 +1242,26 @@ func (z *xlZones) DeleteBucket(ctx context.Context, bucket string) error {
 	for index := range z.zones {
 		index := index
 		g.Go(func() error {
-			return z.zones[index].DeleteBucket(ctx, bucket)
+			return z.zones[index].DeleteBucket(ctx, bucket, forceDelete)
 		}, index)
 	}
 
 	errs := g.Wait()
+
+	if forceDelete {
+		for _, err := range errs {
+			if err != nil {
+				if _, ok := err.(InsufficientWriteQuorum); ok {
+					undoDeleteBucketZones(bucket, z.zones, errs)
+				}
+
+				return err
+			}
+		}
+
+		return nil
+	}
+
 	// For any write quorum failure, we undo all the delete buckets operation
 	// by creating all the buckets again.
 	for _, err := range errs {
@@ -1242,7 +1286,7 @@ func undoDeleteBucketZones(bucket string, zones []*xlSets, errs []error) {
 		index := index
 		g.Go(func() error {
 			if errs[index] == nil {
-				return zones[index].MakeBucketWithLocation(context.Background(), bucket, "")
+				return zones[index].MakeBucketWithLocation(GlobalContext, bucket, "")
 			}
 			return nil
 		}, index)

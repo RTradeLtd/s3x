@@ -1,5 +1,5 @@
 /*
- * MinIO Cloud Storage, (C) 2019 MinIO, Inc.
+ * MinIO Cloud Storage, (C) 2020 MinIO, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,19 +12,27 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package cpu
+package cmd
 
 import (
-	"math"
+	"context"
+
+	"github.com/minio/minio/pkg/madmin"
 )
 
-func round(num float64) int {
-	return int(num + math.Copysign(0.5, num))
-}
+func getLocalDiskHwOBD(ctx context.Context) madmin.ServerDiskHwOBDInfo {
+	addr := ""
+	if globalIsDistXL {
+		addr = GetLocalPeer(globalEndpoints)
+	} else {
+		addr = "minio"
+	}
 
-func toFixed4(num float64) float64 {
-	output := math.Pow(10, float64(4))
-	return float64(round(num*output)) / output
+	return madmin.ServerDiskHwOBDInfo{
+		Addr:  addr,
+		Error: "unsupported platform",
+	}
 }

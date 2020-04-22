@@ -11,6 +11,7 @@ require (
 	github.com/Shopify/sarama v1.24.1
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/alecthomas/participle v0.2.1
+	github.com/aws/aws-sdk-go v1.20.21
 	github.com/aliyun/aliyun-oss-go-sdk v0.0.0-20190307165228-86c17b95fcd5
 	github.com/aws/aws-sdk-go v1.29.14
 	github.com/bcicen/jstream v0.0.0-20190220045926-16c1f8af81c2
@@ -36,6 +37,10 @@ require (
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.3.5
 	github.com/gomodule/redigo v2.0.0+incompatible
+	github.com/google/uuid v1.1.1
+	github.com/gopherjs/gopherjs v0.0.0-20190328170749-bb2674552d8f // indirect
+	github.com/gorilla/handlers v1.4.0
+	github.com/gorilla/mux v1.7.0
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/rpc v1.2.0
@@ -57,7 +62,7 @@ require (
 	github.com/klauspost/pgzip v1.2.1
 	github.com/klauspost/readahead v1.3.1
 	github.com/klauspost/reedsolomon v1.9.3
-	github.com/kurin/blazer v0.5.4-0.20190613185654-cf2f27cc0be3
+	github.com/kurin/blazer v0.5.4-0.20200327014341-8f90a40f8af7
 	github.com/lib/pq v1.1.1
 	github.com/mattn/go-colorable v0.1.4
 	github.com/mattn/go-ieproxy v0.0.0-20190805055040-f9202b1cfdeb // indirect
@@ -68,13 +73,16 @@ require (
 	github.com/minio/hdfs/v3 v3.0.1
 	github.com/minio/highwayhash v1.0.0
 	github.com/minio/lsync v1.0.1
-	github.com/minio/minio-go/v6 v6.0.50-0.20200306231101-b882ba63d570
-	github.com/minio/parquet-go v0.0.0-20200125064549-a1e49702e174
+	github.com/minio/minio-go/v6 v6.0.53
+	github.com/minio/parquet-go v0.0.0-20200414234858-838cfa8aae61
 	github.com/minio/sha256-simd v0.1.1
 	github.com/minio/simdjson-go v0.1.5-0.20200303142138-b17fe061ea37
 	github.com/minio/sio v0.2.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mmcloughlin/avo v0.0.0-20200303042253-6df701fe672f // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.1 // indirect
+	github.com/montanaflynn/stats v0.5.0
 	github.com/nats-io/gnatsd v1.4.1 // indirect
 	github.com/nats-io/go-nats v1.7.2 // indirect
 	github.com/nats-io/go-nats-streaming v0.4.4 // indirect
@@ -91,6 +99,10 @@ require (
 	github.com/rjeczalik/notify v0.9.2
 	github.com/rs/cors v1.6.0
 	github.com/secure-io/sio-go v0.3.0
+	github.com/shirou/gopsutil v2.20.3-0.20200314133625-53cec6b37e6a+incompatible
+	github.com/sirupsen/logrus v1.5.0
+	github.com/smartystreets/assertions v0.0.0-20190401211740-f487f9de1cd3 // indirect
+	github.com/soheilhy/cmux v0.1.4 // indirect
 	github.com/segmentio/ksuid v1.0.2
 	github.com/shirou/gopsutil v2.20.2+incompatible
 	github.com/sirupsen/logrus v1.4.2
@@ -99,6 +111,20 @@ require (
 	github.com/tinylib/msgp v1.1.1
 	github.com/ugorji/go v1.1.5-pre // indirect
 	github.com/valyala/tcplisten v0.0.0-20161114210144-ceec8f93295a
+	github.com/xdg/scram v0.0.0-20180814205039-7eeb5667e42c
+	github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 // indirect
+	go.etcd.io/bbolt v1.3.3 // indirect
+	go.uber.org/atomic v1.3.2
+	go.uber.org/multierr v1.1.0 // indirect
+	go.uber.org/zap v1.10.0 // indirect
+	golang.org/x/crypto v0.0.0-20191117063200-497ca9f6d64f
+	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
+	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a // indirect
+	golang.org/x/sys v0.0.0-20200323222414-85ca7c5b95cd
+	golang.org/x/text v0.3.2 // indirect
+	google.golang.org/api v0.5.0
+	google.golang.org/appengine v1.6.0 // indirect
+	google.golang.org/genproto v0.0.0-20190513181449-d00d292a067c // indirect
 	go.uber.org/atomic v1.6.0
 	go.uber.org/multierr v1.5.0
 	golang.org/x/crypto v0.0.0-20200406173513-056763e48d71

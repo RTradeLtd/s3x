@@ -152,7 +152,7 @@ var defaultAWSCredProviders = []credentials.Provider{
 	&credentials.FileAWSCredentials{},
 	&credentials.IAM{
 		Client: &http.Client{
-			Transport: minio.NewCustomHTTPTransport(),
+			Transport: minio.NewGatewayHTTPTransport(),
 		},
 	},
 	&credentials.EnvMinio{},
@@ -212,7 +212,7 @@ func (g *S3) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error) 
 	metrics := minio.NewMetrics()
 
 	t := &minio.MetricsTransport{
-		Transport: minio.NewCustomHTTPTransport(),
+		Transport: minio.NewGatewayHTTPTransport(),
 		Metrics:   metrics,
 	}
 
@@ -241,8 +241,8 @@ func (g *S3) NewGatewayLayer(creds auth.Credentials) (minio.ObjectLayer, error) 
 		encS := s3EncObjects{s}
 
 		// Start stale enc multipart uploads cleanup routine.
-		go encS.cleanupStaleEncMultipartUploads(context.Background(),
-			minio.GlobalMultipartCleanupInterval, minio.GlobalMultipartExpiry, minio.GlobalServiceDoneCh)
+		go encS.cleanupStaleEncMultipartUploads(minio.GlobalContext,
+			minio.GlobalMultipartCleanupInterval, minio.GlobalMultipartExpiry)
 
 		return &encS, nil
 	}
@@ -351,7 +351,7 @@ func (l *s3Objects) ListBuckets(ctx context.Context) ([]minio.BucketInfo, error)
 }
 
 // DeleteBucket deletes a bucket on S3
-func (l *s3Objects) DeleteBucket(ctx context.Context, bucket string) error {
+func (l *s3Objects) DeleteBucket(ctx context.Context, bucket string, forceDelete bool) error {
 	err := l.Client.RemoveBucket(bucket)
 	if err != nil {
 		return minio.ErrorRespToObjectError(err, bucket)
@@ -401,7 +401,7 @@ func (l *s3Objects) GetObjectNInfo(ctx context.Context, bucket, object string, r
 	// Setup cleanup function to cause the above go-routine to
 	// exit in case of partial read
 	pipeCloser := func() { pr.Close() }
-	return minio.NewGetObjectReaderFromReader(pr, objInfo, opts.CheckCopyPrecondFn, pipeCloser)
+	return minio.NewGetObjectReaderFromReader(pr, objInfo, opts, pipeCloser)
 }
 
 // GetObject reads an object from S3. Supports additional

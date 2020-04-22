@@ -1,7 +1,5 @@
-// +build !linux
-
 /*
- * MinIO Cloud Storage, (C) 2019-2020 MinIO, Inc.
+ * MinIO Cloud Storage, (C) 2020 MinIO, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package cpu
+package madmin
 
-import (
-	"fmt"
-	"runtime"
-	"time"
-)
-
-func newCounter() (counter, error) {
-	return counter{}, fmt.Errorf("cpu metrics not implemented for %s platform", runtime.GOOS)
-}
-
-func (c counter) now() time.Time {
-	return time.Time{}
+// ServerDiskHwOBDInfo - Includes usage counters, disk counters and partitions
+type ServerDiskHwOBDInfo struct {
+	Addr  string `json:"addr"`
+	Error string `json:"error,omitempty"`
 }

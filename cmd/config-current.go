@@ -17,7 +17,6 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"sync"
@@ -49,6 +48,7 @@ func initHelp() {
 		config.IdentityOpenIDSubSys: openid.DefaultKVS,
 		config.PolicyOPASubSys:      opa.DefaultKVS,
 		config.RegionSubSys:         config.DefaultRegionKVS,
+		config.APISubSys:            api.DefaultKVS,
 		config.CredentialsSubSys:    config.DefaultCredentialKVS,
 		config.KmsVaultSubSys:       crypto.DefaultVaultKVS,
 		config.KmsKesSubSys:         crypto.DefaultKesKVS,
@@ -100,6 +100,10 @@ func initHelp() {
 		config.HelpKV{
 			Key:         config.KmsKesSubSys,
 			Description: "enable external MinIO key encryption service",
+		},
+		config.HelpKV{
+			Key:         config.APISubSys,
+			Description: "manage global HTTP API call specific features, such as throttling, authentication types, etc.",
 		},
 		config.HelpKV{
 			Key:             config.LoggerWebhookSubSys,
@@ -175,6 +179,7 @@ func initHelp() {
 	var helpMap = map[string]config.HelpKVS{
 		"":                          helpSubSys, // Help for all sub-systems.
 		config.RegionSubSys:         config.RegionHelp,
+		config.APISubSys:            api.Help,
 		config.StorageClassSubSys:   storageclass.Help,
 		config.EtcdSubSys:           etcd.Help,
 		config.CacheSubSys:          cache.Help,
@@ -222,6 +227,10 @@ func validateConfig(s config.Config) error {
 		return err
 	}
 
+	if _, err := api.LookupConfig(s[config.APISubSys][config.Default]); err != nil {
+		return err
+	}
+
 	if globalIsXL {
 		if _, err := storageclass.LookupConfig(s[config.StorageClassSubSys][config.Default],
 			globalXLSetDriveCount); err != nil {
@@ -251,7 +260,7 @@ func validateConfig(s config.Config) error {
 		}
 	}
 	{
-		kmsCfg, err := crypto.LookupConfig(s, globalCertsCADir.Get(), NewCustomHTTPTransport())
+		kmsCfg, err := crypto.LookupConfig(s, globalCertsCADir.Get(), NewGatewayHTTPTransport())
 		if err != nil {
 			return err
 		}
@@ -269,17 +278,27 @@ func validateConfig(s config.Config) error {
 	}
 
 	if _, err := openid.LookupConfig(s[config.IdentityOpenIDSubSys][config.Default],
-		NewCustomHTTPTransport(), xhttp.DrainBody); err != nil {
+		NewGatewayHTTPTransport(), xhttp.DrainBody); err != nil {
 		return err
 	}
 
-	if _, err := xldap.Lookup(s[config.IdentityLDAPSubSys][config.Default],
-		globalRootCAs); err != nil {
-		return err
+	{
+		cfg, err := xldap.Lookup(s[config.IdentityLDAPSubSys][config.Default],
+			globalRootCAs)
+		if err != nil {
+			return err
+		}
+		if cfg.Enabled {
+			conn, cerr := cfg.Connect()
+			if cerr != nil {
+				return cerr
+			}
+			conn.Close()
+		}
 	}
 
 	if _, err := opa.LookupConfig(s[config.PolicyOPASubSys][config.Default],
-		NewCustomHTTPTransport(), xhttp.DrainBody); err != nil {
+		NewGatewayHTTPTransport(), xhttp.DrainBody); err != nil {
 		return err
 	}
 
@@ -287,12 +306,12 @@ func validateConfig(s config.Config) error {
 		return err
 	}
 
-	return notify.TestNotificationTargets(s, GlobalServiceDoneCh, NewCustomHTTPTransport(),
+	return notify.TestNotificationTargets(s, GlobalContext.Done(), NewGatewayHTTPTransport(),
 		globalNotificationSys.ConfiguredTargetIDs())
 }
 
 func lookupConfigs(s config.Config) {
-	ctx := context.Background()
+	ctx := GlobalContext
 
 	var err error
 	if !globalActiveCred.IsValid() {
@@ -340,6 +359,18 @@ func lookupConfigs(s config.Config) {
 		logger.LogIf(ctx, fmt.Errorf("Invalid region configuration: %w", err))
 	}
 
+	apiConfig, err := api.LookupConfig(s[config.APISubSys][config.Default])
+	if err != nil {
+		logger.LogIf(ctx, fmt.Errorf("Invalid api configuration: %w", err))
+	}
+
+	apiRequestsMax := apiConfig.APIRequestsMax
+	if len(globalEndpoints.Hosts()) > 0 {
+		apiRequestsMax /= len(globalEndpoints.Hosts())
+	}
+
+	globalAPIThrottling.init(apiRequestsMax, apiConfig.APIRequestsDeadline)
+
 	if globalIsXL {
 		globalStorageClass, err = storageclass.LookupConfig(s[config.StorageClassSubSys][config.Default],
 			globalXLSetDriveCount)
@@ -362,7 +393,7 @@ func lookupConfigs(s config.Config) {
 		}
 	}
 
-	kmsCfg, err := crypto.LookupConfig(s, globalCertsCADir.Get(), NewCustomHTTPTransport())
+	kmsCfg, err := crypto.LookupConfig(s, globalCertsCADir.Get(), NewGatewayHTTPTransport())
 	if err != nil {
 		logger.LogIf(ctx, fmt.Errorf("Unable to setup KMS config: %w", err))
 	}
@@ -381,13 +412,13 @@ func lookupConfigs(s config.Config) {
 	}
 
 	globalOpenIDConfig, err = openid.LookupConfig(s[config.IdentityOpenIDSubSys][config.Default],
-		NewCustomHTTPTransport(), xhttp.DrainBody)
+		NewGatewayHTTPTransport(), xhttp.DrainBody)
 	if err != nil {
 		logger.LogIf(ctx, fmt.Errorf("Unable to initialize OpenID: %w", err))
 	}
 
 	opaCfg, err := opa.LookupConfig(s[config.PolicyOPASubSys][config.Default],
-		NewCustomHTTPTransport(), xhttp.DrainBody)
+		NewGatewayHTTPTransport(), xhttp.DrainBody)
 	if err != nil {
 		logger.LogIf(ctx, fmt.Errorf("Unable to initialize OPA: %w", err))
 	}
@@ -412,22 +443,37 @@ func lookupConfigs(s config.Config) {
 	for _, l := range loggerCfg.HTTP {
 		if l.Enabled {
 			// Enable http logging
-			logger.AddTarget(http.New(l.Endpoint, loggerUserAgent, string(logger.All), NewCustomHTTPTransport()))
+			logger.AddTarget(
+				http.New(http.WithEndpoint(l.Endpoint),
+					http.WithAuthToken(l.AuthToken),
+					http.WithUserAgent(loggerUserAgent),
+					http.WithLogKind(string(logger.All)),
+					http.WithTransport(NewGatewayHTTPTransport()),
+				),
+			)
 		}
 	}
 
 	for _, l := range loggerCfg.Audit {
 		if l.Enabled {
 			// Enable http audit logging
-			logger.AddAuditTarget(http.New(l.Endpoint, loggerUserAgent, string(logger.All), NewCustomHTTPTransport()))
+			logger.AddAuditTarget(
+				http.New(http.WithEndpoint(l.Endpoint),
+					http.WithAuthToken(l.AuthToken),
+					http.WithUserAgent(loggerUserAgent),
+					http.WithLogKind(string(logger.All)),
+					http.WithTransport(NewGatewayHTTPTransport()),
+				),
+			)
 		}
 	}
 
-	globalConfigTargetList, err = notify.GetNotificationTargets(s, GlobalServiceDoneCh, NewCustomHTTPTransport())
+	globalConfigTargetList, err = notify.GetNotificationTargets(s, GlobalContext.Done(), NewGatewayHTTPTransport())
 	if err != nil {
 		logger.LogIf(ctx, fmt.Errorf("Unable to initialize notification target(s): %w", err))
 	}
-	globalEnvTargetList, err = notify.GetNotificationTargets(newServerConfig(), GlobalServiceDoneCh, NewCustomHTTPTransport())
+
+	globalEnvTargetList, err = notify.GetNotificationTargets(newServerConfig(), GlobalContext.Done(), NewGatewayHTTPTransport())
 	if err != nil {
 		logger.LogIf(ctx, fmt.Errorf("Unable to initialize notification target(s): %w", err))
 	}
@@ -528,11 +574,11 @@ func newSrvConfig(objAPI ObjectLayer) error {
 	globalServerConfigMu.Unlock()
 
 	// Save config into file.
-	return saveServerConfig(context.Background(), objAPI, globalServerConfig)
+	return saveServerConfig(GlobalContext, objAPI, globalServerConfig)
 }
 
 func getValidConfig(objAPI ObjectLayer) (config.Config, error) {
-	return readServerConfig(context.Background(), objAPI)
+	return readServerConfig(GlobalContext, objAPI)
 }
 
 // loadConfig - loads a new config from disk, overrides params

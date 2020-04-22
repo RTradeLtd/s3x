@@ -178,7 +178,7 @@ func (c *diskCache) diskUsageLow() bool {
 	di, err := disk.GetInfo(c.dir)
 	if err != nil {
 		reqInfo := (&logger.ReqInfo{}).AppendTags("cachePath", c.dir)
-		ctx := logger.SetReqInfo(context.Background(), reqInfo)
+		ctx := logger.SetReqInfo(GlobalContext, reqInfo)
 		logger.LogIf(ctx, err)
 		return false
 	}
@@ -193,7 +193,7 @@ func (c *diskCache) diskUsageHigh() bool {
 	di, err := disk.GetInfo(c.dir)
 	if err != nil {
 		reqInfo := (&logger.ReqInfo{}).AppendTags("cachePath", c.dir)
-		ctx := logger.SetReqInfo(context.Background(), reqInfo)
+		ctx := logger.SetReqInfo(GlobalContext, reqInfo)
 		logger.LogIf(ctx, err)
 		return false
 	}
@@ -207,7 +207,7 @@ func (c *diskCache) diskAvailable(size int64) bool {
 	di, err := disk.GetInfo(c.dir)
 	if err != nil {
 		reqInfo := (&logger.ReqInfo{}).AppendTags("cachePath", c.dir)
-		ctx := logger.SetReqInfo(context.Background(), reqInfo)
+		ctx := logger.SetReqInfo(GlobalContext, reqInfo)
 		logger.LogIf(ctx, err)
 		return false
 	}
@@ -221,7 +221,7 @@ func (c *diskCache) toClear() uint64 {
 	di, err := disk.GetInfo(c.dir)
 	if err != nil {
 		reqInfo := (&logger.ReqInfo{}).AppendTags("cachePath", c.dir)
-		ctx := logger.SetReqInfo(context.Background(), reqInfo)
+		ctx := logger.SetReqInfo(GlobalContext, reqInfo)
 		logger.LogIf(ctx, err)
 		return 0
 	}
@@ -229,7 +229,7 @@ func (c *diskCache) toClear() uint64 {
 }
 
 // Purge cache entries that were not accessed.
-func (c *diskCache) purge(ctx context.Context, doneCh <-chan struct{}) {
+func (c *diskCache) purge(ctx context.Context) {
 	if c.diskUsageLow() {
 		return
 	}
@@ -800,7 +800,7 @@ func (c *diskCache) bitrotReadFromCache(ctx context.Context, filePath string, of
 		if !bytes.Equal(hashBytes, checksumHash) {
 			err = fmt.Errorf("hashes do not match expected %s, got %s",
 				hex.EncodeToString(checksumHash), hex.EncodeToString(hashBytes))
-			logger.LogIf(context.Background(), err)
+			logger.LogIf(GlobalContext, err)
 			return err
 		}
 
@@ -847,11 +847,11 @@ func (c *diskCache) Get(ctx context.Context, bucket, object string, rs *HTTPRang
 	if HasSuffix(object, SlashSeparator) {
 		// The lock taken above is released when
 		// objReader.Close() is called by the caller.
-		gr, gerr := NewGetObjectReaderFromReader(bytes.NewBuffer(nil), objInfo, opts.CheckCopyPrecondFn, nsUnlocker)
+		gr, gerr := NewGetObjectReaderFromReader(bytes.NewBuffer(nil), objInfo, opts, nsUnlocker)
 		return gr, numHits, gerr
 	}
 
-	fn, off, length, nErr := NewGetObjectReader(rs, objInfo, opts.CheckCopyPrecondFn, nsUnlocker)
+	fn, off, length, nErr := NewGetObjectReader(rs, objInfo, opts, nsUnlocker)
 	if nErr != nil {
 		return nil, numHits, nErr
 	}

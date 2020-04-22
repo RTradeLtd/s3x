@@ -49,6 +49,11 @@ func (target *HTTPClientTarget) IsActive() (bool, error) {
 	return true, nil
 }
 
+// HasQueueStore - No-Op. Added for interface compatibility
+func (target *HTTPClientTarget) HasQueueStore() bool {
+	return false
+}
+
 func (target *HTTPClientTarget) start() {
 	go func() {
 		defer func() {
@@ -134,12 +139,12 @@ func (target *HTTPClientTarget) Close() error {
 }
 
 func getNewUUID() (string, error) {
-	uuid, err := uuid.New()
+	u, err := uuid.NewRandom()
 	if err != nil {
 		return "", err
 	}
 
-	return uuid.String(), nil
+	return u.String(), nil
 }
 
 // NewHTTPClientTarget - creates new HTTP client target.
