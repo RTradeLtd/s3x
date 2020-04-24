@@ -1,0 +1,119 @@
+syntax = "proto3"; 
+package s3x;
+import "github.com/gogo/protobuf/gogoproto/gogo.proto";
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+
+service InfoAPI {
+    rpc GetHash(InfoRequest) returns (InfoResponse) { 
+        option (google.api.http) = { get: "/info" };
+    };
+}
+
+message InfoRequest {
+    string bucket = 1;
+    string object = 2;
+    // if set return the object data hash, not the hash of the protocol buffer object
+    // this is only applicable to requests for object info
+    bool objectDataOnly = 3;
+}
+
+message InfoResponse {
+    string bucket = 1;
+    string object = 2;
+    string hash = 3; 
+}
+
+// Ledger is our internal state keeper, and is responsible
+// for keeping track of buckets, objects, and their corresponding IPFS hashes
+message Ledger {
+    // key = bucket name
+    map<string, LedgerBucketEntry> buckets = 1;
+    // key = partID
+    map<string, MultipartUpload> multipartUploads = 2;   
+}
+
+// LedgerBucketEntry is an individual entry within the ledger containing information about a bucket
+message LedgerBucketEntry {
+    //if bucket is nil, this entry can be lazy loaded from ifps
+    Bucket bucket = 1;
+    string ipfsHash = 2;
+}
+
+// BucketInfo is used to store s3 bucket metadata
+message BucketInfo {
+    // name is the name of the bucket
+    string name = 1;
+    google.protobuf.Timestamp created = 2 [(gogoproto.stdtime) = true, (gogoproto.nullable) = false];
+    // the location of the bucket
+    string location = 3;
+}
+
+
+// Bucket is a data repositroy for S3 objects
+message Bucket {
+    // data associated with the object
+    bytes data = 1;
+    // information associated with this bucket
+    BucketInfo bucketInfo = 2 [(gogoproto.nullable) = false];
+    // maps object names to object hashes
+    map<string, string> objects = 3 [(gogoproto.nullable) = false];
+}
+
+// Object is a singular s3 object.
+// the data field contains the actual data 
+// referred to by this object, while the objectInfo
+// field is used to contain the information associated
+// wth the object
+message Object {
+    string dataHash = 1;
+    ObjectInfo objectInfo = 2 [(gogoproto.nullable) = false];
+}
+
+// ObjectInfo contains information about the object
+message ObjectInfo {
+    string bucket = 1;
+    string name = 2;
+    google.protobuf.Timestamp modTime = 3 [(gogoproto.stdtime) = true, (gogoproto.nullable) = false];
+    int64 size = 4;
+    bool isDir = 5;
+    string etag = 6;
+    string contentType = 7;
+    string contentEncoding = 8;
+    string expires = 9;
+    string storageClass = 10;
+    repeated ObjectPartInfo parts = 11 [(gogoproto.nullable) = false];
+    map<string, string> userDefined = 12;
+    bool metadataOnly = 13;
+    google.protobuf.Timestamp accTime = 14 [(gogoproto.stdtime) = true, (gogoproto.nullable) = true];
+    string backendType = 15;
+    string contentDisposition = 16;
+    string contentLanguage = 17;
+}
+
+
+// ObjectPartInfo contains information an individual object client.
+// For Etag, use dataHash
+message ObjectPartInfo {
+    // convertable to "int" type in minio.PartInfo
+    int64 number = 1;
+    // name of object in bucket
+    string name = 2;
+    // Date and time at which the part was uploaded.
+    google.protobuf.Timestamp lastModified = 3 [(gogoproto.stdtime) = true, (gogoproto.nullable) = false];
+    // Size in bytes of the part.
+    int64 size = 4;
+    // Decompressed Size.
+    int64 actualSize = 5;
+    // the hash of the data on ipfs
+    // in the case of multipart uploads
+    // this will refer to a unixfs object
+    string dataHash = 6;
+}
+
+message MultipartUpload {
+    ObjectInfo objectInfo = 1;
+    string id = 2;
+    //map of index to parts
+    map<int64, ObjectPartInfo>  objectParts = 3 [(gogoproto.nullable) = false];
+}
