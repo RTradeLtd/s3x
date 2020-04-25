@@ -16,6 +16,7 @@ services:
 branches:
   only:
     - master
+    - replace-master
 
 matrix:
   include:
