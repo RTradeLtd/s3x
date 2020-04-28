@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/RTradeLtd/s3x/pkg/bucket/policy"
+	"github.com/minio/minio/pkg/bucket/policy"
 )
 
 // SetBucketPolicy sets policy on bucket

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	minio "github.com/RTradeLtd/s3x/cmd"
+	minio "github.com/minio/minio/cmd"
 )
 
 // ListObjects lists all blobs in S3 bucket filtered by prefix

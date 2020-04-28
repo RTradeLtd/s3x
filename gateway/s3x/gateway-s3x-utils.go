@@ -1,7 +1,7 @@
 package s3x
 
 import (
-	minio "github.com/RTradeLtd/s3x/cmd"
+	minio "github.com/minio/minio/cmd"
 )
 
 /* Design Notes

@@ -7,8 +7,8 @@ import (
 	"math"
 	"testing"
 
-	minio "github.com/RTradeLtd/s3x/cmd"
-	"github.com/RTradeLtd/s3x/pkg/hash"
+	minio "github.com/minio/minio/cmd"
+	"github.com/minio/minio/pkg/hash"
 )
 
 const (

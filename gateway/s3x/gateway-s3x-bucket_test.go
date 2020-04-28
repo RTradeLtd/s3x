@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	minio "github.com/RTradeLtd/s3x/cmd"
+	minio "github.com/minio/minio/cmd"
 )
 
 const (

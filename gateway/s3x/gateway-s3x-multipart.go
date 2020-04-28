@@ -6,12 +6,12 @@ import (
 	fmt "fmt"
 	"time"
 
-	minio "github.com/RTradeLtd/s3x/cmd"
 	proto "github.com/gogo/protobuf/proto"
 	"github.com/ipfs/go-cid"
 	ipld "github.com/ipfs/go-ipld-format"
 	"github.com/ipfs/go-merkledag"
 	unixfs_pb "github.com/ipfs/go-unixfs/pb"
+	minio "github.com/minio/minio/cmd"
 	"github.com/segmentio/ksuid"
 )
 

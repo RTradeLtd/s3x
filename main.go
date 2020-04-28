@@ -11,10 +11,13 @@ package main // import "github.com/RTradeLtd/s3x"
 import (
 	"os"
 
-	minio "github.com/RTradeLtd/s3x/cmd"
+	minio "github.com/minio/minio/cmd"
 
-	// Import gateway
+	// Import s3x gateway
 	_ "github.com/RTradeLtd/s3x/gateway"
+
+	// Import all minio gateways
+	_ "github.com/minio/minio/cmd/gateway"
 )
 
 func main() {

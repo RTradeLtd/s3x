@@ -5,7 +5,7 @@ import (
 	"context"
 	"testing"
 
-	minio "github.com/RTradeLtd/s3x/cmd"
+	minio "github.com/minio/minio/cmd"
 )
 
 func TestS3X_Multipart_Badger(t *testing.T) {

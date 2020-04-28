@@ -42,23 +42,19 @@ fmt:
 
 lint:
 	@echo "Running $@ check"
-	@GO111MODULE=on ${GOPATH}/bin/golint -set_exit_status github.com/RTradeLtd/s3x/cmd/...
-	@GO111MODULE=on ${GOPATH}/bin/golint -set_exit_status github.com/RTradeLtd/s3x/pkg/...
+	@GO111MODULE=on ${GOPATH}/bin/golint -set_exit_status github.com/RTradeLtd/s3x/...
 
 staticcheck:
 	@echo "Running $@ check"
-	@GO111MODULE=on ${GOPATH}/bin/staticcheck github.com/RTradeLtd/s3x/cmd/...
-	@GO111MODULE=on ${GOPATH}/bin/staticcheck github.com/RTradeLtd/s3x/pkg/...
+	@GO111MODULE=on ${GOPATH}/bin/staticcheck github.com/RTradeLtd/s3x/...
 
 spelling:
 	@echo "Running $@ check"
-	@GO111MODULE=on ${GOPATH}/bin/misspell -locale US -error `find cmd/`
-	@GO111MODULE=on ${GOPATH}/bin/misspell -locale US -error `find pkg/`
-	@GO111MODULE=on ${GOPATH}/bin/misspell -locale US -error `find docs/`
+	@GO111MODULE=on ${GOPATH}/bin/misspell -locale US -error `find gateway/`
 	@GO111MODULE=on ${GOPATH}/bin/misspell -locale US -error `find buildscripts/`
 	@GO111MODULE=on ${GOPATH}/bin/misspell -locale US -error `find dockerscripts/`
 
-# Builds minio, runs the verifiers then runs the tests.
+# Builds s3x, runs the verifiers then runs the tests.
 check: test
 test: verifiers build
 	@echo "Running unit tests"
@@ -68,37 +64,37 @@ test-race: verifiers build
 	@echo "Running unit tests under -race"
 	@(env bash $(PWD)/buildscripts/race.sh)
 
-# Verify minio binary
+# Verify s3x binary
 verify:
 	@echo "Verifying build with race"
-	@GO111MODULE=on CGO_ENABLED=1 go build -race -tags kqueue -trimpath --ldflags $(BUILD_LDFLAGS) -o $(PWD)/minio 1>/dev/null
+	@GO111MODULE=on CGO_ENABLED=1 go build -race -tags kqueue -trimpath --ldflags $(BUILD_LDFLAGS) -o $(PWD)/minio-s3x 1>/dev/null
 	@(env bash $(PWD)/buildscripts/verify-build.sh)
 
-# Verify healing of disks with minio binary
+# Verify healing of disks with s3x binary
 verify-healing:
 	@echo "Verify healing build with race"
-	@GO111MODULE=on CGO_ENABLED=1 go build -race -tags kqueue -trimpath --ldflags $(BUILD_LDFLAGS) -o $(PWD)/minio 1>/dev/null
+	@GO111MODULE=on CGO_ENABLED=1 go build -race -tags kqueue -trimpath --ldflags $(BUILD_LDFLAGS) -o $(PWD)/minio-s3x 1>/dev/null
 	@(env bash $(PWD)/buildscripts/verify-healing.sh)
 
-# Builds minio locally.
+# Builds s3x locally.
 build: checks
-	@echo "Building minio binary to './minio'"
-	@GO111MODULE=on CGO_ENABLED=0 go build -tags kqueue -trimpath  --ldflags $(BUILD_LDFLAGS) -o $(PWD)/minio 1>/dev/null
+	@echo "Building s3x binary to './minio-s3x'"
+	@GO111MODULE=on CGO_ENABLED=0 go build -tags kqueue -trimpath  --ldflags $(BUILD_LDFLAGS) -o $(PWD)/minio-s3x 1>/dev/null
 
 docker: build
 	@docker build -t $(TAG) . -f Dockerfile.dev
 
-# Builds minio and installs it to $GOPATH/bin.
+# Builds s3x and installs it to $GOPATH/bin.
 install: build
-	@echo "Installing minio binary to '$(GOPATH)/bin/minio'"
-	@mkdir -p $(GOPATH)/bin && cp -f $(PWD)/minio $(GOPATH)/bin/minio
-	@echo "Installation successful. To learn more, try \"minio --help\"."
+	@echo "Installing s3x binary to '$(GOPATH)/bin/minio-s3x'"
+	@mkdir -p $(GOPATH)/bin && cp -f $(PWD)/s3x $(GOPATH)/bin/minio-s3x
+	@echo "Installation successful. To learn more, try \"minio-s3x --help\"."
 
 clean:
 	@echo "Cleaning up all the generated files"
 	@find . -name '*.test' | xargs rm -fv
 	@find . -name '*~' | xargs rm -fv
-	@rm -rvf minio
+	@rm -rvf minio-s3x
 	@rm -rvf build
 	@rm -rvf release
 	@rm -rvf .verify*

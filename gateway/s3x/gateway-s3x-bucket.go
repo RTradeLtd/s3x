@@ -5,7 +5,7 @@ import (
 	"log"
 	"time"
 
-	minio "github.com/RTradeLtd/s3x/cmd"
+	minio "github.com/minio/minio/cmd"
 )
 
 var isTest = false

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	minio "github.com/RTradeLtd/s3x/cmd"
-	"github.com/RTradeLtd/s3x/pkg/auth"
+	minio "github.com/minio/minio/cmd"
+	"github.com/minio/minio/pkg/auth"
 )
 
 func init() {
