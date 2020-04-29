@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/RTradeLtd/TxPB/v3 v3.2.3
 	github.com/RTradeLtd/go-ds-badger/v2 v2.1.0
+	github.com/dgraph-io/badger/v2 v2.0.3 // indirect
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway v1.14.4
