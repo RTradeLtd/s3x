@@ -40,7 +40,7 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/gorilla/rpc v1.2.0
 	github.com/gorilla/websocket v1.4.1 // indirect
-	github.com/grpc-ecosystem/grpc-gateway v1.13.0
+	github.com/grpc-ecosystem/grpc-gateway v1.14.4
 	github.com/hashicorp/go-hclog v0.9.2 // indirect
 	github.com/hashicorp/raft v1.1.1-0.20190703171940-f639636d18e0 // indirect
 	github.com/hashicorp/vault/api v1.0.4
