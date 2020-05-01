@@ -49,7 +49,7 @@ require (
 	github.com/ipfs/go-datastore v0.4.4
 	github.com/ipfs/go-ds-crdt v0.1.8-0.20200310091849-1dca473cbff6
 	github.com/ipfs/go-ipld-format v0.2.0
-	github.com/ipfs/go-merkledag v0.3.1
+	github.com/ipfs/go-merkledag v0.3.2
 	github.com/ipfs/go-unixfs v0.2.4
 	github.com/json-iterator/go v1.1.9
 	github.com/klauspost/compress v1.10.3
