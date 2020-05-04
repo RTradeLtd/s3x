@@ -1,7 +1,7 @@
 **/*.swp
 cover.out
 *~
-minio
+minio-s3x
 !*/
 site/
 **/*.test
@@ -24,3 +24,4 @@ stage/
 config.json
 
 s3xstore/
+
