@@ -37,8 +37,7 @@ vet:
 
 fmt:
 	@echo "Running $@ check"
-	@GO111MODULE=on gofmt -d cmd/
-	@GO111MODULE=on gofmt -d pkg/
+	@GO111MODULE=on gofmt -s -d .
 
 lint:
 	@echo "Running $@ check"
