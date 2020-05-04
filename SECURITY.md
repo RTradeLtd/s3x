@@ -1,5 +1,7 @@
 # Security Policy
 
+TODO: update Security for s3x
+
 ## Supported Versions
 
 We always provide security updates for the [latest release](https://github.com/RTradeLtd/s3x/releases/latest).
