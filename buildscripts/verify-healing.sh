@@ -19,14 +19,14 @@ set -e
 set -E
 set -o pipefail
 
-if [ ! -x "$PWD/minio" ]; then
+if [ ! -x "$PWD/minio-s3x" ]; then
     echo "minio executable binary not found in current directory"
     exit 1
 fi
 
 WORK_DIR="$PWD/.verify-$RANDOM"
-MINIO_CONFIG_DIR="$WORK_DIR/.minio"
-MINIO=( "$PWD/minio" --config-dir "$MINIO_CONFIG_DIR" server )
+MINIO_CONFIG_DIR="$WORK_DIR/.minio-s3x"
+MINIO=( "$PWD/minio-s3x" --config-dir "$MINIO_CONFIG_DIR" server )
 
 function start_minio_3_node() {
     declare -a minio_pids
@@ -39,15 +39,15 @@ function start_minio_3_node() {
         ARGS+=("http://127.0.0.1:$[$start_port+$i]${WORK_DIR}/$i/1/ http://127.0.0.1:$[$start_port+$i]${WORK_DIR}/$i/2/ http://127.0.0.1:$[$start_port+$i]${WORK_DIR}/$i/3/ http://127.0.0.1:$[$start_port+$i]${WORK_DIR}/$i/4/ http://127.0.0.1:$[$start_port+$i]${WORK_DIR}/$i/5/ http://127.0.0.1:$[$start_port+$i]${WORK_DIR}/$i/6/")
     done
 
-    "${MINIO[@]}" --address ":$[$start_port+1]" ${ARGS[@]} > "${WORK_DIR}/dist-minio-server1.log" 2>&1 &
+    "${MINIO[@]}" --address ":$[$start_port+1]" ${ARGS[@]} > "${WORK_DIR}/dist-minio-s3x-server1.log" 2>&1 &
     minio_pids[0]=$!
     disown "${minio_pids[0]}"
 
-    "${MINIO[@]}" --address ":$[$start_port+2]" ${ARGS[@]} > "${WORK_DIR}/dist-minio-server2.log" 2>&1 &
+    "${MINIO[@]}" --address ":$[$start_port+2]" ${ARGS[@]} > "${WORK_DIR}/dist-minio-s3x-server2.log" 2>&1 &
     minio_pids[1]=$!
     disown "${minio_pids[1]}"
 
-    "${MINIO[@]}" --address ":$[$start_port+3]" ${ARGS[@]} > "${WORK_DIR}/dist-minio-server3.log" 2>&1 &
+    "${MINIO[@]}" --address ":$[$start_port+3]" ${ARGS[@]} > "${WORK_DIR}/dist-minio-s3x-server3.log" 2>&1 &
     minio_pids[2]=$!
     disown "${minio_pids[2]}"
 
@@ -56,7 +56,7 @@ function start_minio_3_node() {
         if ! kill "$pid"; then
             for i in $(seq 1 3); do
                 echo "server$i log:"
-                cat "${WORK_DIR}/dist-minio-server$i.log"
+                cat "${WORK_DIR}/dist-minio-s3x-server$i.log"
             done
             echo "FAILED"
             purge "$WORK_DIR"
@@ -70,7 +70,7 @@ function start_minio_3_node() {
 
 
 function check_online() {
-    if grep -q 'Server switching to safe mode' ${WORK_DIR}/dist-minio-*.log; then
+    if grep -q 'Server switching to safe mode' ${WORK_DIR}/dist-minio-s3x-*.log; then
         echo "1"
     fi
 }
@@ -105,7 +105,7 @@ function perform_test() {
         pkill -9 minio
         for i in $(seq 1 3); do
             echo "server$i log:"
-            cat "${WORK_DIR}/dist-minio-server$i.log"
+            cat "${WORK_DIR}/dist-minio-s3x-server$i.log"
         done
         echo "FAILED"
         purge "$WORK_DIR"

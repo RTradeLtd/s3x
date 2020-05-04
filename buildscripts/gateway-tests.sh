@@ -22,7 +22,7 @@ set -o pipefail
 function start_minio_server()
 {
     MINIO_ACCESS_KEY=minio MINIO_SECRET_KEY=minio123 \
-                    minio --quiet --json server /data --address 127.0.0.1:24242 > server.log 2>&1 &
+                    minio-s3x --quiet --json server /data --address 127.0.0.1:24242 > server.log 2>&1 &
     server_pid=$!
     sleep 10
 
@@ -32,7 +32,7 @@ function start_minio_server()
 function start_minio_gateway_s3()
 {
     MINIO_ACCESS_KEY=minio MINIO_SECRET_KEY=minio123 \
-                    minio --quiet --json gateway s3 http://127.0.0.1:24242 \
+                    minio-s3x --quiet --json gateway s3 http://127.0.0.1:24242 \
                     --address 127.0.0.1:24240 > gateway.log 2>&1 &
     gw_pid=$!
     sleep 10
