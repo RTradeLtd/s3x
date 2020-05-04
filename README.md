@@ -2,7 +2,7 @@
 
 `s3x` is an open-source fork of `github.com/minio/minio` modified to work with TemporalX and an S3 gateway. It allows using IPFS from any application that currently uses S3, or minio, without needing to redesign your application architecture. It represents an incredible leap forward in usability for IPFS, and up until now no implementation of IPFS allowed you to use it, without needing to build your application specifically for IPFS. Additionally this means your S3 applications can leverage the benefits of IPFS as if it were a native IPFS application. One might say its better than...
 
-# Upstream Compatability
+# Upstream Compatibility
 
 At the moment S3X has diverged from the MinIO codebase in the sense that we are implementing features in a fork of the codebase. We discussed with one of the MinIO lead devs, and they agreed that once we finish the iteration and have the first "v1 release" of s3x they will accept a PR from us to merge this functionality upstream.
 
