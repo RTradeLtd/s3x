@@ -8,7 +8,7 @@ ENV GO111MODULE on
 
 RUN  \
      apk add --no-cache git && \
-     git clone https://github.com/RTradeLtd/s3x && cd minio && \
+     git clone https://github.com/RTradeLtd/s3x && cd s3x && \
      go install -v -ldflags "$(go run buildscripts/gen-ldflags.go)"
 
 FROM alpine:3.10
@@ -21,9 +21,9 @@ ENV MINIO_ACCESS_KEY_FILE=access_key \
 
 EXPOSE 9000
 
-COPY --from=0 /go/bin/minio /usr/bin/minio
-COPY --from=0 /go/minio/CREDITS /third_party/
-COPY --from=0 /go/minio/dockerscripts/docker-entrypoint.sh /usr/bin/
+COPY --from=0 /go/bin/s3x /usr/bin/minio-s3x
+COPY --from=0 /go/s3x/CREDITS /third_party/
+COPY --from=0 /go/s3x/dockerscripts/docker-entrypoint.sh /usr/bin/
 
 RUN  \
      apk add --no-cache ca-certificates 'curl>7.61.0' 'su-exec>=0.2' && \
@@ -33,4 +33,4 @@ ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 
 VOLUME ["/data"]
 
-CMD ["minio"]
+CMD ["minio-s3x"]

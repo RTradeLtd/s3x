@@ -4,11 +4,11 @@
 
 ## Upstream Compatibility
 
-TODO: update this section.
-
-At the moment S3X has diverged from the MinIO codebase in the sense that we are implementing features in a fork of the codebase. We discussed with one of the MinIO lead devs, and they agreed that once we finish the iteration and have the first "v1 release" of s3x they will accept a PR from us to merge this functionality upstream.
+s3x targets to be fully compatible with S3 and the latest minio release. We discussed with one of the MinIO lead devs, and they agreed that once we finish the iteration and have the first "v1 release" of s3x they will accept a PR from us to merge this functionality upstream.
 
 After that we will continue to develop on this fork of the codebase, however anytime we release bug fixes, new features, etc... we will be porting them upstream.
+
+If you observe any divergence from S3 or minio behaviour, please report them in the issues.
 
 ## Development/Testing
 
@@ -126,7 +126,11 @@ Please note that this doesn't give high availability for the actual bucket/objec
 
 Include in `kubernetes_local.yml` is a deployment that enables running all components of S3X in Kubernetes including the TemporalX node that is needed. This will require you to have the TemporalX docker image locally, which currently must be built locally. As such only those with access to the TemporalX repository can use this.
 
-For those who dont have access to the repository, you can use the `kubernetes_local.yml` file, which is configured to use the publicly accessible production TemporalX service.
+For those who don't have access to the repository, you can use the `kubernetes_remote.yml` file, which is configured to use the publicly accessible production TemporalX service.
+
+### Docker
+
+TODO: some docker files are copied and edited from minio, but not fully ready
 
 ## Product Comparisons
 
