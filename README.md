@@ -10,6 +10,10 @@ After that we will continue to develop on this fork of the codebase, however any
 
 If you observe any divergence from S3 or minio behaviour, please report them in the issues.
 
+### Supported minio versions
+
+Because of frequent changes in minio's interface types and project structure, only the version refenced in the go.mod file is supported for every release.
+
 ## Development/Testing
 
 Unit testing uses the environment variable `TEST_XAPI` to set the TemporalX server address, if not set, `xapi-dev.temporal.cloud:9090` is used.

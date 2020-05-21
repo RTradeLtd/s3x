@@ -32,7 +32,7 @@ func testS3XxObjectsGetHash(t *testing.T, dsType DSType) {
 			t.Fatal(err)
 		}
 	}()
-	if err := gateway.MakeBucketWithLocation(ctx, testBucket1, "us-east-1"); err != nil {
+	if err := gateway.MakeBucketWithLocation(ctx, testBucket1, "us-east-1", false); err != nil {
 		t.Fatal(err)
 	}
 	testPutObject(t, gateway)
