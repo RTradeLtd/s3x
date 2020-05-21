@@ -70,14 +70,14 @@ func testGetObject(t *testing.T, g *testGateway) {
 }
 
 func TestS3XG_Object_Badger(t *testing.T) {
-	testS3XGObject(t, DSTypeBadger)
+	testS3XGObject(t, DSTypeBadger, false)
 }
 func TestS3XG_Object_Crdt(t *testing.T) {
-	testS3XGObject(t, DSTypeCrdt)
+	testS3XGObject(t, DSTypeCrdt, false)
 }
-func testS3XGObject(t *testing.T, dsType DSType) {
+func testS3XGObject(t *testing.T, dsType DSType, passthrough bool) {
 	ctx := context.Background()
-	gateway := newTestGateway(t, dsType)
+	gateway := newTestGateway(t, dsType, passthrough)
 	defer func() {
 		if err := gateway.Shutdown(ctx); err != nil {
 			t.Fatal(err)

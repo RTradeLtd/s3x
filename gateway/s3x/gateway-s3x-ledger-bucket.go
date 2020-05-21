@@ -56,32 +56,43 @@ func (ls *ledgerStore) GetBucketHash(bucket string) (string, error) {
 // if err is returned, then the datastore can not be read
 // if nil, nil is return, then bucket does not exit
 func (ls *ledgerStore) getBucketNilable(bucket string) (*LedgerBucketEntry, error) {
-	ls.mapLocker.Lock()
-	b, ok := ls.l.Buckets[bucket]
-	ls.mapLocker.Unlock()
-	if !ok {
+	load := func() (*LedgerBucketEntry, error) {
 		bHash, err := ls.ds.Get(dsBucketKey.ChildString(bucket))
 		if err != nil {
 			if err == datastore.ErrNotFound {
-				ls.mapLocker.Lock()
-				ls.l.Buckets[bucket] = nil
-				ls.mapLocker.Unlock()
 				return nil, nil
 			}
 			return nil, err
 		}
-		//Update bucket only if it's not loaded
-		ls.mapLocker.Lock()
-		b, ok = ls.l.Buckets[bucket]
-		if !ok {
-			b = &LedgerBucketEntry{
-				IpfsHash: string(bHash),
-			}
-			ls.l.Buckets[bucket] = b
-		}
-		ls.mapLocker.Unlock()
+		return &LedgerBucketEntry{
+			IpfsHash: string(bHash),
+		}, nil
 	}
-	return b, nil
+
+	if ls.l == nil {
+		return load()
+	}
+
+	ls.mapLocker.Lock()
+	b, ok := ls.l.Buckets[bucket]
+	ls.mapLocker.Unlock()
+	if ok {
+		return b, nil
+	}
+	b, err := load()
+	if err != nil {
+		return nil, err
+	}
+	//Update bucket only if it's not loaded since we released lock during load
+	ls.mapLocker.Lock()
+	if b2, exist := ls.l.Buckets[bucket]; !exist {
+		ls.l.Buckets[bucket] = b
+		ls.mapLocker.Unlock()
+		return b, nil
+	} else {
+		ls.mapLocker.Unlock()
+		return b2, nil
+	}
 }
 
 // getBucketRequired returns a lazy loading LedgerBucketEntry

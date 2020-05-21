@@ -13,14 +13,14 @@ const (
 )
 
 func TestS3X_Bucket_Badger(t *testing.T) {
-	testS3XBucket(t, DSTypeBadger)
+	testS3XBucket(t, DSTypeBadger, false)
 }
 func TestS3X_Bucket_Crdt(t *testing.T) {
-	testS3XBucket(t, DSTypeCrdt)
+	testS3XBucket(t, DSTypeCrdt, false)
 }
-func testS3XBucket(t *testing.T, dsType DSType) {
+func testS3XBucket(t *testing.T, dsType DSType, passthrough bool) {
 	ctx := context.Background()
-	gateway := newTestGateway(t, dsType)
+	gateway := newTestGateway(t, dsType, passthrough)
 	defer func() {
 		if err := gateway.Shutdown(ctx); err != nil {
 			t.Fatal(err)
