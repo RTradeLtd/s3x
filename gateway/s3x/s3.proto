@@ -50,7 +50,7 @@ message BucketInfo {
 }
 
 
-// Bucket is a data repositroy for S3 objects
+// Bucket is a data repository for S3 objects
 message Bucket {
     // data associated with the object
     bytes data = 1;
@@ -64,7 +64,7 @@ message Bucket {
 // the data field contains the actual data 
 // referred to by this object, while the objectInfo
 // field is used to contain the information associated
-// wth the object
+// with the object
 message Object {
     string dataHash = 1;
     ObjectInfo objectInfo = 2 [(gogoproto.nullable) = false];
@@ -95,7 +95,7 @@ message ObjectInfo {
 // ObjectPartInfo contains information an individual object client.
 // For Etag, use dataHash
 message ObjectPartInfo {
-    // convertable to "int" type in minio.PartInfo
+    // convertible to "int" type in minio.PartInfo
     int64 number = 1;
     // name of object in bucket
     string name = 2;
