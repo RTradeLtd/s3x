@@ -49,6 +49,7 @@ func testS3XBucket(t *testing.T, dsType DSType) {
 					ctx,
 					tt.args.bucketName,
 					"us-east-1",
+					false,
 				)
 				if (err != nil) != tt.wantErr {
 					t.Fatalf("MakeBucketWithLocation() err %v, wantErr %v", err, tt.wantErr)

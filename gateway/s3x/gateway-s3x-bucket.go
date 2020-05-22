@@ -14,7 +14,14 @@ var isTest = false
 func (x *xObjects) MakeBucketWithLocation(
 	ctx context.Context,
 	name, location string,
+	lockEnabled bool,
 ) error {
+	if lockEnabled {
+		// lockEnabled was added in https://github.com/minio/minio/pull/9548/files#diff-ffa5495ade5a5a87da532a15efe2c38b
+		// which is also NotImplemented in the s3 gateway as of may 21st, 2020
+		return minio.NotImplemented{}
+	}
+
 	b := &Bucket{BucketInfo: BucketInfo{
 		Location: location,
 	}}

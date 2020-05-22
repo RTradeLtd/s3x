@@ -87,7 +87,7 @@ func testS3XGObject(t *testing.T, dsType DSType) {
 		bucketName, objectName string
 	}
 	// setup test bucket
-	if err := gateway.MakeBucketWithLocation(ctx, testBucket1, "us-east-1"); err != nil {
+	if err := gateway.MakeBucketWithLocation(ctx, testBucket1, "us-east-1", false); err != nil {
 		t.Fatal(err)
 	}
 	t.Run("PutObject", func(t *testing.T) {
@@ -236,7 +236,7 @@ func testS3XGObject(t *testing.T, dsType DSType) {
 	t.Run("CopyObject", func(t *testing.T) {
 		dstBucket := "dstBucket"
 		dstObject := "dstObject"
-		err := gateway.MakeBucketWithLocation(ctx, dstBucket, "")
+		err := gateway.MakeBucketWithLocation(ctx, dstBucket, "", false)
 		if err != nil {
 			t.Fatal(err)
 		}

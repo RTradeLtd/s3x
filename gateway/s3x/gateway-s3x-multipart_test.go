@@ -25,7 +25,7 @@ func testS3XMultipart(t *testing.T, dsType DSType) {
 			t.Fatal(err)
 		}
 	}()
-	if err := gateway.MakeBucketWithLocation(ctx, bucket, "us-east-1"); err != nil {
+	if err := gateway.MakeBucketWithLocation(ctx, bucket, "us-east-1", false); err != nil {
 		t.Fatal(err)
 	}
 
