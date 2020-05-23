@@ -9,8 +9,14 @@ import (
 func TestS3X_xObjects_GetHash_Badger(t *testing.T) {
 	testS3XxObjectsGetHash(t, DSTypeBadger, false)
 }
+func TestS3X_xObjects_GetHash_Badger_Passthrough(t *testing.T) {
+	testS3XxObjectsGetHash(t, DSTypeBadger, true)
+}
 func TestS3X_xObjects_GetHash_Crdt(t *testing.T) {
 	testS3XxObjectsGetHash(t, DSTypeCrdt, false)
+}
+func TestS3X_xObjects_GetHash_Crdt_Passthrough(t *testing.T) {
+	testS3XxObjectsGetHash(t, DSTypeCrdt, true)
 }
 func testS3XxObjectsGetHash(t *testing.T, dsType DSType, passthrough bool) {
 	tests := []struct {

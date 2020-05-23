@@ -11,8 +11,14 @@ import (
 func TestS3X_Multipart_Badger(t *testing.T) {
 	testS3XMultipart(t, DSTypeBadger, false)
 }
+func TestS3X_Multipart_Badger_Passthrough(t *testing.T) {
+	testS3XMultipart(t, DSTypeBadger, true)
+}
 func TestS3X_Multipart_Crdt(t *testing.T) {
 	testS3XMultipart(t, DSTypeCrdt, false)
+}
+func TestS3X_Multipart_Crdt_Passthrough(t *testing.T) {
+	testS3XMultipart(t, DSTypeCrdt, true)
 }
 func testS3XMultipart(t *testing.T, dsType DSType, passthrough bool) {
 	bucket := "my multipart bucket"

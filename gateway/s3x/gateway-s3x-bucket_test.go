@@ -15,8 +15,14 @@ const (
 func TestS3X_Bucket_Badger(t *testing.T) {
 	testS3XBucket(t, DSTypeBadger, false)
 }
+func TestS3X_Bucket_Badger_Passthrough(t *testing.T) {
+	testS3XBucket(t, DSTypeBadger, true)
+}
 func TestS3X_Bucket_Crdt(t *testing.T) {
 	testS3XBucket(t, DSTypeCrdt, false)
+}
+func TestS3X_Bucket_Crdt_Passthrough(t *testing.T) {
+	testS3XBucket(t, DSTypeCrdt, true)
 }
 func testS3XBucket(t *testing.T, dsType DSType, passthrough bool) {
 	ctx := context.Background()

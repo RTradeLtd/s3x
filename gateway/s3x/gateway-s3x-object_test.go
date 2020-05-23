@@ -72,8 +72,14 @@ func testGetObject(t *testing.T, g *testGateway) {
 func TestS3XG_Object_Badger(t *testing.T) {
 	testS3XGObject(t, DSTypeBadger, false)
 }
+func TestS3XG_Object_Badger_Passthrough(t *testing.T) {
+	testS3XGObject(t, DSTypeBadger, true)
+}
 func TestS3XG_Object_Crdt(t *testing.T) {
 	testS3XGObject(t, DSTypeCrdt, false)
+}
+func TestS3XG_Object_Crdt_Passthrough(t *testing.T) {
+	testS3XGObject(t, DSTypeCrdt, true)
 }
 func testS3XGObject(t *testing.T, dsType DSType, passthrough bool) {
 	ctx := context.Background()

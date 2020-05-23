@@ -12,8 +12,14 @@ import (
 func TestS3X_LedgerStore_Badger(t *testing.T) {
 	testS3XLedgerStore(t, DSTypeBadger, false)
 }
+func TestS3X_LedgerStore_Badger_Passthrough(t *testing.T) {
+	testS3XLedgerStore(t, DSTypeBadger, true)
+}
 func TestS3X_LedgerStore_Crdt(t *testing.T) {
 	testS3XLedgerStore(t, DSTypeCrdt, false)
+}
+func TestS3X_LedgerStore_Crdt_Passthrough(t *testing.T) {
+	testS3XLedgerStore(t, DSTypeCrdt, true)
 }
 func testS3XLedgerStore(t *testing.T, dsType DSType, passthrough bool) {
 	ctx := context.Background()

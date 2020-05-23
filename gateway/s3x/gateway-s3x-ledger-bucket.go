@@ -163,18 +163,20 @@ func (ls *ledgerStore) saveBucket(ctx context.Context, bucket string, b *Bucket)
 	if err != nil {
 		return nil, err
 	}
+
+	//save hash to ledger
 	if err := ls.ds.Put(dsBucketKey.ChildString(bucket), []byte(bHash)); err != nil {
 		return nil, err
 	}
-
-	//save hash to ledger
 	lb := &LedgerBucketEntry{
 		Bucket:   b,
 		IpfsHash: bHash,
 	}
-	ls.mapLocker.Lock()
-	ls.l.Buckets[bucket] = lb
-	ls.mapLocker.Unlock()
+	if ls.l != nil {
+		ls.mapLocker.Lock()
+		ls.l.Buckets[bucket] = lb
+		ls.mapLocker.Unlock()
+	}
 	return lb, nil
 }
 
@@ -208,9 +210,11 @@ func (ls *ledgerStore) DeleteBucket(bucket string) error {
 	if err != nil {
 		return err
 	}
-	ls.mapLocker.Lock()
-	delete(ls.l.Buckets, bucket)
-	ls.mapLocker.Unlock()
+	if ls.l != nil {
+		ls.mapLocker.Lock()
+		delete(ls.l.Buckets, bucket)
+		ls.mapLocker.Unlock()
+	}
 	return ls.ds.Delete(dsBucketKey.ChildString(bucket))
 	//todo: remove from ipfs
 }
