@@ -85,14 +85,14 @@ func (ls *ledgerStore) getBucketNilable(bucket string) (*LedgerBucketEntry, erro
 	}
 	//Update bucket only if it's not loaded since we released lock during load
 	ls.mapLocker.Lock()
-	if b2, exist := ls.l.Buckets[bucket]; !exist {
-		ls.l.Buckets[bucket] = b
-		ls.mapLocker.Unlock()
-		return b, nil
-	} else {
+	b2, exist := ls.l.Buckets[bucket]
+	if exist {
 		ls.mapLocker.Unlock()
 		return b2, nil
 	}
+	ls.l.Buckets[bucket] = b
+	ls.mapLocker.Unlock()
+	return b, nil
 }
 
 // getBucketRequired returns a lazy loading LedgerBucketEntry
