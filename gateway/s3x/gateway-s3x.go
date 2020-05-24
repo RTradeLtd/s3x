@@ -99,6 +99,10 @@ func init() {
 				Usage: "the type backend to store ledger data in, supported values are [badger, crdt]",
 				Value: "badger",
 			},
+			cli.BoolFlag{
+				Name:  "ds.passthrough",
+				Usage: "turns off in-memory cache of some datastratures, lowers memory usage and allows network sync of the datastore to work, at a cost of performance",
+			},
 			cli.StringFlag{
 				Name:  "ds.topic",
 				Usage: "the topic used for crdt pubsub",
