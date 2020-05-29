@@ -53,7 +53,7 @@ var (
 
 // newTestGateway returns a testGateway that implements minio.ObjectLayer.
 // testGateway also removes all data save on disk when shutdown
-func newTestGateway(t *testing.T, dsType DSType) *testGateway {
+func newTestGateway(t *testing.T, dsType DSType, passthrough bool) *testGateway {
 	pathOnce.Do(func() {
 		testPath, testPathErr = ioutil.TempDir("", "s3x-test")
 	})
@@ -70,13 +70,14 @@ func newTestGateway(t *testing.T, dsType DSType) *testGateway {
 	}
 	os.Setenv("S3X_DS_PATH", testPath)
 	temx := &TEMX{
-		HTTPAddr:  "localhost:8889",
-		GRPCAddr:  "localhost:8888",
-		DSType:    dsType,
-		DSPath:    testPath,
-		CrdtTopic: testPath + time.Now().String(), //make sure the topic is unique
-		XAddr:     xaddr,
-		Insecure:  true,
+		HTTPAddr:      "localhost:8889",
+		GRPCAddr:      "localhost:8888",
+		DSType:        dsType,
+		DSPath:        testPath,
+		DSPassthrough: passthrough,
+		CrdtTopic:     testPath + time.Now().String(), //make sure the topic is unique
+		XAddr:         xaddr,
+		Insecure:      true,
 	}
 	g, err := temx.NewGatewayLayer(auth.Credentials{})
 	if err != nil {

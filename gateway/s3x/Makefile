@@ -2,10 +2,12 @@ gen:
 	# check out dependcies
 	# git clone https://github.com/gogo/protobuf.git ${GOPATH}/src/github.com/gogo/protobuf/
 	# git clone https://github.com/grpc-ecosystem/grpc-gateway.git ${GOPATH}/src/github.com/grpc-ecosystem/grpc-gateway/
-	# go get -u github.com/gogo/protobuf/protoc-gen-gogofaster 
-	# go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
-	# go get -u github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
-	# go get -u github.com/golang/protobuf/protoc-gen-go
+	go get github.com/gogo/protobuf/protoc-gen-gogofaster 
+	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
+	go get github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger
+	go get github.com/golang/protobuf/protoc-gen-go
+	go mod tidy
+
 	# generate golang bindings (dag)
 	protoc \
 		-I=. \

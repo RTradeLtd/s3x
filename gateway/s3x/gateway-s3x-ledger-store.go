@@ -42,14 +42,16 @@ type ledgerStore struct {
 	cleanup []func() error //a list of functions to call before we close the backing database.
 }
 
-func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient) (*ledgerStore, error) {
+func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient, passthrough bool) (*ledgerStore, error) {
 	ls := &ledgerStore{
 		ds:  namespace.Wrap(ds, dsPrefix),
 		dag: dag,
-		l: &Ledger{
+	}
+	if !passthrough {
+		ls.l = &Ledger{
 			Buckets:          make(map[string]*LedgerBucketEntry),
 			MultipartUploads: make(map[string]*MultipartUpload),
-		},
+		}
 	}
 	return ls, nil
 }

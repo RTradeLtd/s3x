@@ -9,17 +9,23 @@ import (
 )
 
 func TestS3X_Multipart_Badger(t *testing.T) {
-	testS3XMultipart(t, DSTypeBadger)
+	testS3XMultipart(t, DSTypeBadger, false)
+}
+func TestS3X_Multipart_Badger_Passthrough(t *testing.T) {
+	testS3XMultipart(t, DSTypeBadger, true)
 }
 func TestS3X_Multipart_Crdt(t *testing.T) {
-	testS3XMultipart(t, DSTypeCrdt)
+	testS3XMultipart(t, DSTypeCrdt, false)
 }
-func testS3XMultipart(t *testing.T, dsType DSType) {
+func TestS3X_Multipart_Crdt_Passthrough(t *testing.T) {
+	testS3XMultipart(t, DSTypeCrdt, true)
+}
+func testS3XMultipart(t *testing.T, dsType DSType, passthrough bool) {
 	bucket := "my multipart bucket"
 	object := "my multipart object"
 	objectETag := "bafybeibzfoslocl3zs4fngsqminlpikibos7u664circ6mw7kjwkwa6y54"
 	ctx := context.Background()
-	gateway := newTestGateway(t, dsType)
+	gateway := newTestGateway(t, dsType, passthrough)
 	defer func() {
 		if err := gateway.Shutdown(ctx); err != nil {
 			t.Fatal(err)

@@ -7,12 +7,18 @@ import (
 )
 
 func TestS3X_xObjects_GetHash_Badger(t *testing.T) {
-	testS3XxObjectsGetHash(t, DSTypeBadger)
+	testS3XxObjectsGetHash(t, DSTypeBadger, false)
+}
+func TestS3X_xObjects_GetHash_Badger_Passthrough(t *testing.T) {
+	testS3XxObjectsGetHash(t, DSTypeBadger, true)
 }
 func TestS3X_xObjects_GetHash_Crdt(t *testing.T) {
-	testS3XxObjectsGetHash(t, DSTypeCrdt)
+	testS3XxObjectsGetHash(t, DSTypeCrdt, false)
 }
-func testS3XxObjectsGetHash(t *testing.T, dsType DSType) {
+func TestS3X_xObjects_GetHash_Crdt_Passthrough(t *testing.T) {
+	testS3XxObjectsGetHash(t, DSTypeCrdt, true)
+}
+func testS3XxObjectsGetHash(t *testing.T, dsType DSType, passthrough bool) {
 	tests := []struct {
 		name    string
 		req     *InfoRequest
@@ -26,7 +32,7 @@ func testS3XxObjectsGetHash(t *testing.T, dsType DSType) {
 	}
 
 	ctx := context.Background()
-	gateway := newTestGateway(t, dsType)
+	gateway := newTestGateway(t, dsType, passthrough)
 	defer func() {
 		if err := gateway.Shutdown(ctx); err != nil {
 			t.Fatal(err)

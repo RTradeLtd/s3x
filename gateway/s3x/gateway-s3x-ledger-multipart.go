@@ -38,9 +38,11 @@ func (ls *ledgerStore) NewMultipartUpload(multipartID string, info *ObjectInfo) 
 		Id:          multipartID,
 		ObjectParts: make(map[int64]ObjectPartInfo),
 	}
-	ls.pmapLocker.Lock()
-	ls.l.MultipartUploads[multipartID] = m
-	ls.pmapLocker.Unlock()
+	if ls.l != nil {
+		ls.pmapLocker.Lock()
+		ls.l.MultipartUploads[multipartID] = m
+		ls.pmapLocker.Unlock()
+	}
 	data, err := m.Marshal()
 	if err != nil {
 		return err
@@ -147,9 +149,11 @@ func (ls *ledgerStore) getMultipartLoaded(uploadID string) (*MultipartUpload, er
 }
 
 func (ls *ledgerStore) DeleteMultipartID(uploadID string) error {
-	ls.pmapLocker.Lock()
-	defer ls.pmapLocker.Unlock()
-	delete(ls.l.MultipartUploads, uploadID)
+	if ls.l != nil {
+		ls.pmapLocker.Lock()
+		delete(ls.l.MultipartUploads, uploadID)
+		ls.pmapLocker.Unlock()
+	}
 	err := ls.ds.Delete(dsPartKey.ChildString(uploadID))
 	if err == datastore.ErrNotFound {
 		return ErrInvalidUploadID
@@ -159,13 +163,16 @@ func (ls *ledgerStore) DeleteMultipartID(uploadID string) error {
 
 // getMultipartNilable returns a MultipartUpload or nil if it did not exist
 func (ls *ledgerStore) getMultipartNilable(uploadID string) (*MultipartUpload, error) {
-	ls.pmapLocker.Lock()
-	defer ls.pmapLocker.Unlock()
-	mu, ok := ls.l.MultipartUploads[uploadID]
-	if ok {
-		// fast path
-		return mu, nil
+	if ls.l != nil {
+		ls.pmapLocker.Lock()
+		defer ls.pmapLocker.Unlock()
+		mu, ok := ls.l.MultipartUploads[uploadID]
+		if ok {
+			// fast path
+			return mu, nil
+		}
 	}
+
 	data, err := ls.ds.Get(dsPartKey.ChildString(uploadID))
 	if err == datastore.ErrNotFound {
 		return nil, nil // not found is nil, nil as documented
@@ -173,12 +180,14 @@ func (ls *ledgerStore) getMultipartNilable(uploadID string) (*MultipartUpload, e
 	if err != nil {
 		return nil, err
 	}
-	mu = &MultipartUpload{}
+	mu := &MultipartUpload{}
 	err = mu.Unmarshal(data)
 	if err != nil {
 		return nil, err
 	}
-	// cache MultipartUpload
-	ls.l.MultipartUploads[uploadID] = mu
+
+	if ls.l != nil {
+		ls.l.MultipartUploads[uploadID] = mu
+	}
 	return mu, nil
 }

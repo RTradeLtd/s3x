@@ -6,11 +6,6 @@ package s3x
 import (
 	context "context"
 	fmt "fmt"
-	io "io"
-	math "math"
-	math_bits "math/bits"
-	time "time"
-
 	_ "github.com/gogo/protobuf/gogoproto"
 	proto "github.com/gogo/protobuf/proto"
 	github_com_gogo_protobuf_types "github.com/gogo/protobuf/types"
@@ -18,6 +13,10 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	io "io"
+	math "math"
+	math_bits "math/bits"
+	time "time"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -327,7 +326,7 @@ func (m *BucketInfo) GetLocation() string {
 	return ""
 }
 
-// Bucket is a data repositroy for S3 objects
+// Bucket is a data repository for S3 objects
 type Bucket struct {
 	// data associated with the object
 	Data []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
@@ -395,7 +394,7 @@ func (m *Bucket) GetObjects() map[string]string {
 // the data field contains the actual data
 // referred to by this object, while the objectInfo
 // field is used to contain the information associated
-// wth the object
+// with the object
 type Object struct {
 	DataHash   string     `protobuf:"bytes,1,opt,name=dataHash,proto3" json:"dataHash,omitempty"`
 	ObjectInfo ObjectInfo `protobuf:"bytes,2,opt,name=objectInfo,proto3" json:"objectInfo"`
@@ -624,7 +623,7 @@ func (m *ObjectInfo) GetContentLanguage() string {
 // ObjectPartInfo contains information an individual object client.
 // For Etag, use dataHash
 type ObjectPartInfo struct {
-	// convertable to "int" type in minio.PartInfo
+	// convertible to "int" type in minio.PartInfo
 	Number int64 `protobuf:"varint,1,opt,name=number,proto3" json:"number,omitempty"`
 	// name of object in bucket
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`

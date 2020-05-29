@@ -37,13 +37,14 @@ const (
 
 // TEMX implements a MinIO gateway on top of TemporalX
 type TEMX struct {
-	HTTPAddr  string
-	GRPCAddr  string
-	DSType    DSType
-	DSPath    string
-	CrdtTopic string
-	XAddr     string
-	Insecure  bool // whether or not we have an insecure connection to TemporalX
+	HTTPAddr      string // HTTP address and port to serve from
+	GRPCAddr      string // GRPC address and port to serve from
+	DSType        DSType // the type of database to use
+	DSPath        string // the location of local data for the database
+	DSPassthrough bool   // turns off in-memory cache of some datastratures, lowers memory usage and allows network sync of the datastore to work, at a cost of performance.
+	CrdtTopic     string // if the database type is crdt, then this is used as the pubsub topic
+	XAddr         string // server and port of the XAPI address
+	Insecure      bool   // skip certificate verification when connecting to TemporalX
 }
 
 // infoAPIServer provides access to the InfoAPI
@@ -98,6 +99,10 @@ func init() {
 				Usage: "the type backend to store ledger data in, supported values are [badger, crdt]",
 				Value: "badger",
 			},
+			cli.BoolFlag{
+				Name:  "ds.passthrough",
+				Usage: "turns off in-memory cache of some datastratures, lowers memory usage and allows network sync of the datastore to work, at a cost of performance",
+			},
 			cli.StringFlag{
 				Name:  "ds.topic",
 				Usage: "the topic used for crdt pubsub",
@@ -148,7 +153,7 @@ func (g *TEMX) newBadgerLedgerStore(dag pb.NodeAPIClient) (*ledgerStore, error) 
 	if err != nil {
 		return nil, err
 	}
-	return newLedgerStore(ds, dag)
+	return newLedgerStore(ds, dag, g.DSPassthrough)
 }
 
 // newCrdtLedgerStore returns an instance of ledgerStore that uses crdt and backed by badgerv2
@@ -177,7 +182,7 @@ func (g *TEMX) newCrdtLedgerStore(ctx context.Context, dag pb.NodeAPIClient, pub
 	if err != nil {
 		return nil, err
 	}
-	ls, err := newLedgerStore(crdtds, dag)
+	ls, err := newLedgerStore(crdtds, dag, g.DSPassthrough)
 	if err != nil {
 		return nil, err
 	}
