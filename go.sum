@@ -23,8 +23,11 @@ github.com/DataDog/zstd v1.4.1/go.mod h1:1jcaCB/ufaK+sKp1NBhlGmpz41jOoPQ35bpF36t
 github.com/Kubuxu/go-os-helper v0.0.1/go.mod h1:N8B+I7vPCT80IcP58r50u4+gEEcsZETFUpAzWW2ep1Y=
 github.com/OneOfOne/xxhash v1.2.2 h1:KMrpdQIwFcEqXDklaen+P1axHaj9BSKzvpUUfnHldSE=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
+github.com/RTradeLtd/TxPB v1.1.1 h1:aLzf5dTkB8sPJUcXUtPhBVIeNfj/wVDO2d4xU8/pdt4=
 github.com/RTradeLtd/TxPB/v3 v3.2.4 h1:W1tUjhlVIVd3XaZ+h3Q0d8A/FJARKdEDm1F2zVCkFes=
 github.com/RTradeLtd/TxPB/v3 v3.2.4/go.mod h1:i825/csWquH1UTNKgF9OZ175KSptuB2qqcBN+7pG2mU=
+github.com/RTradeLtd/TxPB/v3 v3.4.2 h1:JPs2tCewfGCiGXeGzsFln4gz7GlV8nXiYo4dc8+UGQ4=
+github.com/RTradeLtd/TxPB/v3 v3.4.2/go.mod h1:i825/csWquH1UTNKgF9OZ175KSptuB2qqcBN+7pG2mU=
 github.com/RTradeLtd/go-ds-badger/v2 v2.1.0 h1:jkhaqxm0Ot5oOiSjD/UIlKNpPRTKJyA71BaWenRD2bA=
 github.com/RTradeLtd/go-ds-badger/v2 v2.1.0/go.mod h1:keBZTQCmUIslDCqWmlVyNyqbGmYhoVmPMxgR8phE1oU=
 github.com/RTradeLtd/go-libp2p-tls v0.2.3 h1:oZzA2TcJyl6jQNcrMPi14tV42Dq/8cAkCAofNUjVhnU=
