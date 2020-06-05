@@ -20,7 +20,7 @@ func (x *xObjects) ListObjects(
 	bucket, prefix, marker, delimiter string,
 	maxKeys int,
 ) (loi minio.ListObjectsInfo, e error) {
-	objs, err := x.ledgerStore.GetObjectInfos(ctx, bucket, prefix, marker, maxKeys)
+	objs, folders, nextMarker, err := x.ledgerStore.GetObjectInfos(ctx, bucket, prefix, marker, delimiter, maxKeys)
 	if err != nil {
 		return loi, x.toMinioErr(err, bucket, "", "")
 	}
@@ -28,6 +28,9 @@ func (x *xObjects) ListObjects(
 	for _, obj := range objs {
 		loi.Objects = append(loi.Objects, getMinioObjectInfo(&obj))
 	}
+	loi.NextMarker = nextMarker
+	loi.IsTruncated = nextMarker != ""
+	loi.Prefixes = folders
 	return loi, nil
 }
 
