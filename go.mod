@@ -16,7 +16,7 @@ require (
 	github.com/ipfs/go-merkledag v0.3.2
 	github.com/ipfs/go-unixfs v0.2.4
 	github.com/minio/cli v1.22.0
-	github.com/minio/minio v0.0.0-20200520211113-baa30f428943
+	github.com/minio/minio v0.0.0-20200605050920-4dd07e57631b
 	github.com/pkg/errors v0.9.1
 	github.com/segmentio/ksuid v1.0.2
 	go.uber.org/multierr v1.5.0
