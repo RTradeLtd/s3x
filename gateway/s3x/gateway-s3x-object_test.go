@@ -128,7 +128,7 @@ func testS3XGObject(t *testing.T, dsType DSType, passthrough bool) {
 					t.Fatalf("err %v, wantErr %v", err, tt.wantErr)
 				}
 				if err == nil && len(list.Objects) != expectedLength {
-					t.Fatalf("got unexpected list: %v", list)
+					t.Fatalf("got unexpected list: %+v", list)
 				}
 			})
 			t.Run("V2/"+tt.name, func(t *testing.T) {
@@ -142,7 +142,7 @@ func testS3XGObject(t *testing.T, dsType DSType, passthrough bool) {
 					t.Fatalf("err %v, wantErr %v", err, tt.wantErr)
 				}
 				if err == nil && len(list.Objects) != expectedLength {
-					t.Fatalf("got unexpected list: %v", list)
+					t.Fatalf("got unexpected list: %+v", list)
 				}
 			})
 			t.Run("V2/startsAfter/"+tt.name, func(t *testing.T) {

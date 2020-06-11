@@ -56,7 +56,10 @@ func (ls *ledgerStore) GetObjectInfos(ctx context.Context, bucket, prefix, start
 			return objects, folders, name, nil
 		}
 		sub := name[len(prefix):]
-		idx := strings.Index(sub, delimiter)
+		idx := -1
+		if delimiter != "" {
+			idx = strings.Index(sub, delimiter)
+		}
 		if idx < 0 {
 			obj, err := ls.object(ctx, bucket, name)
 			if err != nil {
