@@ -11,12 +11,12 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.14.6
 	github.com/ipfs/go-cid v0.0.6
 	github.com/ipfs/go-datastore v0.4.4
-	github.com/ipfs/go-ds-crdt v0.1.13
+	github.com/ipfs/go-ds-crdt v0.0.0-20200609114916-40eabf459dc8
 	github.com/ipfs/go-ipld-format v0.2.0
 	github.com/ipfs/go-merkledag v0.3.2
 	github.com/ipfs/go-unixfs v0.2.4
 	github.com/minio/cli v1.22.0
-	github.com/minio/minio v0.0.0-20200605050920-4dd07e57631b
+	github.com/minio/minio v0.0.0-20200611001031-62b1da3e2ce5
 	github.com/pkg/errors v0.9.1
 	github.com/segmentio/ksuid v1.0.2
 	go.uber.org/multierr v1.5.0
