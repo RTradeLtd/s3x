@@ -24,9 +24,9 @@ func (x *xObjects) ListObjects(
 	if err != nil {
 		return loi, x.toMinioErr(err, bucket, "", "")
 	}
-	loi.Objects = make([]minio.ObjectInfo, 0, len(objs))
-	for _, obj := range objs {
-		loi.Objects = append(loi.Objects, getMinioObjectInfo(&obj))
+	loi.Objects = make([]minio.ObjectInfo, len(objs))
+	for i, obj := range objs {
+		loi.Objects[i] = getMinioObjectInfo(&obj)
 	}
 	loi.NextMarker = nextMarker
 	loi.IsTruncated = nextMarker != ""
