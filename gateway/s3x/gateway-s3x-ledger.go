@@ -31,12 +31,12 @@ func (ls *ledgerStore) Close() error {
 // GETTER FUNCTINS //
 /////////////////////
 
-// GetObjectInfos returns a list of ordered ObjectInfos with given prefix ordered by name
-func (ls *ledgerStore) GetObjectInfos(ctx context.Context, bucket, prefix, startsFrom string, max int) ([]ObjectInfo, error) {
+// GetObjectInfos returns a list of ordered lists of objects and folders with the given filters
+func (ls *ledgerStore) GetObjectInfos(ctx context.Context, bucket, prefix, startsFrom, delimiter string, max int) ([]ObjectInfo, []string, string, error) {
 	defer ls.locker.read(bucket)()
 	b, err := ls.getBucketLoaded(ctx, bucket)
 	if err != nil {
-		return nil, err
+		return nil, nil, "", err
 	}
 	var names []string
 	objs := b.GetBucket().GetObjects()
@@ -46,18 +46,37 @@ func (ls *ledgerStore) GetObjectInfos(ctx context.Context, bucket, prefix, start
 		}
 	}
 	sort.Strings(names)
-	if max > 0 && len(names) > max {
-		names = names[:max]
-	}
-	list := make([]ObjectInfo, 0, len(names))
+
+	count := 0 //number of objects counted, up to max
+	objects := make([]ObjectInfo, 0)
+	folders := make([]string, 0)
+	lastFolder := ""
 	for _, name := range names {
-		obj, err := ls.object(ctx, bucket, name)
-		if err != nil {
-			return nil, err
+		if max > 0 && count >= max {
+			return objects, folders, name, nil
 		}
-		list = append(list, obj.GetObjectInfo())
+		sub := name[len(prefix):]
+		idx := -1
+		if delimiter != "" {
+			idx = strings.Index(sub, delimiter)
+		}
+		if idx < 0 {
+			obj, err := ls.object(ctx, bucket, name)
+			if err != nil {
+				return nil, nil, "", err
+			}
+			objects = append(objects, obj.GetObjectInfo())
+			count++
+		} else {
+			folder := prefix + sub[:idx] + delimiter
+			if folder != lastFolder {
+				folders = append(folders, folder)
+				lastFolder = folder
+				count++
+			}
+		}
 	}
-	return list, nil
+	return objects, folders, "", nil
 }
 
 // GetObjectHash is used to retrieve the corresponding IPFS CID for an object

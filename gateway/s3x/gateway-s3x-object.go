@@ -11,43 +11,53 @@ import (
 	minio "github.com/minio/minio/cmd"
 )
 
-// ListObjects lists all blobs in S3 bucket filtered by prefix
+// ListObjects lists all objects in a bucket
+// The prefix and delimiter parameters limit the kind of results returned by a list operation.
+// The prefix limits the results to only those keys that begin with the specified prefix.
+// The delimiter causes a list operation to roll up all the keys that share a common prefix into a single summary list result.
 func (x *xObjects) ListObjects(
 	ctx context.Context,
 	bucket, prefix, marker, delimiter string,
 	maxKeys int,
 ) (loi minio.ListObjectsInfo, e error) {
-	// TODO(bonedaddy): implement complex search (George: prefix implemented)
-	objs, err := x.ledgerStore.GetObjectInfos(ctx, bucket, prefix, "", 0)
+	objs, folders, nextMarker, err := x.ledgerStore.GetObjectInfos(ctx, bucket, prefix, marker, delimiter, maxKeys)
 	if err != nil {
 		return loi, x.toMinioErr(err, bucket, "", "")
 	}
-	loi.Objects = make([]minio.ObjectInfo, 0, len(objs))
-	for _, obj := range objs {
-		loi.Objects = append(loi.Objects, getMinioObjectInfo(&obj))
+	loi.Objects = make([]minio.ObjectInfo, len(objs))
+	for i, obj := range objs {
+		loi.Objects[i] = getMinioObjectInfo(&obj)
 	}
-	// TODO(bonedaddy): consider if we should use the following helper func
-	// return minio.FromMinioClientListBucketResult(bucket, result), nil
+	loi.NextMarker = nextMarker
+	loi.IsTruncated = nextMarker != ""
+	loi.Prefixes = folders
 	return loi, nil
 }
 
-// ListObjectsV2 lists all objects in B2 bucket filtered by prefix, returns upto max 1000 entries at a time.
+// ListObjectsV2 lists all objects in a bucket
+// The prefix and delimiter parameters limit the kind of results returned by a list operation.
+// The prefix limits the results to only those keys that begin with the specified prefix.
+// The delimiter causes a list operation to roll up all the keys that share a common prefix into a single summary list result.
 func (x *xObjects) ListObjectsV2(
 	ctx context.Context,
 	bucket, prefix, continuationToken, delimiter string,
 	maxKeys int,
 	fetchOwner bool,
 	startAfter string,
-) (loi minio.ListObjectsV2Info, err error) {
-	objs, err := x.ledgerStore.GetObjectInfos(ctx, bucket, prefix, startAfter, 1000)
+) (loi2 minio.ListObjectsV2Info, err error) {
+	if continuationToken != "" {
+		startAfter = continuationToken
+	}
+	loi, err := x.ListObjects(ctx, bucket, prefix, startAfter, delimiter, maxKeys)
 	if err != nil {
-		return loi, x.toMinioErr(err, bucket, "", "")
+		return loi2, err
 	}
-	loi.Objects = make([]minio.ObjectInfo, 0, len(objs))
-	for _, obj := range objs {
-		loi.Objects = append(loi.Objects, getMinioObjectInfo(&obj))
-	}
-	return loi, nil
+	loi2.ContinuationToken = continuationToken
+	loi2.NextContinuationToken = loi.NextMarker
+	loi2.IsTruncated = loi.IsTruncated
+	loi2.Objects = loi.Objects
+	loi2.Prefixes = loi.Prefixes
+	return
 }
 
 // GetObjectNInfo - returns object info and locked object ReadCloser
