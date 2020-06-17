@@ -46,7 +46,7 @@ matrix:
         - SIMPLE_CI=1
       go: 1.13.x
       script:
-        - go build --ldflags="$(go run buildscripts/gen-ldflags.go)" -o %GOPATH%\bin\minio.exe
+        - go build --ldflags="$(go run buildscripts/gen-ldflags.go)" -o %GOPATH%\bin\minio-s3x.exe
         - for d in $(go list ./... | grep -v browser); do go test -v --timeout -coverprofile=coverage.txt 20m "$d"; done
 
 before_script:
