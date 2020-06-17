@@ -1,0 +1,3 @@
+coverage:
+  ignore:
+    - "**/*.pb*.go"  # protobuf generated go files
