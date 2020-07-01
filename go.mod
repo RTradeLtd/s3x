@@ -18,7 +18,7 @@ require (
 	github.com/minio/cli v1.22.0
 	github.com/minio/minio v0.0.0-20200617020901-b85b18da0979
 	github.com/pkg/errors v0.9.1
-	github.com/segmentio/ksuid v1.0.2
+	github.com/segmentio/ksuid v1.0.3
 	go.uber.org/multierr v1.5.0
 	google.golang.org/genproto v0.0.0-20200519141106-08726f379972
 	google.golang.org/grpc v1.29.1
