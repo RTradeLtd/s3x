@@ -21,5 +21,5 @@ require (
 	github.com/segmentio/ksuid v1.0.2
 	go.uber.org/multierr v1.5.0
 	google.golang.org/genproto v0.0.0-20200519141106-08726f379972
-	google.golang.org/grpc v1.29.1
+	google.golang.org/grpc v1.30.0
 )
