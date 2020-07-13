@@ -285,20 +285,20 @@ func testS3XGObject(t *testing.T, dsType DSType, passthrough bool) {
 		}
 		opts := minio.ObjectOptions{}
 		deletes, errs := gateway.DeleteObjects(ctx, testBucket1, objects, opts)
-		if len(deletes) != len(objects){
+		if len(deletes) != len(objects) {
 			t.Fatal("unexpected number of deletes:", deletes)
 		}
-		if len(errs) != len(objects){
+		if len(errs) != len(objects) {
 			t.Fatal("unexpected number of deletes:", errs)
 		}
-		for i := range deletes{
+		for i := range deletes {
 			err := errs[i]
-			if i == 0{
-				if err != nil{
+			if i == 0 {
+				if err != nil {
 					t.Fatal("unexpected err:", err)
 				}
-			}else{
-				if err == nil{
+			} else {
+				if err == nil {
 					t.Fatal("expected err but not nil")
 				}
 			}

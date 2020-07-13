@@ -17,7 +17,7 @@ func (x *xObjects) MakeBucketWithLocation(ctx context.Context, bucket string, op
 	}
 
 	b := &Bucket{BucketInfo: BucketInfo{
-		Location:  opts.Location,
+		Location: opts.Location,
 	}}
 	if !isTest { // creates consistent hashes for testing
 		b.BucketInfo.Created = time.Now().UTC()
