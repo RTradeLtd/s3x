@@ -49,7 +49,10 @@ func testS3XxObjectsGetHash(t *testing.T, dsType DSType, passthrough bool) {
 			t.Fatal(err)
 		}
 	}()
-	if err := gateway.MakeBucketWithLocation(ctx, testBucket1, "us-east-1", false); err != nil {
+	opts := minio.BucketOptions{
+		Location: "us-east-1",
+	}
+	if err := gateway.MakeBucketWithLocation(ctx, testBucket1,opts); err != nil {
 		t.Fatal(err)
 	}
 	testPutObject(t, gateway)
