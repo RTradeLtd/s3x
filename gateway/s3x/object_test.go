@@ -92,8 +92,11 @@ func testS3XGObject(t *testing.T, dsType DSType, passthrough bool) {
 	type args struct {
 		bucketName, objectName string
 	}
+	opts := minio.BucketOptions{
+		Location: "us-east-1",
+	}
 	// setup test bucket
-	if err := gateway.MakeBucketWithLocation(ctx, testBucket1, "us-east-1", false); err != nil {
+	if err := gateway.MakeBucketWithLocation(ctx, testBucket1, opts); err != nil {
 		t.Fatal(err)
 	}
 	t.Run("PutObject", func(t *testing.T) {
@@ -242,7 +245,7 @@ func testS3XGObject(t *testing.T, dsType DSType, passthrough bool) {
 	t.Run("CopyObject", func(t *testing.T) {
 		dstBucket := "dstBucket"
 		dstObject := "dstObject"
-		err := gateway.MakeBucketWithLocation(ctx, dstBucket, "", false)
+		err := gateway.MakeBucketWithLocation(ctx, dstBucket, opts)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -258,30 +261,47 @@ func testS3XGObject(t *testing.T, dsType DSType, passthrough bool) {
 		}
 	})
 	t.Run("DeleteObject", func(t *testing.T) {
-		err := gateway.DeleteObject(ctx, testBucket1, testObject1)
+		opts := minio.ObjectOptions{}
+		_, err := gateway.DeleteObject(ctx, testBucket1, testObject1, opts)
 		if err != nil {
 			t.Fatal(err)
 		}
-		err = gateway.DeleteObject(ctx, testBucket1, testObject1)
+		_, err = gateway.DeleteObject(ctx, testBucket1, testObject1, opts)
 		if _, ok := err.(minio.ObjectNotFound); !ok {
 			t.Fatal("expected err ObjectNotFound, but got: ", err)
 		}
 		gateway.restart(t)
 		//conform that we deleted from datastore
-		err = gateway.DeleteObject(ctx, testBucket1, testObject1)
+		_, err = gateway.DeleteObject(ctx, testBucket1, testObject1, opts)
 		if _, ok := err.(minio.ObjectNotFound); !ok {
 			t.Fatal("expected err ObjectNotFound, but got: ", err)
 		}
 	})
 	t.Run("DeleteObjects", func(t *testing.T) {
 		testPutObject(t, gateway) // put object back before testing delete
-		list := []string{testObject1, "not an object"}
-		errs, err := gateway.DeleteObjects(ctx, testBucket1, list)
-		if err != nil {
-			t.Fatal(err)
+		objects := []minio.ObjectToDelete{
+			{ObjectName: testObject1},
+			{ObjectName: "not an object"},
 		}
-		if len(errs) != 1 {
-			t.Fatal("expected one missing object, but go errors: ", errs)
+		opts := minio.ObjectOptions{}
+		deletes, errs := gateway.DeleteObjects(ctx, testBucket1, objects, opts)
+		if len(deletes) != len(objects) {
+			t.Fatal("unexpected number of deletes:", deletes)
+		}
+		if len(errs) != len(objects) {
+			t.Fatal("unexpected number of deletes:", errs)
+		}
+		for i := range deletes {
+			err := errs[i]
+			if i == 0 {
+				if err != nil {
+					t.Fatal("unexpected err:", err)
+				}
+			} else {
+				if err == nil {
+					t.Fatal("expected err but not nil")
+				}
+			}
 		}
 	})
 }

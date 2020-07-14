@@ -52,13 +52,15 @@ func testS3XBucket(t *testing.T, dsType DSType, passthrough bool) {
 			{"Bucket1-Success", args{testBucket1, "", "", ""}, false},
 			{"Bucket1-AlreadyExists", args{testBucket1, "", "", ""}, true},
 		}
+		opts := minio.BucketOptions{
+			Location: "us-east-1",
+		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				err := gateway.MakeBucketWithLocation(
 					ctx,
 					tt.args.bucketName,
-					"us-east-1",
-					false,
+					opts,
 				)
 				if (err != nil) != tt.wantErr {
 					t.Fatalf("MakeBucketWithLocation() err %v, wantErr %v", err, tt.wantErr)

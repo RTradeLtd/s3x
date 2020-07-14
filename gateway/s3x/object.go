@@ -253,25 +253,34 @@ func (x *xObjects) CopyObject(
 // DeleteObject deletes a blob in bucket
 func (x *xObjects) DeleteObject(
 	ctx context.Context,
-	bucket, object string,
-) error {
+	bucket, object string, opt minio.ObjectOptions,
+) (minio.ObjectInfo, error) {
 	err := x.ledgerStore.RemoveObject(ctx, bucket, object)
-	return x.toMinioErr(err, bucket, object, "")
+	if err != nil {
+		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, object, "")
+	}
+	return minio.ObjectInfo{
+		Bucket: bucket,
+		Name:   object,
+	}, nil
 }
 
 func (x *xObjects) DeleteObjects(
 	ctx context.Context,
 	bucket string,
-	objects []string,
-) ([]error, error) {
-	missing, err := x.ledgerStore.RemoveObjects(ctx, bucket, objects...)
-	if err != nil {
-		return nil, x.toMinioErr(err, bucket, "", "")
+	objects []minio.ObjectToDelete, opts minio.ObjectOptions,
+) ([]minio.DeletedObject, []error) {
+
+	errs := make([]error, len(objects))
+	dobjects := make([]minio.DeletedObject, len(objects))
+	for idx, object := range objects {
+		//TODO: use  x.ledgerStore.RemoveObjects to batch operations
+		_, errs[idx] = x.DeleteObject(ctx, bucket, object.ObjectName, opts)
+		if errs[idx] == nil {
+			dobjects[idx] = minio.DeletedObject{
+				ObjectName: object.ObjectName,
+			}
+		}
 	}
-	// TODO(bonedaddy): implement removal from ipfs
-	errs := make([]error, len(missing))
-	for i, m := range missing {
-		errs[i] = x.toMinioErr(ErrLedgerObjectDoesNotExist, bucket, m, "")
-	}
-	return errs, nil
+	return dobjects, errs
 }

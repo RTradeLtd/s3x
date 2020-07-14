@@ -31,7 +31,10 @@ func testS3XMultipart(t *testing.T, dsType DSType, passthrough bool) {
 			t.Fatal(err)
 		}
 	}()
-	if err := gateway.MakeBucketWithLocation(ctx, bucket, "us-east-1", false); err != nil {
+	opts := minio.BucketOptions{
+		Location: "us-east-1",
+	}
+	if err := gateway.MakeBucketWithLocation(ctx, bucket, opts); err != nil {
 		t.Fatal(err)
 	}
 

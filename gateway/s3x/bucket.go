@@ -11,28 +11,22 @@ import (
 var isTest = false
 
 // MakeBucket creates a new bucket container within TemporalX.
-func (x *xObjects) MakeBucketWithLocation(
-	ctx context.Context,
-	name, location string,
-	lockEnabled bool,
-) error {
-	if lockEnabled {
-		// lockEnabled was added in https://github.com/minio/minio/pull/9548/files#diff-ffa5495ade5a5a87da532a15efe2c38b
-		// which is also NotImplemented in the s3 gateway as of may 21st, 2020
+func (x *xObjects) MakeBucketWithLocation(ctx context.Context, bucket string, opts minio.BucketOptions) error {
+	if opts.LockEnabled || opts.VersioningEnabled {
 		return minio.NotImplemented{}
 	}
 
 	b := &Bucket{BucketInfo: BucketInfo{
-		Location: location,
+		Location: opts.Location,
 	}}
 	if !isTest { // creates consistent hashes for testing
 		b.BucketInfo.Created = time.Now().UTC()
 	}
-	hash, err := x.ledgerStore.CreateBucket(ctx, name, b)
+	hash, err := x.ledgerStore.CreateBucket(ctx, bucket, b)
 	if err != nil {
-		return x.toMinioErr(err, name, "", "")
+		return x.toMinioErr(err, bucket, "", "")
 	}
-	log.Printf("bucket-name: %s\tbucket-hash: %s", name, hash)
+	log.Printf("bucket-name: %s\tbucket-hash: %s", bucket, hash)
 	return nil
 }
 
