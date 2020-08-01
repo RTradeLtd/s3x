@@ -13,7 +13,7 @@ require (
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.14.6
 	github.com/hashicorp/go-hclog v0.9.2 // indirect
-	github.com/ipfs/go-cid v0.0.6
+	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-datastore v0.4.4
 	github.com/ipfs/go-ds-crdt v0.0.0-20200609114916-40eabf459dc8
 	github.com/ipfs/go-ipld-format v0.2.0
