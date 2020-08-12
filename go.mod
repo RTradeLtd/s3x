@@ -15,14 +15,14 @@ require (
 	github.com/hashicorp/go-hclog v0.9.2 // indirect
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-datastore v0.4.4
-	github.com/ipfs/go-ds-crdt v0.0.0-20200609114916-40eabf459dc8
+	github.com/ipfs/go-ds-crdt v0.1.14
 	github.com/ipfs/go-ipld-format v0.2.0
 	github.com/ipfs/go-merkledag v0.3.2
 	github.com/ipfs/go-unixfs v0.2.4
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/minio/cli v1.22.0
-	github.com/minio/minio v0.0.0-20200727215159-f200a7fb6a6c
+	github.com/minio/minio v0.0.0-20200810213217-9179cdfc9d49
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/rcrowley/go-metrics v0.0.0-20190704165056-9c2d0518ed81 // indirect
@@ -32,7 +32,6 @@ require (
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	go.uber.org/multierr v1.5.0
 	go.uber.org/zap v1.15.0 // indirect
-	golang.org/x/tools v0.0.0-20200502202811-ed308ab3e770 // indirect
 	google.golang.org/appengine v1.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20200519141106-08726f379972
 	google.golang.org/grpc v1.29.1
