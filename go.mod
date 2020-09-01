@@ -15,7 +15,7 @@ require (
 	github.com/hashicorp/go-hclog v0.9.2 // indirect
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-datastore v0.4.4
-	github.com/ipfs/go-ds-crdt v0.1.14
+	github.com/ipfs/go-ds-crdt v0.1.15
 	github.com/ipfs/go-ipld-format v0.2.0
 	github.com/ipfs/go-merkledag v0.3.2
 	github.com/ipfs/go-unixfs v0.2.4
@@ -28,12 +28,11 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20190704165056-9c2d0518ed81 // indirect
 	github.com/segmentio/ksuid v1.0.3
 	github.com/smartystreets/goconvey v1.6.4 // indirect
-	github.com/stretchr/testify v1.5.1 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
 	go.uber.org/multierr v1.5.0
 	go.uber.org/zap v1.15.0 // indirect
 	google.golang.org/appengine v1.6.0 // indirect
-	google.golang.org/genproto v0.0.0-20200519141106-08726f379972
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
 	google.golang.org/grpc v1.29.1
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.28 // indirect
