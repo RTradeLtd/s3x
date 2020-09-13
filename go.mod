@@ -15,7 +15,7 @@ require (
 	github.com/hashicorp/go-hclog v0.9.2 // indirect
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-datastore v0.4.5
-	github.com/ipfs/go-ds-crdt v0.1.15
+	github.com/ipfs/go-ds-crdt v0.1.16
 	github.com/ipfs/go-ipld-format v0.2.0
 	github.com/ipfs/go-merkledag v0.3.2
 	github.com/ipfs/go-unixfs v0.2.4
