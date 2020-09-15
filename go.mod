@@ -29,7 +29,7 @@ require (
 	github.com/segmentio/ksuid v1.0.3
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5 // indirect
-	go.uber.org/multierr v1.5.0
+	go.uber.org/multierr v1.6.0
 	go.uber.org/zap v1.15.0 // indirect
 	google.golang.org/appengine v1.6.0 // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
