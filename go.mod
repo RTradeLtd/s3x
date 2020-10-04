@@ -1,6 +1,6 @@
 module github.com/RTradeLtd/s3x
 
-go 1.13
+go 1.15
 
 require (
 	github.com/RTradeLtd/TxPB/v3 v3.4.2
