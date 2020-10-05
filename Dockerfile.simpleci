@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # Stage 1: Build and Unit tests
 #-------------------------------------------------------------
-FROM golang:1.13
+FROM golang:1.15
 
 COPY . /go/src/github.com/RTradeLtd/s3x
 WORKDIR /go/src/github.com/RTradeLtd/s3x

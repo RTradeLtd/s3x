@@ -108,10 +108,7 @@ func (x *xObjects) ListObjectParts(
 }
 
 // AbortMultipartUpload aborts a ongoing multipart upload
-func (x *xObjects) AbortMultipartUpload(
-	ctx context.Context,
-	bucket, object, uploadID string,
-) error {
+func (x *xObjects) AbortMultipartUpload(ctx context.Context, bucket, object, uploadID string, opt minio.ObjectOptions) error {
 	// TODO(bonedaddy): remove the corresponding objects from ipfs
 	return x.toMinioErr(
 		x.ledgerStore.AbortMultipartUpload(bucket, uploadID),
@@ -193,5 +190,5 @@ func (x *xObjects) CompleteMultipartUpload(
 	if err != nil {
 		return oi, x.toMinioErr(err, bucket, object, uploadID)
 	}
-	return getMinioObjectInfo(loi), x.AbortMultipartUpload(ctx, bucket, object, uploadID)
+	return getMinioObjectInfo(loi), x.AbortMultipartUpload(ctx, bucket, object, uploadID, minio.ObjectOptions{})
 }
