@@ -11,7 +11,7 @@ RUN  \
      git clone https://github.com/RTradeLtd/s3x && cd s3x && \
      go install -v -ldflags "$(go run buildscripts/gen-ldflags.go)"
 
-FROM alpine:3.10
+FROM alpine:3.12
 
 ENV MINIO_UPDATE off
 ENV MINIO_ACCESS_KEY_FILE=access_key \
