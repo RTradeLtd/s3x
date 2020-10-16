@@ -9,7 +9,7 @@ require (
 	github.com/eapache/go-resiliency v1.2.0 // indirect
 	github.com/frankban/quicktest v1.11.0 // indirect
 	github.com/gogo/protobuf v1.3.1
-	github.com/golang/protobuf v1.4.2
+	github.com/golang/protobuf v1.4.3
 	github.com/grpc-ecosystem/grpc-gateway v1.14.6
 	github.com/hashicorp/go-hclog v0.14.1 // indirect
 	github.com/ipfs/go-cid v0.0.7
