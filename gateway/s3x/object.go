@@ -270,7 +270,6 @@ func (x *xObjects) DeleteObjects(
 	bucket string,
 	objects []minio.ObjectToDelete, opts minio.ObjectOptions,
 ) ([]minio.DeletedObject, []error) {
-
 	errs := make([]error, len(objects))
 	dobjects := make([]minio.DeletedObject, len(objects))
 	for idx, object := range objects {

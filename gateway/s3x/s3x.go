@@ -44,6 +44,7 @@ type TEMX struct {
 	DSPassthrough bool   // turns off in-memory cache of some datastratures, lowers memory usage and allows network sync of the datastore to work, at a cost of performance.
 	CrdtTopic     string // if the database type is crdt, then this is used as the pubsub topic
 	XAddr         string // server and port of the XAPI address
+	SFSName       string // name used to salt the RefID secret, so the secret can not be guessed for other severs.
 	Insecure      bool   // skip certificate verification when connecting to TemporalX
 }
 

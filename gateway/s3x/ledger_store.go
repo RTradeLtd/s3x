@@ -30,9 +30,10 @@ var (
 // Object hashes are saved in ipfs and cached in memory,
 // Object data is saved in ipfs.
 type ledgerStore struct {
-	ds  datastore.Batching
-	dag pb.NodeAPIClient //to be used as direct access to ipfs to optimize algorithm
-	l   *Ledger          //a cache of the values in datastore and ipfs
+	ds        datastore.Batching
+	dag       pb.NodeAPIClient //to be used as direct access to ipfs to optimize algorithm
+	l         *Ledger          //a cache of the values in datastore and ipfs
+	refIDroot string           //the calculated refID root, from stored secret and server SFSName
 
 	locker     bucketLocker //a locker to protect buckets from concurrent access (per bucket)
 	plocker    bucketLocker //a locker to protect MultipartUploads from concurrent access (per upload ID)
