@@ -33,7 +33,7 @@ type ledgerStore struct {
 	ds        datastore.Batching
 	dag       pb.NodeAPIClient //to be used as direct access to ipfs to optimize algorithm
 	l         *Ledger          //a cache of the values in datastore and ipfs
-	refIDroot string           //the calculated refID root, from stored secret and server SFSName
+	refIDRoot string           //the calculated refID root, from stored secret and server SFSName
 
 	locker     bucketLocker //a locker to protect buckets from concurrent access (per bucket)
 	plocker    bucketLocker //a locker to protect MultipartUploads from concurrent access (per upload ID)
@@ -43,11 +43,12 @@ type ledgerStore struct {
 	cleanup []func() error //a list of functions to call before we close the backing database.
 }
 
-func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient, passthrough bool) (*ledgerStore, error) {
+func newLedgerStore(g *TEMX, ds datastore.Batching, dag pb.NodeAPIClient, passthrough bool) (*ledgerStore, error) {
 	ls := &ledgerStore{
 		ds:  namespace.Wrap(ds, dsPrefix),
 		dag: dag,
 	}
+	ls.setRefIDRoot(g)
 	if !passthrough {
 		ls.l = &Ledger{
 			Buckets:          make(map[string]*LedgerBucketEntry),

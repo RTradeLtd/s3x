@@ -30,7 +30,7 @@ func testS3XLedgerStore(t *testing.T, dsType DSType, passthrough bool) {
 		}
 	}()
 
-	ledger, err := newLedgerStore(dssync.MutexWrap(datastore.NewMapDatastore()), gateway.dagClient, passthrough)
+	ledger, err := newLedgerStore(gateway.temx, dssync.MutexWrap(datastore.NewMapDatastore()), gateway.dagClient, passthrough)
 
 	if err != nil {
 		t.Fatal(err)

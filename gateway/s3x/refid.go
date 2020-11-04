@@ -34,6 +34,6 @@ func (ls *ledgerStore) setRefIDRoot(g *TEMX) error {
 	if _, err = h.Write([]byte(g.SFSName)); err != nil {
 		return err
 	}
-	ls.refIDroot = string(h.Sum(nil))
+	ls.refIDRoot = string(h.Sum(nil))
 	return nil
 }

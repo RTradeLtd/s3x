@@ -154,7 +154,7 @@ func (g *TEMX) newBadgerLedgerStore(dag pb.NodeAPIClient) (*ledgerStore, error) 
 	if err != nil {
 		return nil, err
 	}
-	return newLedgerStore(ds, dag, g.DSPassthrough)
+	return newLedgerStore(g, ds, dag, g.DSPassthrough)
 }
 
 // newCrdtLedgerStore returns an instance of ledgerStore that uses crdt and backed by badgerv2
@@ -183,7 +183,7 @@ func (g *TEMX) newCrdtLedgerStore(ctx context.Context, dag pb.NodeAPIClient, pub
 	if err != nil {
 		return nil, err
 	}
-	ls, err := newLedgerStore(crdtds, dag, g.DSPassthrough)
+	ls, err := newLedgerStore(g, crdtds, dag, g.DSPassthrough)
 	if err != nil {
 		return nil, err
 	}
