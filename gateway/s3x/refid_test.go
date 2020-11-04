@@ -1,9 +1,18 @@
 package s3x
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestSetRefIDRoot(t *testing.T) {
+	ctx := context.Background()
 	gateway := newTestGateway(t, DSTypeBadger, false)
+	defer func() {
+		if err := gateway.Shutdown(ctx); err != nil {
+			t.Fatal(err)
+		}
+	}()
 	root := gateway.ledgerStore.refIDRoot
 	if len(root) < 20 {
 		t.Fatalf("refIDRoot %v is too short", root)
