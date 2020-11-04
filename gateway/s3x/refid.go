@@ -3,6 +3,8 @@ package s3x
 import (
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/base64"
+	"fmt"
 
 	"github.com/ipfs/go-datastore"
 	"github.com/pkg/errors"
@@ -12,7 +14,7 @@ import (
 type refID string
 
 func (ls *ledgerStore) setRefIDRoot(g *TEMX) error {
-	key := datastore.NewKey("rtrade/s3x/RefIDSecret")
+	key := datastore.NewKey("/rtrade/s3x/RefIDSecret")
 	v, err := ls.ds.Get(key)
 	if err == datastore.ErrNotFound {
 		v = make([]byte, 64)
@@ -34,6 +36,16 @@ func (ls *ledgerStore) setRefIDRoot(g *TEMX) error {
 	if _, err = h.Write([]byte(g.SFSName)); err != nil {
 		return err
 	}
-	ls.refIDRoot = string(h.Sum(nil))
+	ls.refIDRoot = datastore.NewKey(base64.URLEncoding.EncodeToString(h.Sum(nil)))
 	return nil
+}
+
+func (ls *ledgerStore) objectRefID(bucket string, object string) refID {
+	key := ls.refIDRoot.ChildString("o").ChildString(fmt.Sprint(len(bucket))).ChildString(bucket).ChildString(object)
+	return refID(key.String())
+}
+
+func (ls *ledgerStore) bucketRefID(bucket string) refID {
+	key := ls.refIDRoot.ChildString("b").ChildString(bucket)
+	return refID(key.String())
 }
