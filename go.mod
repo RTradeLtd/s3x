@@ -3,7 +3,7 @@ module github.com/RTradeLtd/s3x
 go 1.15
 
 require (
-	github.com/RTradeLtd/TxPB/v3 v3.4.2
+	github.com/RTradeLtd/TxPB/v3 v3.4.3-0.20200926080756-1c3b6905c710
 	github.com/RTradeLtd/go-ds-badger/v2 v2.1.0
 	github.com/dgraph-io/badger/v2 v2.0.3 // indirect
 	github.com/eapache/go-resiliency v1.2.0 // indirect

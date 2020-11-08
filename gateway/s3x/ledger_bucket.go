@@ -159,7 +159,7 @@ func (ls *ledgerStore) saveBucket(ctx context.Context, bucket string, b *Bucket)
 	}
 
 	//save to ipfs and get hash
-	bHash, err := ipfsSave(ctx, ls.dag, b)
+	bHash, err := ipfsSave(ctx, ls.dag, b, ls.bucketRefID(bucket))
 	if err != nil {
 		return nil, err
 	}

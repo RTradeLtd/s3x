@@ -162,7 +162,7 @@ func (ls *ledgerStore) PutObject(ctx context.Context, bucket, object string, obj
 
 //putObject saves an object by hash into the given bucket
 func (ls *ledgerStore) putObject(ctx context.Context, bucket, object string, obj *Object) error {
-	oHash, err := ipfsSave(ctx, ls.dag, obj)
+	oHash, err := ipfsSave(ctx, ls.dag, obj, ls.objectRefID(bucket, object))
 	if err != nil {
 		return err
 	}

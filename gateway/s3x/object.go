@@ -168,7 +168,7 @@ func (x *xObjects) PutObject(
 	if err != nil {
 		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, "", "")
 	}
-	hash, size, err := ipfsFileUpload(ctx, x.fileClient, r)
+	hash, size, err := ipfsFileUpload(ctx, x.fileClient, r, x.ledgerStore.objectRefID(bucket, object))
 	if err != nil {
 		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, object, "")
 	}
