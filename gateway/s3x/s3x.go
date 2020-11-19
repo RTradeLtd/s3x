@@ -44,6 +44,7 @@ type TEMX struct {
 	DSPassthrough bool   // turns off in-memory cache of some datastratures, lowers memory usage and allows network sync of the datastore to work, at a cost of performance.
 	CrdtTopic     string // if the database type is crdt, then this is used as the pubsub topic
 	XAddr         string // server and port of the XAPI address
+	SFSName       string // name used to salt the RefID secret, so the secret can not be guessed for other severs.
 	Insecure      bool   // skip certificate verification when connecting to TemporalX
 }
 
@@ -153,7 +154,7 @@ func (g *TEMX) newBadgerLedgerStore(dag pb.NodeAPIClient) (*ledgerStore, error) 
 	if err != nil {
 		return nil, err
 	}
-	return newLedgerStore(ds, dag, g.DSPassthrough)
+	return newLedgerStore(g, ds, dag, g.DSPassthrough)
 }
 
 // newCrdtLedgerStore returns an instance of ledgerStore that uses crdt and backed by badgerv2
@@ -182,7 +183,7 @@ func (g *TEMX) newCrdtLedgerStore(ctx context.Context, dag pb.NodeAPIClient, pub
 	if err != nil {
 		return nil, err
 	}
-	ls, err := newLedgerStore(crdtds, dag, g.DSPassthrough)
+	ls, err := newLedgerStore(g, crdtds, dag, g.DSPassthrough)
 	if err != nil {
 		return nil, err
 	}

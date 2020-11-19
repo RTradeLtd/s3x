@@ -47,7 +47,7 @@ func (x *xObjects) PutObjectPart(
 	if err != nil {
 		return pi, x.toMinioErr(err, bucket, "", "")
 	}
-	hash, size, err := ipfsFileUpload(ctx, x.fileClient, r)
+	hash, size, err := ipfsFileUpload(ctx, x.fileClient, r, x.ledgerStore.objectRefID(bucket, object))
 	if err != nil {
 		return pi, x.toMinioErr(err, bucket, object, uploadID)
 	}
@@ -171,7 +171,7 @@ func (x *xObjects) CompleteMultipartUpload(
 		return oi, x.toMinioErr(err, bucket, object, uploadID)
 	}
 	protoNode.SetData(data)
-	dataHash, err := ipfsSaveProtoNode(ctx, x.dagClient, protoNode)
+	dataHash, err := ipfsSaveProtoNode(ctx, x.dagClient, protoNode, x.ledgerStore.objectRefID(bucket, object))
 	if err != nil {
 		return oi, x.toMinioErr(err, bucket, object, uploadID)
 	}

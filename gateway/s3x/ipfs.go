@@ -55,19 +55,20 @@ func ipfsBucket(ctx context.Context, dag pb.NodeAPIClient, h string) (*Bucket, e
 }
 
 // ipfsSave saves any marshaller object and returns it's IPFS hash
-func ipfsSave(ctx context.Context, dag pb.NodeAPIClient, m marshaller) (string, error) {
+func ipfsSave(ctx context.Context, dag pb.NodeAPIClient, m marshaller, ref refID) (string, error) {
 	data, err := m.Marshal()
 	if err != nil {
 		return "", err
 	}
-	return ipfsSaveBytes(ctx, dag, data)
+	return ipfsSaveBytes(ctx, dag, data, ref)
 }
 
 // ipfsSaveBytes saves data and returns it's IPFS hash
-func ipfsSaveBytes(ctx context.Context, dag pb.NodeAPIClient, data []byte) (string, error) {
+func ipfsSaveBytes(ctx context.Context, dag pb.NodeAPIClient, data []byte, ref refID) (string, error) {
 	resp, err := dag.Dag(ctx, &pb.DagRequest{
 		RequestType: pb.DAGREQTYPE_DAG_PUT,
 		Data:        data,
+		RefID:       string(ref),
 	})
 	if err != nil {
 		return "", errors.Wrap(err, "dag client error in ipfsSaveBytes")
@@ -75,7 +76,7 @@ func ipfsSaveBytes(ctx context.Context, dag pb.NodeAPIClient, data []byte) (stri
 	return resp.GetHashes()[0], nil
 }
 
-func ipfsSaveProtoNode(ctx context.Context, dag pb.NodeAPIClient, node *merkledag.ProtoNode) (string, error) {
+func ipfsSaveProtoNode(ctx context.Context, dag pb.NodeAPIClient, node *merkledag.ProtoNode, ref refID) (string, error) {
 	data, err := node.Marshal()
 	if err != nil {
 		return "", err
@@ -85,6 +86,7 @@ func ipfsSaveProtoNode(ctx context.Context, dag pb.NodeAPIClient, node *merkleda
 		Data:                data,
 		ObjectEncoding:      "protobuf",
 		SerializationFormat: "protobuf",
+		RefID:               string(ref),
 	})
 	if err != nil {
 		return "", errors.Wrap(err, "dag client error in ipfsSaveProtoNode")
@@ -97,7 +99,7 @@ func ipfsSaveProtoNode(ctx context.Context, dag pb.NodeAPIClient, node *merkleda
 
 const chunkSize = 4*1024*1024 - 1024 //1KB less than 4MB for a good safety buffer
 
-func ipfsFileUpload(ctx context.Context, fileClient pb.FileAPIClient, r io.Reader) (string, int, error) {
+func ipfsFileUpload(ctx context.Context, fileClient pb.FileAPIClient, r io.Reader, ref refID) (string, int, error) {
 	stream, err := fileClient.UploadFile(ctx)
 	if err != nil {
 		return "", 0, err
@@ -116,10 +118,16 @@ func ipfsFileUpload(ctx context.Context, fileClient pb.FileAPIClient, r io.Reade
 			_ = stream.CloseSend()
 			return "", size, err
 		}
-		size = size + n
-		if err := stream.Send(&pb.UploadRequest{
+		req := &pb.UploadRequest{
 			Blob: &pb.Blob{Content: buf[:n]},
-		}); err != nil {
+		}
+		if size == 0 {
+			req.Options = &pb.UploadOptions{
+				RefID: string(ref),
+			}
+		}
+		size = size + n
+		if err := stream.Send(req); err != nil {
 			return "", size, err
 		}
 	}

@@ -30,9 +30,10 @@ var (
 // Object hashes are saved in ipfs and cached in memory,
 // Object data is saved in ipfs.
 type ledgerStore struct {
-	ds  datastore.Batching
-	dag pb.NodeAPIClient //to be used as direct access to ipfs to optimize algorithm
-	l   *Ledger          //a cache of the values in datastore and ipfs
+	ds        datastore.Batching
+	dag       pb.NodeAPIClient //to be used as direct access to ipfs to optimize algorithm
+	l         *Ledger          //a cache of the values in datastore and ipfs
+	refIDRoot datastore.Key    //the calculated refID root, from stored secret and server SFSName
 
 	locker     bucketLocker //a locker to protect buckets from concurrent access (per bucket)
 	plocker    bucketLocker //a locker to protect MultipartUploads from concurrent access (per upload ID)
@@ -42,11 +43,12 @@ type ledgerStore struct {
 	cleanup []func() error //a list of functions to call before we close the backing database.
 }
 
-func newLedgerStore(ds datastore.Batching, dag pb.NodeAPIClient, passthrough bool) (*ledgerStore, error) {
+func newLedgerStore(g *TEMX, ds datastore.Batching, dag pb.NodeAPIClient, passthrough bool) (*ledgerStore, error) {
 	ls := &ledgerStore{
 		ds:  namespace.Wrap(ds, dsPrefix),
 		dag: dag,
 	}
+	ls.setRefIDRoot(g)
 	if !passthrough {
 		ls.l = &Ledger{
 			Buckets:          make(map[string]*LedgerBucketEntry),
@@ -160,7 +162,7 @@ func (ls *ledgerStore) PutObject(ctx context.Context, bucket, object string, obj
 
 //putObject saves an object by hash into the given bucket
 func (ls *ledgerStore) putObject(ctx context.Context, bucket, object string, obj *Object) error {
-	oHash, err := ipfsSave(ctx, ls.dag, obj)
+	oHash, err := ipfsSave(ctx, ls.dag, obj, ls.objectRefID(bucket, object))
 	if err != nil {
 		return err
 	}

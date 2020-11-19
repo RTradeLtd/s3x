@@ -168,7 +168,7 @@ func (x *xObjects) PutObject(
 	if err != nil {
 		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, "", "")
 	}
-	hash, size, err := ipfsFileUpload(ctx, x.fileClient, r)
+	hash, size, err := ipfsFileUpload(ctx, x.fileClient, r, x.ledgerStore.objectRefID(bucket, object))
 	if err != nil {
 		return minio.ObjectInfo{}, x.toMinioErr(err, bucket, object, "")
 	}
@@ -270,7 +270,6 @@ func (x *xObjects) DeleteObjects(
 	bucket string,
 	objects []minio.ObjectToDelete, opts minio.ObjectOptions,
 ) ([]minio.DeletedObject, []error) {
-
 	errs := make([]error, len(objects))
 	dobjects := make([]minio.DeletedObject, len(objects))
 	for idx, object := range objects {
