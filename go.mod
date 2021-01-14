@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/go-hclog v0.14.1 // indirect
 	github.com/ipfs/go-cid v0.0.7
 	github.com/ipfs/go-datastore v0.4.5
-	github.com/ipfs/go-ds-crdt v0.1.17
+	github.com/ipfs/go-ds-crdt v0.1.18
 	github.com/ipfs/go-ipld-format v0.2.0
 	github.com/ipfs/go-merkledag v0.3.2
 	github.com/ipfs/go-unixfs v0.2.4
@@ -32,7 +32,7 @@ require (
 	go.uber.org/zap v1.16.0 // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/genproto v0.0.0-20201002142447-3860012362da
-	google.golang.org/grpc v1.29.1
+	google.golang.org/grpc v1.31.1
 	gopkg.in/check.v1 v1.0.0-20200902074654-038fdea0a05b // indirect
 	gopkg.in/cheggaaa/pb.v1 v1.0.28 // indirect
 	honnef.co/go/tools v0.0.1-2020.1.5 // indirect
